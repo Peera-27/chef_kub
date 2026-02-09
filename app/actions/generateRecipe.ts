@@ -19,12 +19,11 @@ export async function generateRecipes(ingredients: string[]) {
 
   const genAI = new GoogleGenerativeAI(apiKey);
   // ใช้รุ่น Flash เพื่อความเร็วและประหยัด
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
-  // Prompt สั่งงาน AI (สำคัญมาก!)
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
   const prompt = `
     คุณเป็นเชฟมืออาชีพ ฉันมีวัตถุดิบดังนี้: ${ingredients.join(", ")}
     
-    ช่วยคิดเมนูอาหารไทย 3 เมนู ที่ใช้วัตถุดิบเหล่านี้เป็นหลัก (สามารถเพิ่มเครื่องปรุงพื้นฐานได้)
+    ช่วยคิดเมนูอาหารไทย 3 เมนูโดยบอกวิธีการทำที่ละเอียดและกินได้จริง ที่ใช้วัตถุดิบเหล่านี้เป็นหลัก (สามารถเพิ่มเครื่องปรุงพื้นฐานได้)
     ขอผลลัพธ์เป็น JSON Array เท่านั้น โดยมี Format ดังนี้:
     [
       {
@@ -37,7 +36,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
     ]
     ไม่ต้องมีคำเกริ่น หรือ Markdown ใดๆ ขอแค่ Raw JSON
   `;
-  // วางก่อน try...catch ใน generateRecipes
+  
 
   try {
     const result = await model.generateContent(prompt);

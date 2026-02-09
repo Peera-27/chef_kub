@@ -394,6 +394,7 @@ export default function Home() {
             <h2 className="text-xl font-bold text-white mb-2">
               เมนูแนะนำสำหรับคุณ ✨
             </h2>
+
             {recipes.map((recipe, index) => (
               <div
                 key={index}
