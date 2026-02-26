@@ -300,7 +300,7 @@ export default function Home() {
               >
                 <button
                   onClick={() => removeImage(img.id)}
-                  className="absolute top-2 right-2 z-10 p-1.5 bg-red-500/20 text-red-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white"
+                  className="absolute top-2 right-2 z-10 p-1.5 bg-red-500/20 text-red-500 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white"
                   title="ลบรูปภาพ"
                 >
                   <svg
@@ -417,7 +417,7 @@ export default function Home() {
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleMouseUp}
-              className="absolute inset-0 z-10 cursor-crosshair touch-none" // touch-none สำคัญมากเพื่อไม่ให้หน้าจอเลื่อนตอนกำลังวาด
+              className="absolute inset-0 z-10 cursor-crosshair touch-none"
             />
           </div>
           <button
