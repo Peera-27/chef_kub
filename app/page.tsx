@@ -1,82 +1,48 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import * as tf from "@tensorflow/tfjs";
-import "@tensorflow/tfjs-backend-webgl";
-import { labels } from "./utils/labels";
-import { generateRecipes, Recipe } from "./actions/generateRecipe"; // import server action
+import React, { useState, useRef, useEffect } from "react";
+import { identifyIngredients } from "./actions/analyzeImage";
+import { generateRecipes, Recipe } from "./actions/generateRecipe";
 
-// --- Interfaces ---
-interface LoadingState {
-  state: boolean;
-  progress: number;
-  message?: string;
+interface BoundingBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  label: string;
 }
 
 interface ImageItem {
   id: string;
-  originalUrl: string;
-  processedUrl: string;
+  url: string;
   items: string[];
-}
-
-interface DetectionResult {
-  boxes: number[][];
-  scores: number[];
-  classes: number[];
+  boxes?: BoundingBox[];
 }
 
 export default function Home() {
-  // --- States ---
-  const [loading, setLoading] = useState<LoadingState>({
-    state: true,
-    progress: 0,
-    message: "กำลังเตรียม AI...",
-  });
-
-  const [model, setModel] = useState<tf.GraphModel | null>(null);
+  const [loading, setLoading] = useState({ state: false, message: "" });
   const [gallery, setGallery] = useState<ImageItem[]>([]);
   const [allItems, setAllItems] = useState<string[]>([]);
-
-  // เพิ่ม State สำหรับเก็บสูตรอาหาร
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [viewMode, setViewMode] = useState<"home" | "camera" | "recipes">(
-    "home",
-  );
+  const [viewMode, setViewMode] = useState<
+    "home" | "camera" | "recipes" | "edit"
+  >("home");
 
-  // Refs
+  const [editingImage, setEditingImage] = useState<ImageItem | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [currentRect, setCurrentRect] = useState<{
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null>(null);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // 1. โหลดโมเดล
-  useEffect(() => {
-    async function loadModel() {
-      try {
-        const yolov8 = await tf.loadGraphModel("/model/model.json", {
-          onProgress: (fractions) => {
-            setLoading({
-              state: true,
-              progress: fractions,
-              message: "กำลังโหลดสมอง AI...",
-            });
-          },
-        });
-        const dummyInput = tf.zeros([1, 640, 640, 3]);
-        yolov8.execute(dummyInput);
-        tf.dispose(dummyInput);
-        setModel(yolov8);
-        setLoading({ state: false, progress: 1 });
-      } catch (err) {
-        console.error("Model Error:", err);
-        alert("ไม่พบไฟล์โมเดล! ตรวจสอบ folder /public/model/");
-        setLoading({ state: false, progress: 0 });
-      }
-    }
-    loadModel();
-  }, []);
-
-  // 2. รวมวัตถุดิบ
+  // อัปเดตรายการวัตถุดิบรวมจาก Gallery ทั้งหมด
   useEffect(() => {
     const mergedItems = new Set<string>();
     gallery.forEach((img) => {
@@ -85,47 +51,19 @@ export default function Home() {
     setAllItems(Array.from(mergedItems));
   }, [gallery]);
 
-  // --- Functions ---
-
-  // ฟังก์ชันเรียก Gemini (ใหม่!)
-  const handleGenerateRecipes = async () => {
-    if (allItems.length === 0) return;
-
-    setLoading({
-      state: true,
-      progress: 0,
-      message: "กำลังปรึกษาเชฟ Gemini...",
-    });
-    try {
-      // เรียก Server Action
-      const result = await generateRecipes(allItems);
-      setRecipes(result);
-      setViewMode("recipes"); // เปลี่ยนไปหน้าแสดงสูตร
-    } catch (error) {
-      console.error(error);
-      alert("เกิดข้อผิดพลาดในการคิดสูตร");
-    } finally {
-      setLoading({ state: false, progress: 0 });
-    }
-  };
-
+  // --- ระบบกล้อง ---
   const startCamera = async () => {
     setViewMode("camera");
     try {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: false,
-          video: { facingMode: "environment" },
-        });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play();
-        }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
       }
-    } catch (error) {
-      console.error("Camera Error:", error);
-      alert("ไม่สามารถเปิดกล้องได้");
+    } catch (err) {
+      alert("ไม่สามารถเข้าถึงกล้องได้");
       setViewMode("home");
     }
   };
@@ -137,369 +75,425 @@ export default function Home() {
     }
   };
 
-  const captureImage = () => {
+  const capturePhoto = () => {
     if (videoRef.current) {
-      const video = videoRef.current;
       const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
       const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageUrl = canvas.toDataURL("image/jpeg");
-        stopCamera();
-        setViewMode("home");
-        processImage(imageUrl);
-      }
+      ctx?.drawImage(videoRef.current, 0, 0);
+      const base64 = canvas.toDataURL("image/jpeg");
+      stopCamera();
+      setViewMode("home");
+      processImage(base64);
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      Array.from(files).forEach((file) => {
-        const url = URL.createObjectURL(file);
-        processImage(url);
-      });
-    }
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  // ฟังก์ชันลบวัตถุดิบบางอย่างออกจากรูปภาพ
+  const removeItem = (imageId: string, itemName: string) => {
+    setGallery((prev) =>
+      prev.map((img) => {
+        if (img.id === imageId) {
+          return {
+            ...img,
+            items: img.items.filter((item) => item !== itemName),
+            boxes: img.boxes?.filter((box) => box.label !== itemName),
+          };
+        }
+        return img;
+      }),
+    );
   };
+  async function runYoloDetection(base64Url: string): Promise<string[]> {
+    try {
+      // ในอนาคตคุณจะใช้ tf.loadGraphModel('/model/model.json') ตรงนี้
+      console.log("กำลังรัน YOLO Model บนเบราว์เซอร์...");
 
-  const processImage = async (url: string) => {
-    if (!model) return;
-    const img = new Image();
-    img.src = url;
-    img.onload = async () => {
-      setLoading({ state: true, progress: 0, message: "กำลังวิเคราะห์..." });
-      const tfImg = tf.browser.fromPixels(img);
-      const input = tf.image
-        .resizeBilinear(tfImg, [640, 640])
-        .div(255.0)
-        .expandDims(0);
-      const res = (await model.executeAsync(input)) as tf.Tensor;
-      const result = parseResult(res, img.width, img.height);
+      // สมมติว่านี่คือ Logic ของการทำ Inference
+      // สำหรับตอนนี้เราจะคืนค่าว่างไปก่อนเพื่อให้ Code ไม่ Error
+      const detectedFromYolo: string[] = [];
 
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(img, 0, 0);
-        drawBoxes(ctx, result);
-      }
-      const processedUrl = canvas.toDataURL("image/jpeg");
-      const foundItems = new Set<string>();
-      result.classes.forEach((c, i) => {
-        if (result.scores[i] > 0.4) foundItems.add(labels[c]);
-      });
+      return detectedFromYolo;
+    } catch (error) {
+      console.error("YOLO Error:", error);
+      return [];
+    }
+  }
+  const processImage = async (base64Url: string) => {
+    setLoading({ state: true, message: "🤖 กำลังประมวลผลวัตถุดิบ..." });
+    try {
+      // 1. ตรวจจับด้วย Custom YOLO (โมเดลที่คุณเทรนเอง)
+      // สมมติว่าคุณมีฟังก์ชัน runYoloDetection ที่รันโมเดลบน Browser
+      const yoloDetected = await runYoloDetection(base64Url);
+
+      // 2. วิเคราะห์ด้วย Gemini (Vision API)
+      // เพื่อหาวัตถุดิบอื่นๆ ที่โมเดล YOLO อาจจะยังไม่รู้จัก
+      const geminiDetected = await identifyIngredients(base64Url);
+
+      // 3. รวมผลลัพธ์จากทั้ง 2 แหล่ง (และกำจัดชื่อที่ซ้ำกัน)
+      const combinedItems = Array.from(
+        new Set([...yoloDetected, ...geminiDetected]),
+      );
+
       const newImage: ImageItem = {
-        id: Date.now().toString() + Math.random(),
-        originalUrl: url,
-        processedUrl: processedUrl,
-        items: Array.from(foundItems),
+        id: `${Date.now()}`,
+        url: base64Url,
+        items: combinedItems,
       };
+
       setGallery((prev) => [...prev, newImage]);
-      tf.dispose([tfImg, input, res]);
-      setLoading({ state: false, progress: 0 });
-    };
+    } catch (error) {
+      console.error("Processing Error:", error);
+      alert("เกิดข้อผิดพลาดในการวิเคราะห์ภาพ");
+    } finally {
+      setLoading({ state: false, message: "" });
+    }
   };
 
-  const parseResult = (
-    res: tf.Tensor,
-    imgW: number,
-    imgH: number,
-  ): DetectionResult => {
-    const transRes = res.transpose([0, 2, 1]) as tf.Tensor3D;
-    const data = transRes.dataSync();
-    const [_, numBoxes, numClassPlus4] = transRes.shape;
-    const boxes = [];
-    const scores = [];
-    const classes = [];
-    for (let i = 0; i < numBoxes; i++) {
-      const row = data.subarray(i * numClassPlus4, (i + 1) * numClassPlus4);
-      const [x, y, w, h, ...classProbs] = Array.from(row);
-      const maxScore = Math.max(...classProbs);
-      const classIndex = classProbs.indexOf(maxScore);
-      if (maxScore > 0.4) {
-        const scaleX = imgW / 640;
-        const scaleY = imgH / 640;
-        boxes.push([
-          (x - w / 2) * scaleX,
-          (y - h / 2) * scaleY,
-          w * scaleX,
-          h * scaleY,
-        ]);
-        scores.push(maxScore);
-        classes.push(classIndex);
+  // --- Manual Labeling Handlers ---
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (rect) {
+      setStartPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      setIsDrawing(true);
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDrawing) return;
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (rect) {
+      setCurrentRect({
+        x: startPos.x,
+        y: startPos.y,
+        w: e.clientX - rect.left - startPos.x,
+        h: e.clientY - rect.top - startPos.y,
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (!isDrawing || !currentRect) return;
+    setIsDrawing(false);
+    const label = prompt("วัตถุดิบนี้คืออะไร?");
+    if (label && editingImage) {
+      const newBox: BoundingBox = { ...currentRect, label };
+      const updated = {
+        ...editingImage,
+        items: Array.from(new Set([...editingImage.items, label])),
+        boxes: [...(editingImage.boxes || []), newBox],
+      };
+      setGallery((prev) =>
+        prev.map((img) => (img.id === updated.id ? updated : img)),
+      );
+      setEditingImage(updated);
+    }
+    setCurrentRect(null);
+  };
+
+  const removeImage = (imageId: string) => {
+    setGallery((prev) => prev.filter((img) => img.id !== imageId));
+  };
+
+  // วาดกรอบบน Canvas
+  useEffect(() => {
+    if (viewMode === "edit" && canvasRef.current) {
+      const ctx = canvasRef.current.getContext("2d");
+      if (ctx) {
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        editingImage?.boxes?.forEach((box) => {
+          ctx.strokeStyle = "#10b981";
+          ctx.strokeRect(box.x, box.y, box.w, box.h);
+          ctx.fillStyle = "#10b981";
+          ctx.fillText(box.label, box.x, box.y - 5);
+        });
+        if (currentRect) {
+          ctx.strokeStyle = "#3b82f6";
+          ctx.setLineDash([5, 5]);
+          ctx.strokeRect(
+            currentRect.x,
+            currentRect.y,
+            currentRect.w,
+            currentRect.h,
+          );
+          ctx.setLineDash([]);
+        }
       }
     }
-    tf.dispose(transRes);
-    return { boxes, scores, classes };
-  };
+  }, [currentRect, editingImage, viewMode]);
 
-  const drawBoxes = (
-    ctx: CanvasRenderingContext2D,
-    result: DetectionResult,
-  ) => {
-    result.boxes.forEach((box, i) => {
-      const [x, y, w, h] = box;
-      const label = labels[result.classes[i]] || "Unknown";
-      const score = Math.round(result.scores[i] * 100);
-      ctx.strokeStyle = "#00FF00";
-      ctx.lineWidth = 4;
-      ctx.strokeRect(x, y, w, h);
-      ctx.fillStyle = "#00FF00";
-      ctx.font = "bold 20px Kanit";
-      const text = `${label} ${score}%`;
-      const textWidth = ctx.measureText(text).width;
-      ctx.fillRect(x, y - 30, textWidth + 10, 30);
-      ctx.fillStyle = "black";
-      ctx.fillText(text, x + 5, y - 8);
-    });
-  };
-
-  const removeImage = (id: string) => {
-    setGallery((prev) => prev.filter((img) => img.id !== id));
-  };
-
-  // --- RENDER ---
   return (
-    <main className="flex min-h-screen flex-col bg-gray-900 text-white font-[family-name:var(--font-kanit)]">
-      {/* Loading Overlay */}
-      {loading.state && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90">
-          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-green-400 animate-pulse">{loading.message}</p>
+    <main className="min-h-screen bg-gray-900 text-white p-4 font-[family-name:var(--font-kanit)]">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-xl font-bold text-green-400">Chefkub</h1>
+        {viewMode !== "home" && (
+          <button
+            onClick={() => {
+              stopCamera();
+              setViewMode("home");
+            }}
+            className="text-sm bg-gray-700 px-3 py-1 rounded-lg"
+          >
+            กลับ
+          </button>
+        )}
+      </div>
+
+      {/* VIEW: HOME */}
+      {viewMode === "home" && (
+        <div className="max-w-md mx-auto space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={startCamera}
+              className="bg-green-600 p-6 rounded-2xl active:scale-95 transition-transform"
+            >
+              📷 ถ่ายรูป
+            </button>
+            <label className="bg-gray-800 p-6 rounded-2xl text-center cursor-pointer border border-gray-700 active:scale-95 transition-transform">
+              🖼️ อัปโหลด
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (re) =>
+                      processImage(re.target?.result as string);
+                    reader.readAsDataURL(file);
+                    e.target.value = "";
+                  }
+                }}
+              />
+            </label>
+          </div>
+
+          <div className="space-y-3">
+            {gallery.map((img) => (
+              <div
+                key={img.id}
+                className="bg-gray-800 rounded-xl overflow-hidden flex border border-gray-700 relative shadow-md group"
+              >
+                <button
+                  onClick={() => removeImage(img.id)}
+                  className="absolute top-2 right-2 z-10 p-1.5 bg-red-500/20 text-red-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white"
+                  title="ลบรูปภาพ"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                  </svg>
+                </button>
+
+                <div className="w-28 h-28 bg-black flex items-center justify-center">
+                  <img
+                    src={img.url}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+
+                <div className="p-2 flex-1">
+                  <div className="flex flex-wrap gap-1">
+                    {img.items.map((it, i) => (
+                      <span
+                        key={i}
+                        className="flex items-center gap-1 text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded border border-green-800"
+                      >
+                        {it}
+                        <button
+                          onClick={() => removeItem(img.id, it)}
+                          className="hover:text-red-500 ml-1"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingImage(img);
+                    setViewMode("edit");
+                  }}
+                  className="absolute right-2 bottom-2 bg-blue-600 text-[10px] px-2 py-1 rounded shadow-sm"
+                >
+                  ✏️ แก้ไข
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={async () => {
+              if (allItems.length === 0) return alert("กรุณาเพิ่มวัตถุดิบก่อน");
+              setLoading({ state: true, message: "👩‍🍳 กำลังคิดเมนู..." });
+              const res = await generateRecipes(allItems);
+              setRecipes(res);
+              setViewMode("recipes");
+              setLoading({ state: false, message: "" });
+            }}
+            className="w-full py-4 bg-green-600 rounded-xl font-bold mt-4 shadow-lg active:scale-95 transition-transform"
+          >
+            คิดเมนู ({allItems.length})
+          </button>
         </div>
       )}
 
-      <div className="p-4 bg-black/50 text-center sticky top-0 z-10 backdrop-blur-sm shadow-md flex justify-between items-center">
-        {viewMode === "recipes" && (
-          <button
-            onClick={() => setViewMode("home")}
-            className="text-sm text-green-400"
-          >
-            &lt; กลับ
-          </button>
-        )}
-        <h1 className="text-xl font-bold text-green-400 mx-auto">
-          AI Chef : Multi-Scan 🍳
-        </h1>
-        <div className="w-8"></div> {/* Spacer for centering */}
-      </div>
-
-      <div className="flex-1 flex flex-col p-4 w-full max-w-md mx-auto">
-        {/* VIEW 1: CAMERA */}
-        {viewMode === "camera" && (
-          <div className="relative w-full aspect-[3/4] bg-black rounded-2xl overflow-hidden shadow-2xl mb-4">
+      {/* VIEW: CAMERA */}
+      {viewMode === "camera" && (
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <div className="relative w-full max-w-md aspect-[3/4] bg-black rounded-2xl overflow-hidden shadow-2xl">
             <video
               ref={videoRef}
               autoPlay
               playsInline
               className="w-full h-full object-cover"
             />
-            <div className="absolute bottom-6 left-0 right-0 flex justify-center items-center gap-6">
-              <button
-                onClick={() => {
-                  stopCamera();
-                  setViewMode("home");
-                }}
-                className="p-3 bg-gray-800/80 rounded-full text-white"
-              >
-                ❌
-              </button>
-              <button
-                onClick={captureImage}
-                className="w-16 h-16 bg-white rounded-full border-4 border-gray-300 flex items-center justify-center shadow-lg active:scale-90 transition-transform"
-              >
-                <div className="w-12 h-12 bg-white rounded-full border-2 border-black"></div>
-              </button>
-            </div>
           </div>
-        )}
+          <div className="flex gap-4">
+            <button
+              onClick={capturePhoto}
+              className="w-16 h-16 bg-white border-4 border-gray-400 rounded-full active:scale-90 transition-transform shadow-lg"
+            />
+          </div>
+        </div>
+      )}
 
-        {/* VIEW 2: HOME / GALLERY */}
-        {viewMode === "home" && (
-          <>
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <button
-                onClick={startCamera}
-                className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg"
-              >
-                📸 ถ่ายเพิ่ม
-              </button>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  ref={fileInputRef}
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 w-full shadow-lg h-full"
-                >
-                  🖼️ อัปโหลด
-                </label>
-              </div>
-            </div>
+      {/* VIEW: EDIT */}
+      {viewMode === "edit" && editingImage && (
+        <div className="flex flex-col items-center">
+          <div className="relative inline-block bg-black rounded-lg overflow-hidden border-2 border-green-500 shadow-xl">
+            <img
+              src={editingImage.url}
+              className="block max-w-full h-auto max-h-[60vh] opacity-60"
+              onLoad={(e) => {
+                const img = e.currentTarget;
+                if (canvasRef.current) {
+                  canvasRef.current.width = img.clientWidth;
+                  canvasRef.current.height = img.clientHeight;
+                }
+              }}
+            />
+            <canvas
+              ref={canvasRef}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              className="absolute inset-0 z-10 cursor-crosshair"
+            />
+          </div>
+          <button
+            onClick={() => setViewMode("home")}
+            className="mt-6 w-full max-w-xs py-3 bg-green-600 rounded-xl font-bold shadow-md"
+          >
+            เสร็จสิ้น
+          </button>
+        </div>
+      )}
 
-            {gallery.length > 0 ? (
-              <div className="flex flex-col gap-4 mb-24">
-                <h2 className="text-gray-300 text-sm font-semibold">
-                  รูปที่สแกนแล้ว ({gallery.length})
-                </h2>
-                <div className="grid grid-cols-2 gap-3">
-                  {gallery.map((img) => (
-                    <div
-                      key={img.id}
-                      className="relative group rounded-xl overflow-hidden border border-gray-700 bg-black aspect-square"
-                    >
-                      <img
-                        src={img.processedUrl}
-                        alt="scan"
-                        className="w-full h-full object-cover opacity-90"
-                      />
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-center">
-                        <span className="text-[10px] text-green-400">
-                          เจอ {img.items.length} อย่าง
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => removeImage(img.id)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md active:scale-90"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-500 py-10">
-                <div className="text-4xl mb-2">🥗</div>
-                <p>ยังไม่มีรูปภาพ</p>
-                <p className="text-sm">ถ่ายรูปหรืออัปโหลดเพื่อเริ่มสแกน</p>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* VIEW 3: RECIPES (หน้าแสดงผลลัพธ์) */}
-        {viewMode === "recipes" && (
-          <div className="flex flex-col gap-6 animate-slide-up">
-            <h2 className="text-xl font-bold text-white mb-2">
-              เมนูแนะนำสำหรับคุณ ✨
+      {/* VIEW: RECIPES */}
+      {viewMode === "recipes" && (
+        <div className="max-w-md mx-auto space-y-6 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold text-white">
+              เมนูที่แนะนำสำหรับคุณ
             </h2>
+            <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-md">
+              3 เมนูใหม่
+            </span>
+          </div>
 
-            {recipes.map((recipe, index) => (
-              <div
-                key={index}
-                className="bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-700"
-              >
-                <div className="p-5">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-bold text-green-400">
-                      {recipe.name}
-                    </h3>
-                    <span className="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300">
-                      {recipe.calories}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {recipe.tags.map((tag, i) => (
+          {recipes.map((r, i) => (
+            <div
+              key={i}
+              className="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden shadow-xl"
+            >
+              <div className="p-4 border-b border-gray-700 bg-gray-800/50 flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-bold text-green-400 leading-tight">
+                    {r.name}
+                  </h3>
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {r.tags.map((tag, idx) => (
                       <span
-                        key={i}
-                        className="text-xs text-blue-300 bg-blue-900/30 px-2 py-0.5 rounded-full border border-blue-900"
+                        key={idx}
+                        className="text-[10px] bg-emerald-900/30 text-emerald-400 px-2 py-0.5 rounded-md border border-emerald-800/50"
                       >
                         #{tag}
                       </span>
                     ))}
                   </div>
+                </div>
+                <span className="text-[10px] font-mono bg-gray-900 text-orange-400 px-2 py-1 rounded-full border border-orange-900/50">
+                  🔥 {r.calories}
+                </span>
+              </div>
 
-                  <div className="mb-4">
-                    <h4 className="text-sm font-bold text-gray-300 mb-1">
-                      ส่วนผสม:
-                    </h4>
-                    <ul className="list-disc list-inside text-sm text-gray-400">
-                      {recipe.ingredients.map((ing, i) => (
-                        <li key={i}>{ing}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-bold text-gray-300 mb-1">
-                      วิธีทำ:
-                    </h4>
-                    <ol className="list-decimal list-inside text-sm text-gray-400 space-y-1">
-                      {recipe.instructions.map((step, i) => (
-                        <li key={i}>{step}</li>
-                      ))}
-                    </ol>
+              <div className="p-4 space-y-4">
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>{" "}
+                    วัตถุดิบที่ต้องใช้
+                  </h4>
+                  <ul className="grid grid-cols-1 gap-1">
+                    {r.ingredients.map((ing, idx) => (
+                      <li
+                        key={idx}
+                        className="text-sm text-gray-300 flex items-start gap-2"
+                      >
+                        <span className="text-green-500 mt-0.5">•</span> {ing}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="pt-2">
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>{" "}
+                    ขั้นตอนการปรุง
+                  </h4>
+                  <div className="space-y-3">
+                    {r.instructions.map((step, idx) => (
+                      <div key={idx} className="flex gap-3">
+                        <span className="flex-none w-5 h-5 bg-gray-700 text-gray-300 text-[10px] font-bold flex items-center justify-center rounded-full mt-0.5">
+                          {idx + 1}
+                        </span>
+                        <p className="text-sm text-gray-300 leading-relaxed">
+                          {step}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-            ))}
-
-            <button
-              onClick={() => setViewMode("home")}
-              className="w-full py-4 bg-gray-700 rounded-xl font-bold text-white hover:bg-gray-600"
-            >
-              กลับไปหน้าแรก
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Bottom Sheet (วัตถุดิบรวม) - แสดงเฉพาะหน้า Home */}
-      {viewMode === "home" && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white text-black rounded-t-3xl p-6 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] z-20 transition-transform duration-300">
-          <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-gray-800">
-              วัตถุดิบรวม ({allItems.length})
-            </h2>
-            {gallery.length > 0 && (
-              <button
-                onClick={() => setGallery([])}
-                className="text-xs text-red-500 underline"
-              >
-                ล้างทั้งหมด
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2 mb-4 max-h-[120px] overflow-y-auto">
-            {allItems.length > 0 ? (
-              allItems.map((item, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium border border-green-200"
-                >
-                  {item}
-                </span>
-              ))
-            ) : (
-              <p className="text-gray-400 w-full text-center text-sm">
-                ...รอข้อมูลวัตถุดิบ...
-              </p>
-            )}
-          </div>
+            </div>
+          ))}
           <button
-            onClick={handleGenerateRecipes} // <-- กดปุ่มนี้แล้วไปเรียก AI
-            disabled={allItems.length === 0}
-            className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg ${
-              allItems.length > 0
-                ? "bg-gradient-to-r from-green-600 to-green-500 text-white hover:shadow-green-500/30 active:scale-95"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }`}
+            onClick={() => setViewMode("home")}
+            className="w-full py-3 bg-gray-800 text-gray-400 rounded-xl border border-gray-700 hover:bg-gray-700 transition-colors"
           >
-            ✨ ให้ AI คิดสูตร ({allItems.length})
+            กลับไปสแกนวัตถุดิบเพิ่ม
           </button>
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {loading.state && (
+        <div className="fixed inset-0 bg-black/80 flex flex-col items-center justify-center z-50">
+          <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-green-400 font-medium">{loading.message}</p>
         </div>
       )}
     </main>
