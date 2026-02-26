@@ -259,7 +259,7 @@ export default function Home() {
               stopCamera();
               setViewMode("home");
             }}
-            className="cursor-pointer text-sm bg-gray-700 px-3 py-1 rounded-lg"
+            className="cursor-pointer text-sm bg-orange-600 px-3 py-1 rounded-lg"
           >
             Back
           </button>
@@ -300,7 +300,7 @@ export default function Home() {
             {gallery.map((img) => (
               <div
                 key={img.id}
-                className="bg-gray-800 rounded-xl overflow-hidden flex border border-gray-700 relative shadow-md group"
+                className="bg-orange-100 rounded-xl overflow-hidden flex border border-orange-50 relative shadow-md group"
               >
                 <button
                   onClick={() => removeImage(img.id)}
@@ -336,7 +336,7 @@ export default function Home() {
                     {img.items.map((it, i) => (
                       <span
                         key={i}
-                        className="flex items-center gap-1 text-[10px] bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded border border-orange-800"
+                        className="flex items-center gap-1 text-[10px]  px-2 py-0.5 rounded border text-white bg-orange-800 border-orange-700 "
                       >
                         {it}
                         <button
@@ -441,7 +441,9 @@ export default function Home() {
       {viewMode === "recipes" && (
         <div className="max-w-md mx-auto space-y-6 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-white">Suggested Recipes</h2>
+            <h2 className="text-xl font-bold text-orange-400">
+              Suggested Recipes
+            </h2>
             <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded-md">
               {recipes.length} recipes found
             </span>
@@ -450,9 +452,9 @@ export default function Home() {
           {recipes.map((r, i) => (
             <div
               key={i}
-              className="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden shadow-xl"
+              className="bg-orange-100   rounded-2xl border border-orange-200 overflow-hidden shadow-xl"
             >
-              <div className="p-4 border-b border-gray-700 bg-gray-800/50 flex justify-between items-start">
+              <div className="p-4 border-b border-orange-200 bg-orange-500/20 flex justify-between items-start">
                 <div>
                   <h3 className="text-lg font-bold text-orange-400 leading-tight">
                     {r.name}
@@ -461,7 +463,7 @@ export default function Home() {
                     {r.tags.map((tag, idx) => (
                       <span
                         key={idx}
-                        className="text-[10px] bg-emerald-900/30 text-emerald-400 px-2 py-0.5 rounded-md border border-emerald-800/50"
+                        className="text-[10px]  px-2 py-0.5 rounded-md border bg-white text-orange-500 border-orange-300"
                       >
                         #{tag}
                       </span>
@@ -475,7 +477,7 @@ export default function Home() {
 
               <div className="p-4 space-y-4">
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <h4 className="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-2 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>{" "}
                     Ingredients
                   </h4>
@@ -483,7 +485,7 @@ export default function Home() {
                     {r.ingredients.map((ing, idx) => (
                       <li
                         key={idx}
-                        className="text-sm text-gray-300 flex items-start gap-2"
+                        className="text-sm text-orange-300 flex items-start gap-2"
                       >
                         <span className="text-orange-500 mt-0.5">•</span> {ing}
                       </li>
@@ -491,17 +493,17 @@ export default function Home() {
                   </ul>
                 </div>
                 <div className="pt-2">
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>{" "}
+                  <h4 className="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>{" "}
                     How to make it
                   </h4>
                   <div className="space-y-3">
                     {r.instructions.map((step, idx) => (
                       <div key={idx} className="flex gap-3">
-                        <span className="flex-none w-5 h-5 bg-gray-700 text-gray-300 text-[10px] font-bold flex items-center justify-center rounded-full mt-0.5">
+                        <span className="flex-none w-5 h-5 bg-orange-700 text-orange-300 text-[10px] font-bold flex items-center justify-center rounded-full mt-0.5">
                           {idx + 1}
                         </span>
-                        <p className="text-sm text-gray-300 leading-relaxed">
+                        <p className="text-sm  leading-relaxed text-orange-300 ">
                           {step}
                         </p>
                       </div>
@@ -513,7 +515,7 @@ export default function Home() {
           ))}
           <button
             onClick={() => setViewMode("home")}
-            className="cursor-pointer w-full py-3 bg-gray-800 text-gray-400 rounded-xl border border-gray-700 hover:bg-gray-700 transition-colors"
+            className="cursor-pointer w-full py-3 bg-orange-600 text-white rounded-xl border border-orange-700 hover:bg-orange-700 transition-colors"
           >
             Back to Home
           </button>
