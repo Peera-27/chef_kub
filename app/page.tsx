@@ -304,13 +304,13 @@ export default function Home() {
               >
                 <button
                   onClick={() => removeImage(img.id)}
-                  className="absolute top-2 right-2 z-10 p-1.5 bg-red-500/20 text-red-500 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white"
+                  className="absolute top-2 right-2 z-10 p-2 bg-red-500/90 text-white rounded-full shadow-md active:scale-90 md:bg-red-500/20 md:text-red-500 md:rounded-lg md:opacity-0 md:group-hover:opacity-100 md:hover:bg-red-500 md:hover:text-white transition-all"
                   title="ลบรูปภาพ"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
+                    width="16"
+                    height="16"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -331,7 +331,7 @@ export default function Home() {
                   />
                 </div>
 
-                <div className="p-2 flex-1">
+                <div className="p-2 flex-1 pr-12 pb-10">
                   <div className="flex flex-wrap gap-1">
                     {img.items.map((it, i) => (
                       <span
