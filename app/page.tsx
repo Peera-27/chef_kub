@@ -41,7 +41,7 @@ export default function Home() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
+  const imageCache = useRef<Map<string, string[]>>(new Map());
   // อัปเดตรายการวัตถุดิบรวมจาก Gallery ทั้งหมด
   useEffect(() => {
     const mergedItems = new Set<string>();
@@ -122,20 +122,30 @@ export default function Home() {
     }
   }
   const processImage = async (base64Url: string) => {
+    // 1. เช็คว่ารูปนี้เคยประมวลผลและมีใน Cache หรือยัง?
+    if (imageCache.current.has(base64Url)) {
+      const cachedItems = imageCache.current.get(base64Url)!;
+      const newImage: ImageItem = {
+        id: `${Date.now()}`,
+        url: base64Url,
+        items: cachedItems,
+      };
+      setGallery((prev) => [...prev, newImage]);
+      return; // จบการทำงานทันที ไม่ต้องรอโหลด ไม่ต้องเสียเงิน/เวลาเรียก API ใหม่
+    }
+
+    // 2. ถ้าไม่มีใน Cache ค่อยเริ่มโหลดและเรียก API
     setLoading({ state: true, message: "Processing ingredients" });
     try {
-      // 1. ตรวจจับด้วย Custom YOLO (โมเดลที่คุณเทรนเอง)
-      // สมมติว่าคุณมีฟังก์ชัน runYoloDetection ที่รันโมเดลบน Browser
       const yoloDetected = await runYoloDetection(base64Url);
-
-      // 2. วิเคราะห์ด้วย Gemini (Vision API)
-      // เพื่อหาวัตถุดิบอื่นๆ ที่โมเดล YOLO อาจจะยังไม่รู้จัก
       const geminiDetected = await identifyIngredients(base64Url);
 
-      // 3. รวมผลลัพธ์จากทั้ง 2 แหล่ง (และกำจัดชื่อที่ซ้ำกัน)
       const combinedItems = Array.from(
         new Set([...yoloDetected, ...geminiDetected]),
       );
+
+      // 3. บันทึกผลลัพธ์ลง Cache เพื่อใช้ในรอบหน้า
+      imageCache.current.set(base64Url, combinedItems);
 
       const newImage: ImageItem = {
         id: `${Date.now()}`,
