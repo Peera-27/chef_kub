@@ -63,7 +63,9 @@ export default function Home() {
         videoRef.current.srcObject = stream;
       }
     } catch (err) {
-      alert("ไม่สามารถเข้าถึงกล้องได้");
+      alert(
+        "Can't access camera. Please allow camera permissions and try again.",
+      );
       setViewMode("home");
     }
   };
@@ -107,7 +109,7 @@ export default function Home() {
   async function runYoloDetection(base64Url: string): Promise<string[]> {
     try {
       // ในอนาคตคุณจะใช้ tf.loadGraphModel('/model/model.json') ตรงนี้
-      console.log("กำลังรัน YOLO Model บนเบราว์เซอร์...");
+      console.log("Running YOLO detection on the image");
 
       // สมมติว่านี่คือ Logic ของการทำ Inference
       // สำหรับตอนนี้เราจะคืนค่าว่างไปก่อนเพื่อให้ Code ไม่ Error
@@ -120,7 +122,7 @@ export default function Home() {
     }
   }
   const processImage = async (base64Url: string) => {
-    setLoading({ state: true, message: "🤖 กำลังประมวลผลวัตถุดิบ..." });
+    setLoading({ state: true, message: "Processing ingredients" });
     try {
       // 1. ตรวจจับด้วย Custom YOLO (โมเดลที่คุณเทรนเอง)
       // สมมติว่าคุณมีฟังก์ชัน runYoloDetection ที่รันโมเดลบน Browser
@@ -144,7 +146,7 @@ export default function Home() {
       setGallery((prev) => [...prev, newImage]);
     } catch (error) {
       console.error("Processing Error:", error);
-      alert("เกิดข้อผิดพลาดในการวิเคราะห์ภาพ");
+      alert("An error occurred while analyzing the image. Please try again.");
     } finally {
       setLoading({ state: false, message: "" });
     }
@@ -175,7 +177,7 @@ export default function Home() {
   const handleMouseUp = () => {
     if (!isDrawing || !currentRect) return;
     setIsDrawing(false);
-    const label = prompt("วัตถุดิบนี้คืออะไร?");
+    const label = prompt("What is this ingredient?");
     if (label && editingImage) {
       const newBox: BoundingBox = { ...currentRect, label };
       const updated = {
@@ -245,19 +247,21 @@ export default function Home() {
   }, [currentRect, editingImage, viewMode]);
 
   return (
-    <main className="min-h-screen bg-gray-900 text-white p-4 font-[family-name:var(--font-kanit)]">
+    <main className="min-h-screen bg-neutral-100 flex flex-col text-white p-4 font-[family-name:var(--font-kanit)]">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-bold text-green-400">Chefkub</h1>
+        <h1 className="text-xl font-bold text-orange-400 border-black ">
+          Chefkub
+        </h1>
         {viewMode !== "home" && (
           <button
             onClick={() => {
               stopCamera();
               setViewMode("home");
             }}
-            className="text-sm bg-gray-700 px-3 py-1 rounded-lg"
+            className="cursor-pointer text-sm bg-gray-700 px-3 py-1 rounded-lg"
           >
-            กลับ
+            Back
           </button>
         )}
       </div>
@@ -268,12 +272,12 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={startCamera}
-              className="bg-green-600 p-6 rounded-2xl active:scale-95 transition-transform"
+              className=" cursor-pointer bg-orange-600 p-6 rounded-2xl active:scale-95 transition-transform"
             >
-              📷 ถ่ายรูป
+              Camera
             </button>
-            <label className="bg-gray-800 p-6 rounded-2xl text-center cursor-pointer border border-gray-700 active:scale-95 transition-transform">
-              🖼️ อัปโหลด
+            <label className="bg-orange-600 p-6 rounded-2xl text-center cursor-pointer   active:scale-95 transition-transform">
+              Upload
               <input
                 type="file"
                 className="hidden"
@@ -332,12 +336,12 @@ export default function Home() {
                     {img.items.map((it, i) => (
                       <span
                         key={i}
-                        className="flex items-center gap-1 text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded border border-green-800"
+                        className="flex items-center gap-1 text-[10px] bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded border border-orange-800"
                       >
                         {it}
                         <button
                           onClick={() => removeItem(img.id, it)}
-                          className="hover:text-red-500 ml-1"
+                          className="hover:text-red-500 ml-1 cursor-pointer transition-colors"
                         >
                           ✕
                         </button>
@@ -350,9 +354,9 @@ export default function Home() {
                     setEditingImage(img);
                     setViewMode("edit");
                   }}
-                  className="absolute right-2 bottom-2 bg-blue-600 text-[10px] px-2 py-1 rounded shadow-sm"
+                  className="cursor-pointer absolute right-2 bottom-2 bg-blue-600 text-[10px] px-2 py-1 rounded shadow-sm"
                 >
-                  ✏️ แก้ไข
+                  Edit
                 </button>
               </div>
             ))}
@@ -360,16 +364,20 @@ export default function Home() {
 
           <button
             onClick={async () => {
-              if (allItems.length === 0) return alert("กรุณาเพิ่มวัตถุดิบก่อน");
-              setLoading({ state: true, message: "👩‍🍳 กำลังคิดเมนู..." });
+              if (allItems.length === 0)
+                return alert("Please add some ingredients first!");
+              setLoading({
+                state: true,
+                message: "Suggesting recipes based on your ingredients",
+              });
               const res = await generateRecipes(allItems);
               setRecipes(res);
               setViewMode("recipes");
               setLoading({ state: false, message: "" });
             }}
-            className="w-full py-4 bg-green-600 rounded-xl font-bold mt-4 shadow-lg active:scale-95 transition-transform"
+            className=" cursor-pointer w-full py-4 bg-orange-600 rounded-xl font-bold mt-4 shadow-lg active:scale-95 transition-transform"
           >
-            คิดเมนู ({allItems.length})
+            Invent a recipe ({allItems.length})
           </button>
         </div>
       )}
@@ -388,7 +396,7 @@ export default function Home() {
           <div className="flex gap-4">
             <button
               onClick={capturePhoto}
-              className="w-16 h-16 bg-white border-4 border-gray-400 rounded-full active:scale-90 transition-transform shadow-lg"
+              className="w-16 h-16 bg-white border-4 border-gray-400 rounded-full active:scale-90 transition-transform cursor-pointer shadow-lg"
             />
           </div>
         </div>
@@ -397,7 +405,7 @@ export default function Home() {
       {/* VIEW: EDIT */}
       {viewMode === "edit" && editingImage && (
         <div className="flex flex-col items-center">
-          <div className="relative inline-block bg-black rounded-lg overflow-hidden border-2 border-green-500 shadow-xl">
+          <div className="relative inline-block bg-black rounded-lg overflow-hidden border-2 border-orange-500 shadow-xl">
             <img
               src={editingImage.url}
               className="block max-w-full h-auto max-h-[60vh] opacity-60"
@@ -422,9 +430,9 @@ export default function Home() {
           </div>
           <button
             onClick={() => setViewMode("home")}
-            className="mt-6 w-full max-w-xs py-3 bg-green-600 rounded-xl font-bold shadow-md"
+            className="cursor-pointer mt-6 w-full max-w-xs py-3 bg-orange-600 rounded-xl font-bold shadow-md"
           >
-            เสร็จสิ้น
+            Done
           </button>
         </div>
       )}
@@ -433,11 +441,9 @@ export default function Home() {
       {viewMode === "recipes" && (
         <div className="max-w-md mx-auto space-y-6 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-white">
-              เมนูที่แนะนำสำหรับคุณ
-            </h2>
-            <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-md">
-              3 เมนูใหม่
+            <h2 className="text-xl font-bold text-white">Suggested Recipes</h2>
+            <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded-md">
+              {recipes.length} recipes found
             </span>
           </div>
 
@@ -448,7 +454,7 @@ export default function Home() {
             >
               <div className="p-4 border-b border-gray-700 bg-gray-800/50 flex justify-between items-start">
                 <div>
-                  <h3 className="text-lg font-bold text-green-400 leading-tight">
+                  <h3 className="text-lg font-bold text-orange-400 leading-tight">
                     {r.name}
                   </h3>
                   <div className="flex flex-wrap gap-1.5 mt-3">
@@ -470,8 +476,8 @@ export default function Home() {
               <div className="p-4 space-y-4">
                 <div>
                   <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>{" "}
-                    วัตถุดิบที่ต้องใช้
+                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>{" "}
+                    Ingredients
                   </h4>
                   <ul className="grid grid-cols-1 gap-1">
                     {r.ingredients.map((ing, idx) => (
@@ -479,7 +485,7 @@ export default function Home() {
                         key={idx}
                         className="text-sm text-gray-300 flex items-start gap-2"
                       >
-                        <span className="text-green-500 mt-0.5">•</span> {ing}
+                        <span className="text-orange-500 mt-0.5">•</span> {ing}
                       </li>
                     ))}
                   </ul>
@@ -487,7 +493,7 @@ export default function Home() {
                 <div className="pt-2">
                   <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>{" "}
-                    ขั้นตอนการปรุง
+                    How to make it
                   </h4>
                   <div className="space-y-3">
                     {r.instructions.map((step, idx) => (
@@ -507,9 +513,9 @@ export default function Home() {
           ))}
           <button
             onClick={() => setViewMode("home")}
-            className="w-full py-3 bg-gray-800 text-gray-400 rounded-xl border border-gray-700 hover:bg-gray-700 transition-colors"
+            className="cursor-pointer w-full py-3 bg-gray-800 text-gray-400 rounded-xl border border-gray-700 hover:bg-gray-700 transition-colors"
           >
-            กลับไปสแกนวัตถุดิบเพิ่ม
+            Back to Home
           </button>
         </div>
       )}
@@ -517,8 +523,8 @@ export default function Home() {
       {/* Loading Overlay */}
       {loading.state && (
         <div className="fixed inset-0 bg-black/80 flex flex-col items-center justify-center z-50">
-          <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-green-400 font-medium">{loading.message}</p>
+          <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-orange-400 font-medium">{loading.message}</p>
         </div>
       )}
     </main>
