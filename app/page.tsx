@@ -194,7 +194,29 @@ export default function Home() {
   const removeImage = (imageId: string) => {
     setGallery((prev) => prev.filter((img) => img.id !== imageId));
   };
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (rect && e.touches.length > 0) {
+      setStartPos({
+        x: e.touches[0].clientX - rect.left,
+        y: e.touches[0].clientY - rect.top,
+      });
+      setIsDrawing(true);
+    }
+  };
 
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDrawing) return;
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (rect && e.touches.length > 0) {
+      setCurrentRect({
+        x: startPos.x,
+        y: startPos.y,
+        w: e.touches[0].clientX - rect.left - startPos.x,
+        h: e.touches[0].clientY - rect.top - startPos.y,
+      });
+    }
+  };
   // วาดกรอบบน Canvas
   useEffect(() => {
     if (viewMode === "edit" && canvasRef.current) {
@@ -392,7 +414,10 @@ export default function Home() {
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
-              className="absolute inset-0 z-10 cursor-crosshair"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleMouseUp}
+              className="absolute inset-0 z-10 cursor-crosshair touch-none" // touch-none สำคัญมากเพื่อไม่ให้หน้าจอเลื่อนตอนกำลังวาด
             />
           </div>
           <button
