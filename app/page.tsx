@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import { identifyIngredients } from "./actions/analyzeImage";
 import { generateRecipes, Recipe } from "./actions/generateRecipe";
-
+import "@tensorflow/tfjs-backend-webgl";
+import * as tf from "@tensorflow/tfjs";
+import { labels } from "./utils/labels";
 interface BoundingBox {
   x: number;
   y: number;
@@ -42,6 +45,25 @@ export default function Home() {
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageCache = useRef<Map<string, string[]>>(new Map());
+
+  const [model, setModel] = useState<tf.GraphModel | null>(null);
+
+  useEffect(() => {
+    async function loadModel() {
+      try {
+        const yolov8 = await tf.loadGraphModel("/model/model.json");
+        // Warm up
+        const dummyInput = tf.zeros([1, 640, 640, 3]);
+        yolov8.execute(dummyInput);
+        tf.dispose(dummyInput);
+        setModel(yolov8);
+      } catch (err) {
+        console.error("Model load error", err);
+      }
+    }
+    loadModel();
+  }, []);
+
   // อัปเดตรายการวัตถุดิบรวมจาก Gallery ทั้งหมด
   useEffect(() => {
     const mergedItems = new Set<string>();
@@ -106,19 +128,81 @@ export default function Home() {
       }),
     );
   };
-  async function runYoloDetection(base64Url: string): Promise<string[]> {
+  async function runYoloDetection(
+    base64Url: string,
+  ): Promise<{ items: string[]; boxes: BoundingBox[] }> {
+    if (!model) {
+      console.warn("YOLO Model ยังโหลดไม่เสร็จ หรือโหลดไม่สำเร็จ");
+      return { items: [], boxes: [] };
+    }
+
     try {
-      // ในอนาคตคุณจะใช้ tf.loadGraphModel('/model/model.json') ตรงนี้
-      console.log("Running YOLO detection on the image");
+      console.log("🚀 [YOLO] เริ่มสแกนรูปภาพ...");
 
-      // สมมติว่านี่คือ Logic ของการทำ Inference
-      // สำหรับตอนนี้เราจะคืนค่าว่างไปก่อนเพื่อให้ Code ไม่ Error
-      const detectedFromYolo: string[] = [];
+      // 1. สร้าง Image object จาก base64
+      const img = new Image();
+      img.src = base64Url;
+      await new Promise((resolve) => (img.onload = resolve));
 
-      return detectedFromYolo;
+      // 2. แปลงรูปเป็น Tensor และ Resize ให้ตรงกับโมเดล YOLO (ปกติคือ 640x640)
+      const tfImg = tf.browser.fromPixels(img);
+      const input = tf.image
+        .resizeBilinear(tfImg, [640, 640])
+        .div(255.0)
+        .expandDims(0);
+
+      // 3. สั่งประมวลผล
+      const res = (await model.executeAsync(input)) as tf.Tensor;
+
+      // 4. จัดการข้อมูล Output
+      // *หมายเหตุ: โค้ดตรงนี้อาจต้องปรับนิดหน่อยขึ้นอยู่กับว่าโมเดล YOLO ของคุณ
+      // Export มาจาก Ultralytics เวอร์ชันไหน แต่ส่วนใหญ่จะใช้แบบนี้
+      const transRes = res.transpose([0, 2, 1]) as tf.Tensor3D;
+      const data = transRes.dataSync();
+      const [_, numBoxes, numClassPlus4] = transRes.shape;
+
+      const detectedBoxes: BoundingBox[] = [];
+      const foundItems = new Set<string>();
+
+      // 5. วนลูปหากรอบที่มีความมั่นใจสูง
+      for (let i = 0; i < numBoxes; i++) {
+        const row = data.subarray(i * numClassPlus4, (i + 1) * numClassPlus4);
+        const [x, y, w, h, ...classProbs] = Array.from(row);
+
+        const maxScore = Math.max(...classProbs);
+        const classIndex = classProbs.indexOf(maxScore);
+
+        if (maxScore > 0.4) {
+          // Threshold 40%
+          const label = labels[classIndex] || "Unknown";
+          foundItems.add(label);
+
+          // แปลงพิกัดกลับเป็นขนาดรูปจริง
+          const scaleX = img.width / 640;
+          const scaleY = img.height / 640;
+
+          detectedBoxes.push({
+            x: (x - w / 2) * scaleX,
+            y: (y - h / 2) * scaleY,
+            w: w * scaleX,
+            h: h * scaleY,
+            label: label,
+          });
+        }
+      }
+
+      // คืนหน่วยความจำ
+      tf.dispose([tfImg, input, res, transRes]);
+
+      console.log(`🎯 [YOLO] เจอแล้ว:`, Array.from(foundItems));
+
+      return {
+        items: Array.from(foundItems),
+        boxes: detectedBoxes,
+      };
     } catch (error) {
-      console.error("YOLO Error:", error);
-      return [];
+      console.error("❌ YOLO Error:", error);
+      return { items: [], boxes: [] };
     }
   }
   const processImage = async (base64Url: string) => {
@@ -131,26 +215,32 @@ export default function Home() {
         items: cachedItems,
       };
       setGallery((prev) => [...prev, newImage]);
-      return; // จบการทำงานทันที ไม่ต้องรอโหลด ไม่ต้องเสียเงิน/เวลาเรียก API ใหม่
+      return;
     }
 
-    // 2. ถ้าไม่มีใน Cache ค่อยเริ่มโหลดและเรียก API
     setLoading({ state: true, message: "Processing ingredients" });
     try {
-      const yoloDetected = await runYoloDetection(base64Url);
-      const geminiDetected = await identifyIngredients(base64Url);
+      const yoloResult = await runYoloDetection(base64Url);
 
+      let geminiDetected: string[] = [];
+
+      try {
+        geminiDetected = await identifyIngredients(base64Url);
+      } catch (geminiErr) {
+        console.warn(
+          "can't call Gemini ( Please check your internet connection ):",
+          geminiErr,
+        );
+      }
       const combinedItems = Array.from(
-        new Set([...yoloDetected, ...geminiDetected]),
+        new Set([...yoloResult.items, ...geminiDetected]),
       );
-
-      // 3. บันทึกผลลัพธ์ลง Cache เพื่อใช้ในรอบหน้า
-      imageCache.current.set(base64Url, combinedItems);
 
       const newImage: ImageItem = {
         id: `${Date.now()}`,
         url: base64Url,
         items: combinedItems,
+        boxes: yoloResult.boxes, // เอาพิกัดกรอบที่ AI วาดมาใส่ตรงนี้
       };
 
       setGallery((prev) => [...prev, newImage]);
