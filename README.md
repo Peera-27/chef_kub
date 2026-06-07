@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Chef Kub — ระบบสแกนวัตถุดิบและแนะนำสูตรอาหารด้วย AI
 
-## Getting Started
+โปรเจกตจบที่ใช้ **Computer Vision + Generative AI** ช่วยผู้ใช้สแกนวัตถุดิบจากรูปภาพ แล้วแนะนำสูตรอาหารไทยพร้อมรูปประกอบ
 
-First, run the development server:
+## ฟีเจอร์หลัก
+
+| ฟีเจอร์ | รายละเอียด |
+|---------|------------|
+| ตรวจจับวัตถุดิบ (YOLO) | โมเดล YOLO11n ฝึกจาก FOOD-INGREDIENTS dataset (~118 class) รันในเบราว์เซอร์ด้วย TensorFlow.js |
+| วิเคราะห์ภาพ (Gemini) | Google Gemini Vision ระบุชื่อวัตถุดิบภาษาไทย |
+| Hybrid Detection | รวมผล YOLO + Gemini อัตโนมัติ |
+| แปล Label | แปลชื่อวัตถุดิบ YOLO (อังกฤษ) เป็นภาษาไทยอัตโนมัติ |
+| สร้างสูตรอาหาร | Gemini สร้าง 3 เมนูไทยจากวัตถุดิบที่มี |
+| สร้างรูปอาหาร | Gemini Image Gen สร้างรูปตามชื่อเมนู |
+| รายการโปรด | บันทึกสูตรที่ชอบด้วย localStorage |
+| ประวัติการสแกน | เก็บประวัติวัตถุดิบที่เคยสแกน |
+| กรองเมนู | กรองสูตรตาม tag (เผ็ด, ทำง่าย ฯลฯ) |
+
+## สถาปัตยกรรมระบบ
+
+```
+┌─────────────┐     ┌──────────────────────────────────────────┐
+│  ผู้ใช้      │────▶│  Frontend (Next.js + React)              │
+│  ถ่ายรูป/    │     │  • กล้อง / อัปโหลดรูป                     │
+│  อัปโหลด     │     │  • Gallery + แก้ไข label ด้วยมือ          │
+└─────────────┘     └──────────────┬───────────────────────────┘
+                                   │
+                    ┌──────────────┼──────────────┐
+                    ▼              ▼              ▼
+            ┌─────────────┐ ┌───────────┐ ┌──────────────┐
+            │ YOLO11n     │ │ Gemini    │ │ Gemini       │
+            │ (TF.js)     │ │ Vision    │ │ Text + Image │
+            │ ในเบราว์เซอร์│ │ (Server)  │ │ (Server)     │
+            └──────┬──────┘ └─────┬─────┘ └──────┬───────┘
+                   │              │              │
+                   └──────┬───────┘              │
+                          ▼                      ▼
+                   ┌─────────────┐        ┌─────────────┐
+                   │ รวมวัตถุดิบ   │───────▶│ สร้างสูตร +  │
+                   │ (Hybrid)    │        │ สร้างรูป    │
+                   └─────────────┘        └─────────────┘
+```
+
+## Tech Stack
+
+- **Frontend:** Next.js 16, React 19, Tailwind CSS 4
+- **Object Detection:** YOLO11n (Ultralytics) → TensorFlow.js Graph Model
+- **AI API:** Google Gemini (`gemini-flash-latest`, `gemini-2.5-flash-image`)
+- **SDK:** `@google/generative-ai`, `@google/genai`
+
+## โครงสร้างโปรเจกต
+
+```
+app/
+├── actions/
+│   ├── analyzeImage.ts      # Gemini Vision — ระบุวัตถุดิบภาษาไทย
+│   ├── generateRecipe.ts    # Gemini — สร้างสูตรอาหาร JSON
+│   └── generateFoodImage.ts # Gemini — สร้างรูปอาหาร
+├── components/
+│   └── RecipeCard.tsx       # การ์ดสูตร + โปรด + คัดลอก
+├── utils/
+│   ├── labels.ts            # Label ภาษาอังกฤษของ YOLO (118 class)
+│   ├── labelsTh.ts          # แปล label เป็นภาษาไทย
+│   ├── storage.ts           # localStorage (โปรด + ประวัติ)
+│   └── types.ts             # Type definitions
+└── page.tsx                 # หน้าหลัก
+public/model/                # โมเดล YOLO (model.json + weights)
+```
+
+## การติดตั้ง
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+# ติดตั้ง dependencies
+bun install   # หรือ npm install
+
+# ตั้งค่า API Key
+cp .env.example .env
+# ใส่ GEMINI_API_KEY=your_key_here
+
+# รัน dev server
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+เปิด [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| ตัวแปร | คำอธิบาย |
+|--------|----------|
+| `GEMINI_API_KEY` | API Key จาก [Google AI Studio](https://aistudio.google.com/apikey) |
 
-## Learn More
+## การประเมินผล (แนะนำสำหรับรายงาน)
 
-To learn more about Next.js, take a look at the following resources:
+| การทดสอบ | วิธี |
+|----------|------|
+| YOLO accuracy | ทดสอบกับ test set → วัด Precision, Recall, mAP |
+| Gemini accuracy | รูปทดสอบ 30–50 รูป → นับถูก/ผิด |
+| Hybrid vs แยก | เปรียบเทียบ 3 โหมดบนรูปชุดเดียวกัน |
+| Response time | แอปแสดงเวลา YOLO/Gemini อัตโนมัติหลังสแกน |
+| User satisfaction | ให้ผู้ใช้ 10–20 คนทดสอบ → แบบสอบถาม 1–5 |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# Build
+bun run build
 
-## Deploy on Vercel
+# Deploy บน Vercel
+vercel deploy
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+ตั้ง `GEMINI_API_KEY` ใน Environment Variables ของ Vercel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ข้อจำกัด
+
+- Label YOLO เป็นภาษาอังกฤษ/เนปาล — แปลเป็นภาษาไทยด้วย mapping (อาจไม่ครบ 100%)
+- ต้องมี API Key สำหรับ Gemini (Vision, Recipe, Image Gen)
+- โมเดล YOLO ฝึกจาก dataset ต่างประเทศ อาจไม่แม่นยำกับวัตถุดิบไทยบางชนิด
+- รูปอาหารที่สร้างเป็น AI-generated อาจไม่ตรงกับของจริง 100%
+
+## ผู้พัฒนา
+
+โปรเจกตจบ — Chef Kub

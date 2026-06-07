@@ -9,11 +9,10 @@ const kanit = Kanit({
 });
 
 export const metadata: Metadata = {
-  title: "AI Chef - หาวัตถุดิบทำอาหาร",
-  description: "สแกนวัตถุดิบแล้วคิดสูตรอาหารด้วย AI",
+  title: "Chef Kub — สแกนวัตถุดิบ คิดสูตรอาหารด้วย AI",
+  description: "ถ่ายรูปวัตถุดิบ ให้ AI วิเคราะห์และแนะนำสูตรอาหารไทย",
 };
 
-// เพิ่ม Type ตรงนี้ครับ
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -21,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th">
-      <body className={kanit.className}>{children}</body>
+      <body className={`${kanit.className} antialiased`}>{children}</body>
     </html>
   );
 }

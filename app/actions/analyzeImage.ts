@@ -21,7 +21,7 @@ export async function identifyIngredients(imageBase64: string): Promise<string[]
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.0-flash",
+    model: "gemini-flash-latest",
     generationConfig: { responseMimeType: "application/json" }
   });
 
