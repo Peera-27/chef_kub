@@ -3,7 +3,7 @@ import { identifyIngredients } from "../actions/analyzeImage";
 import { generateRecipes } from "../actions/generateRecipe";
 import { generateFoodImage } from "../actions/generateFoodImage";
 import { runYoloDetection } from "../lib/yolo/runYoloDetection";
-import { Recipe } from "../types/recipe";
+import type { Recipe } from "../types/recipe";
 import { mergeIngredients } from "../utils/mergeIngredients";
 import {
   BoundingBox,

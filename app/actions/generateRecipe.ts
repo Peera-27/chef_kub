@@ -1,9 +1,7 @@
 "use server";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Recipe } from "../types/recipe";
-
-export type { Recipe };
+import type { Recipe } from "../types/recipe";
 
 export async function generateRecipes(ingredients: string[]) {
   const apiKey = process.env.GEMINI_API_KEY;
