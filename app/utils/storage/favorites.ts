@@ -1,8 +1,6 @@
-import { Recipe } from "../actions/generateRecipe";
-import { ScanHistoryEntry } from "./types";
+import { Recipe } from "../../types/recipe";
 
 const FAVORITES_KEY = "chefkub_favorites";
-const HISTORY_KEY = "chefkub_history";
 
 export function loadFavorites(): Recipe[] {
   if (typeof window === "undefined") return [];
@@ -30,27 +28,4 @@ export function toggleFavorite(recipe: Recipe): Recipe[] {
 
 export function isFavorite(name: string): boolean {
   return loadFavorites().some((r) => r.name === name);
-}
-
-export function loadHistory(): ScanHistoryEntry[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    return raw ? (JSON.parse(raw) as ScanHistoryEntry[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function addHistoryEntry(items: string[], imageCount: number) {
-  const history = loadHistory();
-  const entry: ScanHistoryEntry = {
-    id: `${Date.now()}`,
-    date: new Date().toLocaleString("th-TH"),
-    items,
-    imageCount,
-  };
-  const updated = [entry, ...history].slice(0, 20);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
-  return updated;
 }

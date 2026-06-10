@@ -2,21 +2,17 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createHash } from "crypto";
-
-// ป้องกัน Cache หายตอน Hot Reload ในโหมด Development
-const globalForCache = global as unknown as { visionCache: Map<string, string[]> };
-const visionCache = globalForCache.visionCache || new Map<string, string[]>();
-if (process.env.NODE_ENV !== "production") globalForCache.visionCache = visionCache;
+import { getVisionCache, setVisionCache } from "../lib/visionCache";
 
 export async function identifyIngredients(imageBase64: string): Promise<string[]> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("ไม่พบ API Key");
 
-  // 1. สร้าง Hash เพื่อเช็ค Cache (ถ้าส่งรูปเดิมมาจะตอบทันที)
   const hash = createHash("sha256").update(imageBase64).digest("hex");
-  if (visionCache.has(hash)) {
+  const cached = getVisionCache(hash);
+  if (cached) {
     console.log("🚀 Cache Hit: ใช้ข้อมูลเดิม");
-    return visionCache.get(hash)!;
+    return cached;
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
@@ -36,9 +32,8 @@ export async function identifyIngredients(imageBase64: string): Promise<string[]
     ]);
     
     const detectedItems = JSON.parse(result.response.text()) as string[];
-    
-    // 2. บันทึกลง Cache
-    visionCache.set(hash, detectedItems);
+
+    setVisionCache(hash, detectedItems);
     return detectedItems;
   } catch (error) {
     console.error("Vision Error:", error);
