@@ -1,30 +1,64 @@
+import type { Recipe } from "../../types/recipe";
 import { ImageItem, ScanHistoryEntry } from "../../utils/types";
 
 interface HomeViewProps {
   gallery: ImageItem[];
   history: ScanHistoryEntry[];
+  favorites: Recipe[];
   allItemsCount: number;
+  hasRecipes: boolean;
   onStartCamera: () => void;
   onUploadImage: (base64: string) => void;
   onRemoveImage: (imageId: string) => void;
   onRemoveItem: (imageId: string, itemName: string) => void;
   onEditImage: (image: ImageItem) => void;
   onInventRecipe: () => void;
+  onQuickStartHistory: (items: string[]) => void;
+  onQuickCookFavorite: (recipe: Recipe) => void;
+  onViewRecipes: () => void;
 }
 
 export function HomeView({
   gallery,
   history,
+  favorites,
   allItemsCount,
+  hasRecipes,
   onStartCamera,
   onUploadImage,
   onRemoveImage,
   onRemoveItem,
   onEditImage,
   onInventRecipe,
+  onQuickStartHistory,
+  onQuickCookFavorite,
+  onViewRecipes,
 }: HomeViewProps) {
+  const topFavorite = favorites[0];
+
   return (
     <div className="space-y-4">
+    
+
+      {topFavorite && (
+        <div className="bg-white rounded-xl border border-pink-100 p-3 shadow-sm">
+          <p className="text-[10px] uppercase tracking-wide text-pink-500 mb-1">
+            ทำเมนูโปรดอีกครั้ง
+          </p>
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-semibold text-gray-800 truncate">
+              {topFavorite.name}
+            </span>
+            <button
+              onClick={() => onQuickCookFavorite(topFavorite)}
+              className="cursor-pointer shrink-0 text-xs bg-orange-500 text-white px-3 py-2 rounded-lg font-medium"
+            >
+              เริ่มทำเลย →
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4">
         <button
           onClick={onStartCamera}
@@ -106,20 +140,41 @@ export function HomeView({
       </div>
 
       {history.length > 0 && (
-        <div className="bg-white rounded-xl p-3 border border-orange-100 text-xs text-gray-400">
-          <p className="font-medium text-gray-500 mb-1">ประวัติล่าสุด</p>
-          {history.slice(0, 3).map((h) => (
-            <p key={h.id}>{h.items.join(", ")}</p>
-          ))}
+        <div className="bg-white rounded-xl p-3 border border-orange-100">
+          <p className="text-xs font-medium text-gray-500 mb-2">
+            ทำเมนูจากวัตถุดิบเดิม
+          </p>
+          <div className="space-y-1">
+            {history.slice(0, 3).map((h) => (
+              <button
+                key={h.id}
+                onClick={() => onQuickStartHistory(h.items)}
+                className="cursor-pointer w-full text-left text-xs text-gray-600 hover:text-orange-600 hover:bg-orange-50 px-2 py-1.5 rounded-lg transition-colors truncate"
+              >
+                → {h.items.join(", ")}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      <button
-        onClick={onInventRecipe}
-        className="cursor-pointer w-full py-4 bg-orange-500 text-white rounded-xl font-bold shadow-md active:scale-95 transition-transform"
-      >
-        คิดสูตรอาหาร ({allItemsCount} วัตถุดิบ)
-      </button>
+      {hasRecipes && (
+        <button
+          onClick={onViewRecipes}
+          className="cursor-pointer w-full py-3 bg-white border border-orange-300 text-orange-600 rounded-xl font-medium"
+        >
+          ดูเมนูที่แนะนำแล้ว →
+        </button>
+      )}
+
+      {allItemsCount > 0 && (
+        <button
+          onClick={onInventRecipe}
+          className="cursor-pointer w-full py-3 text-sm text-gray-500 underline"
+        >
+          สร้างเมนูใหม่จาก {allItemsCount} วัตถุดิบ
+        </button>
+      )}
     </div>
   );
 }

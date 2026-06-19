@@ -4,9 +4,14 @@ import { isFavorite, toggleFavorite } from "../utils/storage";
 interface RecipeCardProps {
   recipe: Recipe;
   onFavoriteChange: () => void;
+  onStartCook?: (recipe: Recipe) => void;
 }
 
-export function RecipeCard({ recipe, onFavoriteChange }: RecipeCardProps) {
+export function RecipeCard({
+  recipe,
+  onFavoriteChange,
+  onStartCook,
+}: RecipeCardProps) {
   const favorited = isFavorite(recipe.name);
 
   const handleCopy = () => {
@@ -99,6 +104,17 @@ export function RecipeCard({ recipe, onFavoriteChange }: RecipeCardProps) {
           </div>
         </div>
       </div>
+
+      {onStartCook && (
+        <div className="px-4 pb-4">
+          <button
+            onClick={() => onStartCook(recipe)}
+            className="cursor-pointer w-full py-3 bg-orange-500 text-white rounded-xl font-medium text-sm active:scale-95 transition-transform"
+          >
+            🎙️ เริ่มทำอาหาร (Voice AI)
+          </button>
+        </div>
+      )}
     </div>
   );
 }

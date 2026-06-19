@@ -8,27 +8,33 @@ export async function generateRecipes(ingredients: string[]) {
   if (!apiKey) return [];
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ 
-    model: "gemini-flash-latest", 
-    generationConfig: { responseMimeType: "application/json" }
+  const model = genAI.getGenerativeModel({
+    model: "gemini-flash-latest",
+    generationConfig: { responseMimeType: "application/json" },
   });
 
   const prompt = `
-    
-        คุณเป็นเชฟมืออาชีพ ฉันมีวัตถุดิบดังนี้: ${ingredients.join(", ")}
-    
-    ช่วยคิดเมนูอาหารไทย 3 เมนูโดยบอกวิธีการทำที่ละเอียดและกินได้จริง ที่ใช้วัตถุดิบเหล่านี้เป็นหลัก (สามารถเพิ่มเครื่องปรุงพื้นฐานได้)
-    ขอผลลัพธ์เป็น JSON Array เท่านั้น โดยมี Format ดังนี้:
-    [
-      {
-        "name": "ชื่อเมนูภาษาไทย",
-        "ingredients": ["รายชื่อวัตถุดิบพร้อมปริมาณ"],
-        "instructions": ["ขั้นตอนที่ 1", "ขั้นตอนที่ 2"],
-        "calories": "ประมาณ xxx kcal",
-        "tags": ["เผ็ด", "ทำง่าย", "โปรตีนสูง"]
-      }
-    ]
-    ไม่ต้องมีคำเกริ่น หรือ Markdown ใดๆ ขอแค่ Raw JSON
+คุณเป็นเชฟมืออาชีพ ผู้ใช้พร้อมทำอาหารแล้ว — อย่าถามคำถามเพิ่ม ให้คำตอบที่ทำได้ทันที
+
+วัตถุดิบที่มี: ${ingredients.join(", ")}
+
+สร้างเมนูอาหารไทย 3 เมนู เรียงจาก "ทำเร็วที่สุด/ง่ายที่สุด" ไปก่อน
+- ใช้วัตถุดิบที่มีเป็นหลัก (เครื่องปรุงพื้นฐานเพิ่มได้)
+- ขั้นตอนชัดเจน ทำตามได้จริง ไม่ต้องถามผู้ใช้เพิ่ม
+- เมนูแรกควรเป็นตัวเลือกที่ดีที่สุดสำหรับเริ่มทำทันที
+
+ตอบเป็น JSON Array เท่านั้น:
+[
+  {
+    "name": "ชื่อเมนูภาษาไทย",
+    "ingredients": ["วัตถุดิบพร้อมปริมาณ"],
+    "instructions": ["ขั้นตอนที่ 1", "ขั้นตอนที่ 2"],
+    "calories": "ประมาณ xxx kcal",
+    "readyInMinutes": 15,
+    "tags": ["ทำง่าย", "เร็ว"]
+  }
+]
+Raw JSON เท่านั้น ไม่มี markdown
   `;
 
   try {

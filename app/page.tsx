@@ -6,6 +6,7 @@ import { CameraView } from "./components/views/CameraView";
 import { EditImageView } from "./components/views/EditImageView";
 import { FavoritesView } from "./components/views/FavoritesView";
 import { HomeView } from "./components/views/HomeView";
+import { CookView } from "./components/views/CookView";
 import { RecipesView } from "./components/views/RecipesView";
 import { useChefKub } from "./hooks/useChefKub";
 
@@ -22,6 +23,7 @@ export default function Home() {
     favorites,
     history,
     favVersion,
+    activeRecipe,
     editingImage,
     setEditingImage,
     videoRef,
@@ -34,12 +36,16 @@ export default function Home() {
     removeItem,
     removeImage,
     handleInventRecipe,
+    quickStartFromHistory,
+    quickCookFavorite,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
     handleTouchStart,
     handleTouchMove,
     goHome,
+    startCook,
+    endCook,
     refreshFavorites,
   } = useChefKub();
 
@@ -49,7 +55,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-xl font-bold text-orange-500">Chef Kub</h1>
-            <p className="text-xs text-gray-500">สแกนวัตถุดิบ → คิดสูตรอาหาร</p>
+            <p className="text-xs text-gray-500">สแกนแล้วเริ่มทำได้เลย</p>
           </div>
           <div className="flex gap-2">
             {favorites.length > 0 && viewMode === "home" && (
@@ -75,7 +81,9 @@ export default function Home() {
           <HomeView
             gallery={gallery}
             history={history}
+            favorites={favorites}
             allItemsCount={allItems.length}
+            hasRecipes={recipes.length > 0}
             onStartCamera={startCamera}
             onUploadImage={processImage}
             onRemoveImage={removeImage}
@@ -85,6 +93,9 @@ export default function Home() {
               setViewMode("edit");
             }}
             onInventRecipe={handleInventRecipe}
+            onQuickStartHistory={quickStartFromHistory}
+            onQuickCookFavorite={quickCookFavorite}
+            onViewRecipes={() => setViewMode("recipes")}
           />
         )}
 
@@ -113,7 +124,12 @@ export default function Home() {
             tagFilter={tagFilter}
             onTagFilterChange={setTagFilter}
             onFavoriteChange={refreshFavorites}
+            onStartCook={startCook}
           />
+        )}
+
+        {viewMode === "cook" && activeRecipe && (
+          <CookView recipe={activeRecipe} onDone={endCook} />
         )}
 
         {viewMode === "favorites" && (
@@ -121,6 +137,7 @@ export default function Home() {
             favorites={favorites}
             favVersion={favVersion}
             onFavoriteChange={refreshFavorites}
+            onStartCook={startCook}
           />
         )}
       </div>

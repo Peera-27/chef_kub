@@ -18,7 +18,13 @@ import {
 } from "../utils/storage";
 import { useYoloModel } from "./useYoloModel";
 
-export type ViewMode = "home" | "camera" | "recipes" | "edit" | "favorites";
+export type ViewMode =
+  | "home"
+  | "camera"
+  | "recipes"
+  | "edit"
+  | "favorites"
+  | "cook";
 
 export function useChefKub() {
   const model = useYoloModel();
@@ -32,6 +38,7 @@ export function useChefKub() {
   const [favorites, setFavorites] = useState<Recipe[]>([]);
   const [history, setHistory] = useState<ScanHistoryEntry[]>([]);
   const [favVersion, setFavVersion] = useState(0);
+  const [activeRecipe, setActiveRecipe] = useState<Recipe | null>(null);
 
   const [editingImage, setEditingImage] = useState<ImageItem | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -91,13 +98,76 @@ export function useChefKub() {
     }
   };
 
+  const removeImage = (imageId: string) => {
+    setGallery((prev) => prev.filter((img) => img.id !== imageId));
+  };
+
+  const loadRecipeImagesInBackground = (recipeList: Recipe[]) => {
+    recipeList.forEach(async (recipe, index) => {
+      try {
+        const imageUrl = await generateFoodImage(recipe.name);
+        if (!imageUrl) return;
+        setRecipes((prev) =>
+          prev.map((r, i) =>
+            i === index && r.name === recipe.name
+              ? { ...r, imageUrl }
+              : r,
+          ),
+        );
+      } catch {
+        // รูปเป็น optional — ไม่ block flow
+      }
+    });
+  };
+
+  const generateRecipesFlow = async (
+    ingredients: string[],
+    options: { navigate?: boolean } = { navigate: true },
+  ) => {
+    if (ingredients.length === 0) return false;
+
+    setLoading({ state: true, message: "กำลังจัดเมนูให้คุณทำเลย..." });
+    try {
+      const res = await generateRecipes(ingredients);
+      if (res.length === 0) {
+        alert("ไม่พบเมนูที่เหมาะกับวัตถุดิบนี้ ลองเพิ่มรูปอีกใบ");
+        return false;
+      }
+
+      setRecipes(res);
+      setTagFilter(null);
+      if (options.navigate) setViewMode("recipes");
+
+      addHistoryEntry(ingredients, gallery.length);
+      setHistory(loadHistory());
+
+      loadRecipeImagesInBackground(res);
+      return true;
+    } catch (err) {
+      console.error(err);
+      alert("ไม่สามารถสร้างสูตรได้ กรุณาลองใหม่");
+      return false;
+    } finally {
+      setLoading({ state: false, message: "" });
+    }
+  };
+
   const processImage = async (base64Url: string) => {
     if (imageCache.current.has(base64Url)) {
       const cached = imageCache.current.get(base64Url)!;
+      const mergedNames = Array.from(
+        new Set([
+          ...gallery.flatMap((g) => g.items.map((i) => i.name)),
+          ...cached.map((i) => i.name),
+        ]),
+      );
       setGallery((prev) => [
         ...prev,
         { id: `${Date.now()}`, url: base64Url, items: cached },
       ]);
+      if (mergedNames.length > 0) {
+        await generateRecipesFlow(mergedNames);
+      }
       return;
     }
 
@@ -124,6 +194,13 @@ export function useChefKub() {
       const combined = mergeIngredients([...yoloResult.items, ...geminiItems]);
       imageCache.current.set(base64Url, combined);
 
+      const mergedNames = Array.from(
+        new Set([
+          ...gallery.flatMap((g) => g.items.map((i) => i.name)),
+          ...combined.map((i) => i.name),
+        ]),
+      );
+
       setGallery((prev) => [
         ...prev,
         {
@@ -133,6 +210,10 @@ export function useChefKub() {
           boxes: yoloResult.boxes,
         },
       ]);
+
+      if (mergedNames.length > 0) {
+        await generateRecipesFlow(mergedNames);
+      }
     } catch {
       alert("เกิดข้อผิดพลาดในการวิเคราะห์รูป กรุณาลองใหม่");
     } finally {
@@ -165,43 +246,17 @@ export function useChefKub() {
     );
   };
 
-  const removeImage = (imageId: string) => {
-    setGallery((prev) => prev.filter((img) => img.id !== imageId));
+  const handleInventRecipe = async () => {
+    await generateRecipesFlow(allItems);
   };
 
-  const handleInventRecipe = async () => {
-    if (allItems.length === 0)
-      return alert("กรุณาเพิ่มวัตถุดิบก่อน!");
+  const quickStartFromHistory = async (items: string[]) => {
+    await generateRecipesFlow(items);
+  };
 
-    setLoading({ state: true, message: "กำลังคิดสูตรอาหาร..." });
-    try {
-      const res = await generateRecipes(allItems);
-      const recipesWithImages: Recipe[] = [];
-
-      for (let i = 0; i < res.length; i++) {
-        setLoading({
-          state: true,
-          message: `กำลังสร้างรูปอาหาร ${i + 1}/${res.length}...`,
-        });
-        const imageUrl = await generateFoodImage(res[i].name);
-        recipesWithImages.push({
-          ...res[i],
-          imageUrl: imageUrl ?? undefined,
-        });
-      }
-
-      setRecipes(recipesWithImages);
-      setTagFilter(null);
-      setViewMode("recipes");
-
-      const updatedHistory = addHistoryEntry(allItems, gallery.length);
-      setHistory(updatedHistory);
-    } catch (err) {
-      console.error(err);
-      alert("ไม่สามารถสร้างสูตรได้ กรุณาลองใหม่");
-    } finally {
-      setLoading({ state: false, message: "" });
-    }
+  const quickCookFavorite = (recipe: Recipe) => {
+    setActiveRecipe(recipe);
+    setViewMode("cook");
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -295,8 +350,19 @@ export function useChefKub() {
     }
   }, [currentRect, editingImage, viewMode]);
 
+  const startCook = (recipe: Recipe) => {
+    setActiveRecipe(recipe);
+    setViewMode("cook");
+  };
+
+  const endCook = () => {
+    setActiveRecipe(null);
+    setViewMode("recipes");
+  };
+
   const goHome = () => {
     stopCamera();
+    setActiveRecipe(null);
     setViewMode("home");
   };
 
@@ -317,6 +383,7 @@ export function useChefKub() {
     favorites,
     history,
     favVersion,
+    activeRecipe,
     editingImage,
     setEditingImage,
     videoRef,
@@ -329,12 +396,16 @@ export function useChefKub() {
     removeItem,
     removeImage,
     handleInventRecipe,
+    quickStartFromHistory,
+    quickCookFavorite,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
     handleTouchStart,
     handleTouchMove,
     goHome,
+    startCook,
+    endCook,
     refreshFavorites,
   };
 }

@@ -4,5 +4,6 @@ export type Recipe = {
   instructions: string[];
   calories: string;
   tags: string[];
+  readyInMinutes?: number;
   imageUrl?: string;
 };

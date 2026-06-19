@@ -1,5 +1,6 @@
 import type { Recipe } from "../../types/recipe";
-import { RecipeCard } from "../RecipeCard";
+import { RecipeCompactCard } from "../RecipeCompactCard";
+import { RecipeHeroCard } from "../RecipeHeroCard";
 
 interface RecipesViewProps {
   recipes: Recipe[];
@@ -8,6 +9,7 @@ interface RecipesViewProps {
   tagFilter: string | null;
   onTagFilterChange: (tag: string | null) => void;
   onFavoriteChange: () => void;
+  onStartCook: (recipe: Recipe) => void;
 }
 
 export function RecipesView({
@@ -16,14 +18,26 @@ export function RecipesView({
   tagFilter,
   onTagFilterChange,
   onFavoriteChange,
+  onStartCook,
 }: RecipesViewProps) {
+  const hero = filteredRecipes[0];
+  const alternatives = filteredRecipes.slice(1);
+
+  if (filteredRecipes.length === 0) {
+    return (
+      <p className="text-sm text-gray-400 text-center py-8">
+        ไม่พบเมนูในหมวดนี้
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-4 pb-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-bold text-orange-500">สูตรที่แนะนำ</h2>
-        <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded">
-          {filteredRecipes.length} เมนู
-        </span>
+      <div>
+        <h2 className="text-lg font-bold text-orange-500">พร้อมทำแล้ว</h2>
+        <p className="text-xs text-gray-500 mt-0.5">
+          เลือกเมนูแนะนำหรือสลับทางเลือกด้านล่าง
+        </p>
       </div>
 
       {allTags.length > 0 && (
@@ -54,13 +68,27 @@ export function RecipesView({
         </div>
       )}
 
-      {filteredRecipes.map((r, i) => (
-        <RecipeCard
-          key={i}
-          recipe={r}
+      {hero && (
+        <RecipeHeroCard
+          recipe={hero}
+          onStartCook={onStartCook}
           onFavoriteChange={onFavoriteChange}
         />
-      ))}
+      )}
+
+      {alternatives.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-gray-500">ทางเลือกอื่น</p>
+          {alternatives.map((r, i) => (
+            <RecipeCompactCard
+              key={`${r.name}-${i}`}
+              recipe={r}
+              onStartCook={onStartCook}
+              onFavoriteChange={onFavoriteChange}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -12,6 +12,7 @@
 | แปล Label | แปลชื่อวัตถุดิบ YOLO (อังกฤษ) เป็นภาษาไทยอัตโนมัติ |
 | สร้างสูตรอาหาร | Gemini สร้าง 3 เมนูไทยจากวัตถุดิบที่มี |
 | สร้างรูปอาหาร | Gemini Image Gen สร้างรูปตามชื่อเมนู |
+| โหมดทำอาหาร + Voice AI | Gemini Live API — คุยเสียง real-time ระหว่างทำอาหาร |
 | รายการโปรด | บันทึกสูตรที่ชอบด้วย localStorage |
 | ประวัติการสแกน | เก็บประวัติวัตถุดิบที่เคยสแกน |
 | กรองเมนู | กรองสูตรตาม tag (เผ็ด, ทำง่าย ฯลฯ) |
@@ -56,8 +57,16 @@ app/
 │   ├── analyzeImage.ts      # Gemini Vision — ระบุวัตถุดิบภาษาไทย
 │   ├── generateRecipe.ts    # Gemini — สร้างสูตรอาหาร JSON
 │   └── generateFoodImage.ts # Gemini — สร้างรูปอาหาร
+├── api/live-token/route.ts  # สร้าง Ephemeral Token สำหรับ Gemini Live
+├── hooks/
+│   ├── useChefKub.ts        # state หลักของแอป
+│   └── useGeminiLiveCook.ts # เชื่อมต่อ Gemini Live + ไมค์/ลำโพง
+├── lib/
+│   ├── audio/liveAudio.ts   # จับเสียง PCM 16kHz + เล่นเสียง 24kHz
+│   └── live/cookPrompt.ts   # system prompt สำหรับโหมดทำอาหาร
 ├── components/
-│   └── RecipeCard.tsx       # การ์ดสูตร + โปรด + คัดลอก
+│   ├── RecipeCard.tsx       # การ์ดสูตร + โปรด + คัดลอก
+│   └── views/CookView.tsx   # หน้าโหมดทำอาหารพร้อม Voice AI
 ├── utils/
 │   ├── labels.ts            # Label ภาษาอังกฤษของ YOLO (118 class)
 │   ├── labelsTh.ts          # แปล label เป็นภาษาไทย
