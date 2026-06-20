@@ -44,7 +44,7 @@ export function CookView({ recipe, onDone }: CookViewProps) {
       <div className="flex justify-between items-center mb-3">
         <div>
           <h2 className="text-lg font-bold text-orange-500">{recipe.name}</h2>
-          <p className="text-xs text-gray-400">คุยกับ Chef Kub ขณะทำอาหาร</p>
+          <p className="text-xs text-gray-400">คุยกับ เชฟครับ 👨‍🍳</p>
         </div>
         <button
           onClick={handleDone}
@@ -68,7 +68,7 @@ export function CookView({ recipe, onDone }: CookViewProps) {
           <div className="flex gap-2 items-start">
             <span className="text-lg shrink-0">👨‍🍳</span>
             <div className="bg-white rounded-2xl rounded-tl-sm px-3 py-2 text-sm text-gray-500 border border-orange-100 shadow-sm">
-              พร้อมแล้ว — ฟังคำแนะนำหรือพูดถามได้เลย
+              รอฟังเชฟครับทักทาย — ตอบ &quot;พร้อม&quot; หรือ &quot;เริ่มเลย&quot; เมื่อพร้อมทำ
             </div>
           </div>
         )}
@@ -121,7 +121,7 @@ export function CookView({ recipe, onDone }: CookViewProps) {
           {isMuted
             ? "ไมค์ปิด — กดเพื่อพูด"
             : status === "connected"
-              ? "พูดได้เลย เช่น “เสร็จแล้ว” หรือ “ทำต่อ”"
+              ? "พูดได้เลย เช่น “พร้อม” “เริ่มเลย” หรือ “เสร็จแล้ว”"
               : status === "connecting"
                 ? "กำลังเตรียมไมค์..."
                 : "รอเชื่อมต่อ..."}
