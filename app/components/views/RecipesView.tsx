@@ -1,6 +1,5 @@
 import type { Recipe } from "../../types/recipe";
-import { RecipeCompactCard } from "../RecipeCompactCard";
-import { RecipeHeroCard } from "../RecipeHeroCard";
+import { RecipeCard } from "../RecipeCard";
 
 interface RecipesViewProps {
   recipes: Recipe[];
@@ -20,35 +19,28 @@ export function RecipesView({
   onFavoriteChange,
   onStartCook,
 }: RecipesViewProps) {
-  const hero = filteredRecipes[0];
-  const alternatives = filteredRecipes.slice(1);
-
   if (filteredRecipes.length === 0) {
     return (
-      <p className="text-sm text-gray-400 text-center py-8">
+      <p className="text-sm text-gray-400 text-center py-12">
         ไม่พบเมนูในหมวดนี้
       </p>
     );
   }
 
   return (
-    <div className="space-y-4 pb-6">
-      <div>
-        <h2 className="text-lg font-bold text-orange-500">พร้อมทำแล้ว</h2>
-        <p className="text-xs text-gray-500 mt-0.5">
-          เลือกเมนูแนะนำหรือสลับทางเลือกด้านล่าง
-        </p>
+    <div className="space-y-5 pb-6">
+      <div className="flex justify-between items-center">
+        <h2 className="section-title">เมนูที่แนะนำ</h2>
+        <span className="pill bg-orange-100 text-orange-600">
+          {filteredRecipes.length} เมนู
+        </span>
       </div>
 
       {allTags.length > 0 && (
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => onTagFilterChange(null)}
-            className={`cursor-pointer text-xs px-3 py-1 rounded-full ${
-              !tagFilter
-                ? "bg-orange-500 text-white"
-                : "bg-white text-orange-600 border border-orange-200"
-            }`}
+            className={`pill cursor-pointer ${!tagFilter ? "pill-active" : "pill-inactive"}`}
           >
             ทั้งหมด
           </button>
@@ -56,11 +48,7 @@ export function RecipesView({
             <button
               key={tag}
               onClick={() => onTagFilterChange(tag)}
-              className={`cursor-pointer text-xs px-3 py-1 rounded-full ${
-                tagFilter === tag
-                  ? "bg-orange-500 text-white"
-                  : "bg-white text-orange-600 border border-orange-200"
-              }`}
+              className={`pill cursor-pointer ${tagFilter === tag ? "pill-active" : "pill-inactive"}`}
             >
               {tag}
             </button>
@@ -68,27 +56,16 @@ export function RecipesView({
         </div>
       )}
 
-      {hero && (
-        <RecipeHeroCard
-          recipe={hero}
-          onStartCook={onStartCook}
-          onFavoriteChange={onFavoriteChange}
-        />
-      )}
-
-      {alternatives.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-gray-500">ทางเลือกอื่น</p>
-          {alternatives.map((r, i) => (
-            <RecipeCompactCard
-              key={`${r.name}-${i}`}
-              recipe={r}
-              onStartCook={onStartCook}
-              onFavoriteChange={onFavoriteChange}
-            />
-          ))}
-        </div>
-      )}
+      <div className="space-y-5">
+        {filteredRecipes.map((r, i) => (
+          <RecipeCard
+            key={`${r.name}-${i}`}
+            recipe={r}
+            onFavoriteChange={onFavoriteChange}
+            onStartCook={onStartCook}
+          />
+        ))}
+      </div>
     </div>
   );
 }

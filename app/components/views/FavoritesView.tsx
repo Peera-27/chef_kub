@@ -15,22 +15,26 @@ export function FavoritesView({
   onStartCook,
 }: FavoritesViewProps) {
   return (
-    <div className="space-y-4 pb-6">
+    <div className="space-y-6 pb-6">
       <div>
-        <h2 className="text-lg font-bold text-orange-500">รายการโปรด</h2>
-        <p className="text-xs text-gray-500 mt-0.5">กดทำเมนูนี้เพื่อเริ่มทันที</p>
+        <h2 className="section-title">รายการโปรด</h2>
+        <p className="section-subtitle">กดทำเมนูนี้เพื่อเริ่มทันที</p>
       </div>
       {favorites.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8">ยังไม่มีสูตรโปรด</p>
+        <p className="text-sm text-gray-400 text-center py-12">
+          ยังไม่มีสูตรโปรด
+        </p>
       ) : (
-        favorites.map((r, i) => (
-          <RecipeCompactCard
-            key={`${r.name}-${i}-${favVersion}`}
-            recipe={r}
-            onFavoriteChange={onFavoriteChange}
-            onStartCook={onStartCook}
-          />
-        ))
+        <div className="space-y-2">
+          {favorites.map((r, i) => (
+            <RecipeCompactCard
+              key={`${r.name}-${i}-${favVersion}`}
+              recipe={r}
+              onFavoriteChange={onFavoriteChange}
+              onStartCook={onStartCook}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

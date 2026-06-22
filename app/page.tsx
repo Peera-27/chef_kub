@@ -50,32 +50,32 @@ export default function Home() {
   } = useChefKub();
 
   return (
-    <main className="min-h-screen bg-neutral-100 p-4 text-gray-800">
+    <main className="min-h-screen bg-neutral-100 px-4 pt-5 pb-8 text-gray-800">
       <div className="max-w-md mx-auto">
-        <div className="flex justify-between items-center mb-6">
+        <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-xl font-bold text-orange-500">Chef Kub</h1>
-            <p className="text-xs text-gray-500">สแกนแล้วเริ่มทำได้เลย</p>
+            <h1 className="text-2xl font-bold text-orange-500 tracking-tight">
+              Chef Kub
+            </h1>
+            <p className="text-sm text-gray-400 mt-0.5">สแกนแล้วเริ่มทำได้เลย</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             {favorites.length > 0 && viewMode === "home" && (
               <button
                 onClick={() => setViewMode("favorites")}
-                className="cursor-pointer text-xs bg-pink-100 text-pink-600 px-2 py-1 rounded-lg"
+                className="pill bg-pink-100 text-pink-600 flex items-center gap-1"
               >
-                ❤️ {favorites.length}
+                <span className="text-[10px]">♥</span>
+                {favorites.length}
               </button>
             )}
             {viewMode !== "home" && (
-              <button
-                onClick={goHome}
-                className="cursor-pointer text-sm bg-orange-500 text-white px-3 py-1 rounded-lg"
-              >
+              <button onClick={goHome} className="btn-primary text-sm px-4 py-2">
                 กลับ
               </button>
             )}
           </div>
-        </div>
+        </header>
 
         {viewMode === "home" && (
           <HomeView

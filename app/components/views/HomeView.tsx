@@ -37,37 +37,37 @@ export function HomeView({
   const topFavorite = favorites[0];
 
   return (
-    <div className="space-y-4">
-    
-
+    <div className="space-y-6">
       {topFavorite && (
-        <div className="bg-white rounded-xl border border-pink-100 p-3 shadow-sm">
-          <p className="text-[10px] uppercase tracking-wide text-pink-500 mb-1">
+        <div className="card-outline p-4">
+          <p className="text-xs text-pink-500 font-medium mb-2">
             ทำเมนูโปรดอีกครั้ง
           </p>
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-3">
             <span className="font-semibold text-gray-800 truncate">
               {topFavorite.name}
             </span>
             <button
               onClick={() => onQuickCookFavorite(topFavorite)}
-              className="cursor-pointer shrink-0 text-xs bg-orange-500 text-white px-3 py-2 rounded-lg font-medium"
+              className="btn-primary shrink-0 text-sm px-4 py-2"
             >
-              เริ่มทำเลย →
+              เริ่มทำเลย
             </button>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         <button
           onClick={onStartCamera}
-          className="cursor-pointer bg-orange-500 text-white p-6 rounded-2xl font-medium active:scale-95 transition-transform"
+          className="btn-primary flex flex-col items-center justify-center gap-2 py-8 rounded-2xl"
         >
-          ถ่ายรูป
+          <span className="text-2xl leading-none opacity-90">📷</span>
+          <span>ถ่ายรูป</span>
         </button>
-        <label className="bg-orange-500 text-white p-6 rounded-2xl text-center cursor-pointer font-medium active:scale-95 transition-transform">
-          อัปโหลด
+        <label className="btn-primary flex flex-col items-center justify-center gap-2 py-8 rounded-2xl cursor-pointer">
+          <span className="text-2xl leading-none opacity-90">🖼️</span>
+          <span>อัปโหลด</span>
           <input
             type="file"
             className="hidden"
@@ -86,62 +86,64 @@ export function HomeView({
         </label>
       </div>
 
-      <div className="space-y-3">
-        {gallery.map((img) => (
-          <div
-            key={img.id}
-            className="bg-white rounded-xl flex border border-orange-100 shadow-sm relative overflow-hidden"
-          >
-            <button
-              onClick={() => onRemoveImage(img.id)}
-              className="absolute top-2 right-2 z-10 w-6 h-6 bg-red-500 text-white rounded-full text-xs cursor-pointer"
-            >
-              ✕
-            </button>
+      {gallery.length > 0 && (
+        <div className="space-y-3">
+          {gallery.map((img) => (
+            <div key={img.id} className="card overflow-hidden relative">
+              <button
+                onClick={() => onRemoveImage(img.id)}
+                className="absolute top-3 right-3 z-10 w-7 h-7 bg-black/40 text-white rounded-full text-xs icon-btn backdrop-blur-sm"
+                aria-label="ลบรูป"
+              >
+                ✕
+              </button>
 
-            <div className="w-28 h-28 bg-gray-100 flex items-center justify-center shrink-0">
-              <img
-                src={img.url}
-                alt="วัตถุดิบ"
-                className="max-w-full max-h-full object-contain"
-              />
-            </div>
+              <div className="flex">
+                <div className="w-24 h-24 bg-orange-50 flex items-center justify-center shrink-0">
+                  <img
+                    src={img.url}
+                    alt="วัตถุดิบ"
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
 
-            <div className="p-2 flex-1 pr-8 pb-8">
-              <div className="flex flex-wrap gap-1">
-                {img.items.map((it, i) => (
-                  <span
-                    key={i}
-                    className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700"
-                  >
-                    {it.name}
-                    <button
-                      onClick={() => onRemoveItem(img.id, it.name)}
-                      className="text-orange-400 hover:text-red-500 cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  </span>
-                ))}
-                {img.items.length === 0 && (
-                  <span className="text-xs text-gray-400">ไม่พบวัตถุดิบ</span>
-                )}
+                <div className="p-3 flex-1 pr-10">
+                  <div className="flex flex-wrap gap-1.5">
+                    {img.items.map((it, i) => (
+                      <span key={i} className="tag flex items-center gap-1">
+                        {it.name}
+                        <button
+                          onClick={() => onRemoveItem(img.id, it.name)}
+                          className="text-orange-400 hover:text-red-500 cursor-pointer leading-none"
+                          aria-label={`ลบ ${it.name}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                    {img.items.length === 0 && (
+                      <span className="text-xs text-gray-400">
+                        ไม่พบวัตถุดิบ
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <button
-              onClick={() => onEditImage(img)}
-              className="absolute right-2 bottom-2 bg-blue-500 text-white text-[10px] px-2 py-1 rounded cursor-pointer"
-            >
-              แก้ไข
-            </button>
-          </div>
-        ))}
-      </div>
+              <button
+                onClick={() => onEditImage(img)}
+                className="absolute right-3 bottom-3 text-xs text-blue-500 font-medium cursor-pointer hover:text-blue-600"
+              >
+                แก้ไข
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {history.length > 0 && (
-        <div className="bg-white rounded-xl p-3 border border-orange-100">
-          <p className="text-xs font-medium text-gray-500 mb-2">
+        <div className="card-outline p-4">
+          <p className="text-xs font-medium text-gray-400 mb-3">
             ทำเมนูจากวัตถุดิบเดิม
           </p>
           <div className="space-y-1">
@@ -149,9 +151,9 @@ export function HomeView({
               <button
                 key={h.id}
                 onClick={() => onQuickStartHistory(h.items)}
-                className="cursor-pointer w-full text-left text-xs text-gray-600 hover:text-orange-600 hover:bg-orange-50 px-2 py-1.5 rounded-lg transition-colors truncate"
+                className="btn-ghost w-full text-left text-sm px-2 py-2 rounded-lg truncate"
               >
-                → {h.items.join(", ")}
+                {h.items.join(", ")}
               </button>
             ))}
           </div>
@@ -159,18 +161,15 @@ export function HomeView({
       )}
 
       {hasRecipes && (
-        <button
-          onClick={onViewRecipes}
-          className="cursor-pointer w-full py-3 bg-white border border-orange-300 text-orange-600 rounded-xl font-medium"
-        >
-          ดูเมนูที่แนะนำแล้ว →
+        <button onClick={onViewRecipes} className="btn-secondary w-full py-3.5">
+          ดูเมนูที่แนะนำแล้ว
         </button>
       )}
 
       {allItemsCount > 0 && (
         <button
           onClick={onInventRecipe}
-          className="cursor-pointer w-full py-3 text-sm text-gray-500 underline"
+          className="btn-ghost w-full text-sm py-2"
         >
           สร้างเมนูใหม่จาก {allItemsCount} วัตถุดิบ
         </button>

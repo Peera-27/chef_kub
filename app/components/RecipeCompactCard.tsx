@@ -15,8 +15,8 @@ export function RecipeCompactCard({
   const favorited = isFavorite(recipe.name);
 
   return (
-    <div className="bg-white rounded-xl border border-orange-100 p-3 flex gap-3 items-center shadow-sm">
-      <div className="w-14 h-14 rounded-lg bg-orange-50 flex items-center justify-center shrink-0 text-2xl overflow-hidden">
+    <div className="card p-3 flex gap-3 items-center">
+      <div className="w-14 h-14 rounded-xl bg-orange-50 flex items-center justify-center shrink-0 overflow-hidden">
         {recipe.imageUrl ? (
           <img
             src={recipe.imageUrl}
@@ -24,7 +24,7 @@ export function RecipeCompactCard({
             className="w-full h-full object-cover"
           />
         ) : (
-          "🍽️"
+          <span className="text-xl">🍽️</span>
         )}
       </div>
 
@@ -36,21 +36,22 @@ export function RecipeCompactCard({
         </p>
       </div>
 
-      <div className="flex flex-col gap-1 shrink-0">
-        <button
-          onClick={() => onStartCook(recipe)}
-          className="cursor-pointer text-xs bg-orange-500 text-white px-3 py-1.5 rounded-lg font-medium"
-        >
-          ทำเมนูนี้
-        </button>
+      <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={() => {
             toggleFavorite(recipe);
             onFavoriteChange();
           }}
-          className="cursor-pointer text-center text-sm"
+          className="cursor-pointer text-lg opacity-80 hover:opacity-100 transition-opacity"
+          aria-label={favorited ? "เอาออกจากโปรด" : "เพิ่มในโปรด"}
         >
           {favorited ? "❤️" : "🤍"}
+        </button>
+        <button
+          onClick={() => onStartCook(recipe)}
+          className="btn-primary text-xs px-3 py-2"
+        >
+          ทำเมนูนี้
         </button>
       </div>
     </div>

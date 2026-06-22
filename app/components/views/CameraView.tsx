@@ -7,8 +7,8 @@ interface CameraViewProps {
 
 export function CameraView({ videoRef, onCapture }: CameraViewProps) {
   return (
-    <div className="flex flex-col items-center space-y-4">
-      <div className="w-full aspect-[3/4] bg-black rounded-2xl overflow-hidden">
+    <div className="flex flex-col items-center gap-8">
+      <div className="w-full aspect-[3/4] bg-black rounded-2xl overflow-hidden shadow-lg">
         <video
           ref={videoRef}
           autoPlay
@@ -18,7 +18,8 @@ export function CameraView({ videoRef, onCapture }: CameraViewProps) {
       </div>
       <button
         onClick={onCapture}
-        className="w-16 h-16 bg-white border-4 border-orange-400 rounded-full cursor-pointer active:scale-90 transition-transform"
+        className="icon-btn w-[72px] h-[72px] bg-white border-[5px] border-orange-400 rounded-full shadow-md"
+        aria-label="ถ่ายรูป"
       />
     </div>
   );

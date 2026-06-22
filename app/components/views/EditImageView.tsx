@@ -24,12 +24,14 @@ export function EditImageView({
 }: EditImageViewProps) {
   return (
     <div className="flex flex-col items-center">
-      <p className="text-xs text-gray-500 mb-2">วาดกรอบรอบวัตถุดิบแล้วใส่ชื่อ</p>
-      <div className="relative rounded-lg overflow-hidden border-2 border-orange-400">
+      <p className="text-sm text-gray-400 mb-4 text-center">
+        วาดกรอบรอบวัตถุดิบแล้วใส่ชื่อ
+      </p>
+      <div className="relative rounded-2xl overflow-hidden shadow-md ring-2 ring-orange-400/60">
         <img
           src={editingImage.url}
           alt="แก้ไข"
-          className="block max-w-full h-auto max-h-[60vh] opacity-60"
+          className="block max-w-full h-auto max-h-[60vh] opacity-50"
           onLoad={(e) => {
             const img = e.currentTarget;
             if (canvasRef.current) {
@@ -49,10 +51,7 @@ export function EditImageView({
           className="absolute inset-0 z-10 cursor-crosshair touch-none"
         />
       </div>
-      <button
-        onClick={onDone}
-        className="cursor-pointer mt-6 w-full py-3 bg-orange-500 text-white rounded-xl font-bold"
-      >
+      <button onClick={onDone} className="btn-primary mt-8 w-full py-3.5 font-bold">
         เสร็จสิ้น
       </button>
     </div>
