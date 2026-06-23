@@ -1,8 +1,20 @@
 "use server";
 
 import { GoogleGenAI } from "@google/genai";
+import {
+  getFoodImageCache,
+  setFoodImageCache,
+} from "../lib/foodImageCache";
 
-export async function generateFoodImage(recipeName: string): Promise<string | null> {
+export async function generateFoodImage(
+  recipeName: string,
+): Promise<string | null> {
+  const cached = getFoodImageCache(recipeName);
+  if (cached) {
+    console.log("🚀 Food Image Cache Hit:", recipeName);
+    return cached;
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
@@ -20,14 +32,16 @@ export async function generateFoodImage(recipeName: string): Promise<string | nu
       contents: prompt,
       config: {
         responseModalities: ["IMAGE"],
-        imageConfig: { aspectRatio: "16:9" }, // หรือ "1:1", "4:3"
+        imageConfig: { aspectRatio: "16:9" },
       },
     });
 
     for (const part of response.candidates?.[0]?.content?.parts ?? []) {
       if (part.inlineData?.data) {
         const mime = part.inlineData.mimeType ?? "image/png";
-        return `data:${mime};base64,${part.inlineData.data}`;
+        const imageUrl = `data:${mime};base64,${part.inlineData.data}`;
+        setFoodImageCache(recipeName, imageUrl);
+        return imageUrl;
       }
     }
     return null;

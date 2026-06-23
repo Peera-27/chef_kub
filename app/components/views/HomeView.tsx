@@ -141,6 +141,15 @@ export function HomeView({
         </div>
       )}
 
+      {allItemsCount > 0 && (
+        <button
+          onClick={onInventRecipe}
+          className="btn-primary w-full py-4 text-base font-semibold"
+        >
+          ขอสูตรอาหาร ({allItemsCount} วัตถุดิบ)
+        </button>
+      )}
+
       {history.length > 0 && (
         <div className="card-outline p-4">
           <p className="text-xs font-medium text-gray-400 mb-3">
@@ -163,15 +172,6 @@ export function HomeView({
       {hasRecipes && (
         <button onClick={onViewRecipes} className="btn-secondary w-full py-3.5">
           ดูเมนูที่แนะนำแล้ว
-        </button>
-      )}
-
-      {allItemsCount > 0 && (
-        <button
-          onClick={onInventRecipe}
-          className="btn-ghost w-full text-sm py-2"
-        >
-          สร้างเมนูใหม่จาก {allItemsCount} วัตถุดิบ
         </button>
       )}
     </div>
