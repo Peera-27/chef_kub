@@ -47,6 +47,16 @@ export default function Home() {
     startCook,
     endCook,
     refreshFavorites,
+    finishEditing,
+    labelPickerOpen,
+    confirmLabelSelection,
+    cancelLabelPicker,
+    removeBoxAtIndex,
+    startEditBoxLabel,
+    editingBoxIndex,
+    classOptions,
+    handleClassesChange,
+    handleEditImageMetrics,
   } = useChefKub();
 
   return (
@@ -107,12 +117,21 @@ export default function Home() {
           <EditImageView
             editingImage={editingImage}
             canvasRef={canvasRef}
+            labelPickerOpen={labelPickerOpen}
+            editingBoxIndex={editingBoxIndex}
+            classOptions={classOptions}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
-            onDone={() => setViewMode("home")}
+            onDone={finishEditing}
+            onSelectLabel={confirmLabelSelection}
+            onCancelLabel={cancelLabelPicker}
+            onClassesChange={handleClassesChange}
+            onEditBox={startEditBoxLabel}
+            onRemoveBox={removeBoxAtIndex}
+            onImageMetrics={handleEditImageMetrics}
           />
         )}
 

@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { identifyIngredients } from "../actions/analyzeImage";
 import { generateRecipes } from "../actions/generateRecipe";
 import { generateFoodImage } from "../actions/generateFoodImage";
+import { listClasses } from "../actions/classes";
+import { getLabeledImageByHash } from "../actions/getLabeledImage";
+import { saveLabeledImage } from "../actions/saveLabeledImage";
 import { runYoloDetection } from "../lib/yolo/runYoloDetection";
 import type { Recipe } from "../types/recipe";
 import { mergeIngredients } from "../utils/mergeIngredients";
@@ -16,7 +18,58 @@ import {
   loadFavorites,
   loadHistory,
 } from "../utils/storage";
+import { hashImageBase64 } from "../utils/imageHash";
+import { getOrCreateSessionId } from "../utils/sessionId";
+import {
+  canvasToImagePixels,
+  imagePixelsToCanvas,
+  normalizePixelRect,
+} from "../utils/toYoloBBox";
+import {
+  setClassRegistry,
+  type ClassEntry,
+} from "../utils/classRegistry";
+import { resolveClassId } from "../utils/resolveClassId";
 import { useYoloModel } from "./useYoloModel";
+
+function syncItemsFromBoxes(
+  boxes: BoundingBox[],
+  prevItems: IngredientItem[],
+): IngredientItem[] {
+  const sourceByLabel = new Map(prevItems.map((item) => [item.name, item.source]));
+  const seen = new Set<string>();
+  const items: IngredientItem[] = [];
+
+  for (const box of boxes) {
+    if (seen.has(box.label)) continue;
+    seen.add(box.label);
+    items.push({
+      name: box.label,
+      source: sourceByLabel.get(box.label) ?? "manual",
+    });
+  }
+
+  return items;
+}
+
+interface CachedImageResult {
+  items: IngredientItem[];
+  boxes: BoundingBox[];
+  imageWidth: number;
+  imageHeight: number;
+}
+
+async function measureImage(
+  base64Url: string,
+): Promise<{ width: number; height: number }> {
+  const img = new Image();
+  img.src = base64Url;
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error("โหลดรูปไม่สำเร็จ"));
+  });
+  return { width: img.naturalWidth, height: img.naturalHeight };
+}
 
 export type ViewMode =
   | "home"
@@ -49,15 +102,23 @@ export function useChefKub() {
     w: number;
     h: number;
   } | null>(null);
+  const [labelPickerOpen, setLabelPickerOpen] = useState(false);
+  const [pendingRect, setPendingRect] = useState<BoundingBox | null>(null);
+  const [editingBoxIndex, setEditingBoxIndex] = useState<number | null>(null);
+  const [classOptions, setClassOptions] = useState<ClassEntry[]>([]);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imageCache = useRef<Map<string, IngredientItem[]>>(new Map());
+  const imageCache = useRef<Map<string, CachedImageResult>>(new Map());
 
   useEffect(() => {
     setFavorites(loadFavorites());
     setHistory(loadHistory());
+    listClasses().then((entries) => {
+      setClassRegistry(entries);
+      setClassOptions(entries);
+    });
   }, []);
 
   useEffect(() => {
@@ -158,7 +219,14 @@ export function useChefKub() {
       setLoading({ state: true, message: "แคชรูปภาพ — วิเคราะห์ทันที ⚡" });
       setGallery((prev) => [
         ...prev,
-        { id: `${Date.now()}`, url: base64Url, items: cached },
+        {
+          id: `${Date.now()}`,
+          url: base64Url,
+          items: cached.items,
+          boxes: cached.boxes,
+          imageWidth: cached.imageWidth,
+          imageHeight: cached.imageHeight,
+        },
       ]);
       setLoading({ state: false, message: "" });
       return;
@@ -167,25 +235,51 @@ export function useChefKub() {
     setLoading({ state: true, message: "กำลังวิเคราะห์วัตถุดิบ..." });
 
     try {
+      const { width: imageWidth, height: imageHeight } =
+        await measureImage(base64Url);
+      const hash = await hashImageBase64(base64Url);
+
+      setLoading({ state: true, message: "กำลังเช็ค label ที่เคยบันทึก..." });
+      const saved = await getLabeledImageByHash(hash);
+
+      if (saved) {
+        const result: CachedImageResult = {
+          items: saved.items,
+          boxes: saved.boxes,
+          imageWidth: saved.imageWidth,
+          imageHeight: saved.imageHeight,
+        };
+        imageCache.current.set(base64Url, result);
+        setGallery((prev) => [
+          ...prev,
+          {
+            id: `${Date.now()}`,
+            url: base64Url,
+            items: saved.items,
+            boxes: saved.boxes,
+            imageWidth: saved.imageWidth,
+            imageHeight: saved.imageHeight,
+          },
+        ]);
+        setLoading({ state: false, message: "" });
+        return;
+      }
+
       setLoading({ state: true, message: "กำลังสแกนวัตถุดิบ..." });
       const yoloResult = model
         ? await runYoloDetection(model, base64Url)
         : { items: [], boxes: [], ms: 0 };
 
-      let geminiItems: IngredientItem[] = [];
-      setLoading({ state: true, message: "กำลังวิเคราะห์เพิ่มเติม..." });
-      try {
-        const detected = await identifyIngredients(base64Url);
-        geminiItems = detected.map((name) => ({
-          name,
-          source: "gemini" as const,
-        }));
-      } catch (geminiErr) {
-        console.warn("Gemini ไม่พร้อมใช้งาน:", geminiErr);
-      }
+      const combined = yoloResult.items;
 
-      const combined = mergeIngredients([...yoloResult.items, ...geminiItems]);
-      imageCache.current.set(base64Url, combined);
+      if (combined.length > 0 || yoloResult.boxes.length > 0) {
+        imageCache.current.set(base64Url, {
+          items: combined,
+          boxes: yoloResult.boxes,
+          imageWidth,
+          imageHeight,
+        });
+      }
 
       setGallery((prev) => [
         ...prev,
@@ -194,6 +288,8 @@ export function useChefKub() {
           url: base64Url,
           items: combined,
           boxes: yoloResult.boxes,
+          imageWidth,
+          imageHeight,
         },
       ]);
     } catch {
@@ -236,12 +332,95 @@ export function useChefKub() {
     await generateRecipesFlow(items);
   };
 
+  const applyImageUpdate = (updated: ImageItem) => {
+    setGallery((prev) =>
+      prev.map((img) => (img.id === updated.id ? updated : img)),
+    );
+    setEditingImage(updated);
+  };
+
+  const cancelLabelPicker = () => {
+    setLabelPickerOpen(false);
+    setPendingRect(null);
+    setEditingBoxIndex(null);
+  };
+
+  const confirmLabelSelection = (label: string) => {
+    if (!editingImage) {
+      cancelLabelPicker();
+      return;
+    }
+
+    const boxes = [...(editingImage.boxes ?? [])];
+
+    if (editingBoxIndex !== null) {
+      boxes[editingBoxIndex] = { ...boxes[editingBoxIndex], label };
+      const items = syncItemsFromBoxes(boxes, editingImage.items).map((item) =>
+        item.name === label ? { name: label, source: "manual" as const } : item,
+      );
+      applyImageUpdate({ ...editingImage, boxes, items });
+    } else if (pendingRect) {
+      const canvas = canvasRef.current;
+      const imgW = editingImage.imageWidth;
+      const imgH = editingImage.imageHeight;
+      let boxCoords = {
+        x: pendingRect.x,
+        y: pendingRect.y,
+        w: pendingRect.w,
+        h: pendingRect.h,
+      };
+      if (canvas && imgW && imgH) {
+        boxCoords = canvasToImagePixels(
+          pendingRect,
+          canvas.width,
+          canvas.height,
+          imgW,
+          imgH,
+        );
+      }
+      const newBox: BoundingBox = { ...boxCoords, label };
+      boxes.push(newBox);
+      applyImageUpdate({
+        ...editingImage,
+        boxes,
+        items: mergeIngredients([
+          ...editingImage.items,
+          { name: label, source: "manual" as const },
+        ]),
+      });
+    }
+
+    cancelLabelPicker();
+  };
+
+  const removeBoxAtIndex = (index: number) => {
+    if (!editingImage?.boxes) return;
+    const boxes = editingImage.boxes.filter((_, i) => i !== index);
+    applyImageUpdate({
+      ...editingImage,
+      boxes,
+      items: syncItemsFromBoxes(boxes, editingImage.items),
+    });
+  };
+
+  const startEditBoxLabel = (index: number) => {
+    setPendingRect(null);
+    setEditingBoxIndex(index);
+    setLabelPickerOpen(true);
+  };
+
+  const handleClassesChange = (entries: ClassEntry[]) => {
+    setClassRegistry(entries);
+    setClassOptions(entries);
+  };
+
   const quickCookFavorite = (recipe: Recipe) => {
     setActiveRecipe(recipe);
     setViewMode("cook");
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (labelPickerOpen) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (rect) {
       setStartPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
@@ -263,26 +442,23 @@ export function useChefKub() {
   };
 
   const handleMouseUp = () => {
-    if (!isDrawing || !currentRect) return;
+    if (!isDrawing || !currentRect || labelPickerOpen) return;
     setIsDrawing(false);
-    const label = prompt("วัตถุดิบนี้คืออะไร?");
-    if (label && editingImage) {
-      const newBox: BoundingBox = { ...currentRect, label };
-      const newItem: IngredientItem = { name: label, source: "manual" };
-      const updated: ImageItem = {
-        ...editingImage,
-        items: mergeIngredients([...editingImage.items, newItem]),
-        boxes: [...(editingImage.boxes || []), newBox],
-      };
-      setGallery((prev) =>
-        prev.map((img) => (img.id === updated.id ? updated : img)),
-      );
-      setEditingImage(updated);
+
+    const rect = normalizePixelRect(currentRect);
+    if (Math.abs(rect.w) < 8 || Math.abs(rect.h) < 8) {
+      setCurrentRect(null);
+      return;
     }
+
+    setPendingRect({ ...rect, label: "" });
+    setEditingBoxIndex(null);
+    setLabelPickerOpen(true);
     setCurrentRect(null);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (labelPickerOpen) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (rect && e.touches.length > 0) {
       setStartPos({
@@ -308,14 +484,26 @@ export function useChefKub() {
 
   useEffect(() => {
     if (viewMode === "edit" && canvasRef.current) {
-      const ctx = canvasRef.current.getContext("2d");
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
       if (ctx) {
-        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const imgW = editingImage?.imageWidth ?? canvas.width;
+        const imgH = editingImage?.imageHeight ?? canvas.height;
+
         editingImage?.boxes?.forEach((box) => {
-          ctx.strokeStyle = "#10b981";
-          ctx.strokeRect(box.x, box.y, box.w, box.h);
-          ctx.fillStyle = "#10b981";
-          ctx.fillText(box.label, box.x, box.y - 5);
+          const display = imagePixelsToCanvas(
+            box,
+            imgW,
+            imgH,
+            canvas.width,
+            canvas.height,
+          );
+          const valid = resolveClassId(box.label) !== null;
+          ctx.strokeStyle = valid ? "#10b981" : "#f59e0b";
+          ctx.strokeRect(display.x, display.y, display.w, display.h);
+          ctx.fillStyle = valid ? "#10b981" : "#f59e0b";
+          ctx.fillText(box.label, display.x, display.y - 5);
         });
         if (currentRect) {
           ctx.strokeStyle = "#3b82f6";
@@ -351,6 +539,74 @@ export function useChefKub() {
   const refreshFavorites = () => {
     setFavorites(loadFavorites());
     setFavVersion((v) => v + 1);
+  };
+
+  const handleEditImageMetrics = (width: number, height: number) => {
+    if (!editingImage) return;
+    applyImageUpdate({ ...editingImage, imageWidth: width, imageHeight: height });
+  };
+
+  const finishEditing = async () => {
+    if (!editingImage) {
+      setViewMode("home");
+      return;
+    }
+
+    const boxes = editingImage.boxes ?? [];
+
+    if (boxes.length === 0) {
+      setViewMode("home");
+      return;
+    }
+
+    const invalid = boxes.filter((box) => resolveClassId(box.label) === null);
+    if (invalid.length > 0) {
+      alert(
+        `มี ${invalid.length} label ที่ไม่รู้จัก (${invalid.map((b) => b.label).join(", ")})\nกรุณากด "แก้ไข" เพื่อเลือกจากรายการ`,
+      );
+      return;
+    }
+
+    setLoading({ state: true, message: "กำลังบันทึกข้อมูล..." });
+
+    try {
+      const img = new Image();
+      img.src = editingImage.url;
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("โหลดรูปไม่สำเร็จ"));
+      });
+
+      const sourceByLabel = new Map(
+        editingImage.items.map((item) => [item.name, item.source]),
+      );
+
+      const imageWidth = editingImage.imageWidth ?? img.naturalWidth;
+      const imageHeight = editingImage.imageHeight ?? img.naturalHeight;
+
+      await saveLabeledImage({
+        imageBase64: editingImage.url,
+        sessionId: getOrCreateSessionId(),
+        imageWidth,
+        imageHeight,
+        boxes: boxes.map((box) => ({
+          ...box,
+          source: sourceByLabel.get(box.label) ?? "manual",
+        })),
+      });
+
+      imageCache.current.set(editingImage.url, {
+        items: editingImage.items,
+        boxes,
+        imageWidth,
+        imageHeight,
+      });
+    } catch (err) {
+      console.warn("บันทึก label ไม่สำเร็จ:", err);
+    } finally {
+      setLoading({ state: false, message: "" });
+      setViewMode("home");
+    }
   };
 
   return {
@@ -389,5 +645,15 @@ export function useChefKub() {
     startCook,
     endCook,
     refreshFavorites,
+    finishEditing,
+    labelPickerOpen,
+    confirmLabelSelection,
+    cancelLabelPicker,
+    removeBoxAtIndex,
+    startEditBoxLabel,
+    editingBoxIndex,
+    classOptions,
+    handleClassesChange,
+    handleEditImageMetrics,
   };
 }

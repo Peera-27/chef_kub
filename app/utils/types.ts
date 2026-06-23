@@ -1,4 +1,4 @@
-export type DetectionSource = "yolo" | "gemini" | "manual";
+export type DetectionSource = "yolo" | "manual";
 
 export interface IngredientItem {
   name: string;
@@ -18,6 +18,8 @@ export interface ImageItem {
   url: string;
   items: IngredientItem[];
   boxes?: BoundingBox[];
+  imageWidth?: number;
+  imageHeight?: number;
 }
 
 export interface ScanHistoryEntry {
@@ -29,6 +31,5 @@ export interface ScanHistoryEntry {
 
 export interface TimingStats {
   yoloMs?: number;
-  geminiMs?: number;
   totalMs: number;
 }
