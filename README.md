@@ -12,8 +12,8 @@
 | จำ Label รูปเดิม | ใช้ `image_hash` โหลด label จาก DB หลัง refresh |
 | จัดการ Class | ตาราง `classes` กลาง ป้องกันชื่อซ้ำ/คล้ายกัน |
 | สร้างสูตรอาหาร | Gemini สร้าง 3 เมนูไทยจากวัตถุดิบที่มี |
-| สร้างรูปอาหาร | Gemini Image Gen สร้างรูปตามชื่อเมนู |
-| โหมดทำอาหาร + Voice AI | Gemini Live API — คุยเสียง real-time |
+| รูปประกอบเมนู | Unsplash API ค้นหารูปอาหารตามชื่อเมนู |
+| โหมดทำอาหาร | แสดงขั้นตอนทีละ step + อ่านให้ฟัง (Web Speech API) |
 | รายการโปรด / ประวัติ | localStorage |
 | กรองเมนู | กรองสูตรตาม tag (เผ็ด, ทำง่าย ฯลฯ) |
 
@@ -30,8 +30,8 @@
           ▼                        ▼                        ▼
    ┌─────────────┐         ┌─────────────┐          ┌──────────────┐
    │ YOLO11n     │         │ Supabase    │          │ Gemini       │
-   │ (TF.js)     │         │ Postgres +  │          │ สูตร / รูป /  │
-   │ ในเบราว์เซอร์│         │ Storage     │          │ Live Voice   │
+   │ (TF.js)     │         │ Postgres +  │          │ สร้างสูตร    │
+   │ ในเบราว์เซอร์│         │ Storage     │          │ Unsplash รูป │
    └──────┬──────┘         └──────┬──────┘          └──────┬───────┘
           │                         │                        │
           │    user แก้ label       │ เก็บ training data     │
@@ -39,7 +39,7 @@
                        ▼                                     ▼
                 ┌─────────────┐                       ┌─────────────┐
                 │ Export →    │                       │ สร้างสูตร +  │
-                │ Train YOLO  │                       │ สร้างรูป    │
+                │ Train YOLO  │                       │ รูป Unsplash │
                 │ ใหม่        │                       └─────────────┘
                 └─────────────┘
 ```
@@ -60,8 +60,9 @@
 - **Frontend:** Next.js 16, React 19, Tailwind CSS 4
 - **Object Detection:** YOLO11n → TensorFlow.js Graph Model (`public/model/`)
 - **Database:** Supabase (PostgreSQL + Storage)
-- **AI API:** Google Gemini (`gemini-flash-latest`, `gemini-2.5-flash-image`, Live API)
-- **SDK:** `@supabase/supabase-js`, `@google/generative-ai`, `@google/genai`
+- **AI API:** Google Gemini (`gemini-flash-latest`) — สร้างสูตรเท่านั้น
+- **รูปเมนู:** [Unsplash API](https://unsplash.com/developers) (free tier)
+- **SDK:** `@supabase/supabase-js`, `@google/generative-ai`
 
 ## โครงสร้างโปรเจกต
 
@@ -72,19 +73,17 @@ app/
 │   ├── getLabeledImage.ts    # โหลด label จาก image_hash
 │   ├── classes.ts            # รายการ class + เพิ่มชื่อใหม่
 │   ├── generateRecipe.ts     # Gemini สร้างสูตร
-│   └── generateFoodImage.ts  # Gemini สร้างรูปอาหาร
-├── api/live-token/route.ts   # Ephemeral Token สำหรับ Gemini Live
+│   └── fetchRecipeImage.ts   # Unsplash ค้นหารูปเมนู
 ├── hooks/
 │   ├── useChefKub.ts         # state หลักของแอป
-│   ├── useYoloModel.ts       # โหลดโมเดล YOLO
-│   └── useGeminiLiveCook.ts  # Gemini Live + ไมค์/ลำโพง
+│   └── useYoloModel.ts       # โหลดโมเดล YOLO
 ├── components/
 │   ├── LabelPickerModal.tsx  # เลือก/เพิ่มชื่อวัตถุดิบ
 │   └── views/                # Home, Camera, Edit, Recipes, Cook, Favorites
 ├── lib/
 │   ├── yolo/runYoloDetection.ts
 │   ├── supabase/server.ts
-│   └── audio/liveAudio.ts
+│   └── foodImageCache.ts     # cache URL รูปเมนู
 └── utils/
     ├── labels.ts / labelsTh.ts   # class เดิมของ YOLO (~118)
     ├── classRegistry.ts          # class list ฝั่ง client
@@ -116,13 +115,16 @@ GEMINI_API_KEY=your_gemini_key
 
 NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+UNSPLASH_ACCESS_KEY=your_unsplash_access_key
 ```
 
 | ตัวแปร | คำอธิบาย |
 |--------|----------|
-| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) |
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) — สร้างสูตร |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API |
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role key (ใช้ฝั่ง server เท่านั้น) |
+| `UNSPLASH_ACCESS_KEY` | [Unsplash Developers](https://unsplash.com/developers) — รูปเมนู |
 
 ### 3. ตั้งค่า Supabase
 
@@ -177,14 +179,15 @@ bun run build
 vercel deploy
 ```
 
-ตั้ง Environment Variables ทั้ง 3 ตัวใน Vercel
+ตั้ง Environment Variables ทั้ง 4 ตัวใน Vercel
 
 ## ข้อจำกัด
 
 - YOLO รู้จักแค่ class ในโมเดลปัจจุบัน (~118) — class ใหม่ (เช่น ใบโหระพา) ต้อง train โมเดลใหม่
 - Label YOLO เดิมเป็นภาษาอังกฤษ — แปลเป็นไทยด้วย mapping ใน `labelsTh.ts`
 - รูปที่ label ก่อนมี `image_hash` ต้องกด "เสร็จสิ้น" อีกครั้ง 1 รอบเพื่อให้จำรูปซ้ำได้
-- รูปอาหารที่ Gemini สร้างเป็น AI-generated อาจไม่ตรงของจริง 100%
+- รูปเมนูจาก Unsplash อาจไม่ตรงเมนูไทย 100% (ค้นด้วยชื่อเมนู + "thai food")
+- โหมดทำอาหารใช้ Web Speech API — เสียงขึ้นกับ browser/OS
 
 ## ผู้พัฒนา
 

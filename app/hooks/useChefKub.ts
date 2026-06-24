@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { generateRecipes } from "../actions/generateRecipe";
-import { generateFoodImage } from "../actions/generateFoodImage";
+import { fetchRecipeImage } from "../actions/fetchRecipeImage";
 import { listClasses } from "../actions/classes";
 import { getLabeledImageByHash } from "../actions/getLabeledImage";
 import { saveLabeledImage } from "../actions/saveLabeledImage";
@@ -167,7 +167,7 @@ export function useChefKub() {
     return Promise.all(
       recipeList.map(async (recipe) => {
         try {
-          const imageUrl = await generateFoodImage(recipe.name);
+          const imageUrl = await fetchRecipeImage(recipe.name);
           return imageUrl ? { ...recipe, imageUrl } : recipe;
         } catch {
           return recipe;
@@ -192,7 +192,7 @@ export function useChefKub() {
 
       setLoading({
         state: true,
-        message: `กำลังสร้างรูปอาหาร (${res.length} เมนู)...`,
+        message: `กำลังหารูปอาหาร (${res.length} เมนู)...`,
       });
       const recipesWithImages = await attachRecipeImages(res);
 
