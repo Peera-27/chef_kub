@@ -60,10 +60,6 @@ export function EditImageView({
           className="block w-full h-auto max-h-[50vh] md:max-h-[60vh] opacity-50"
           onLoad={(e) => {
             const img = e.currentTarget;
-            if (canvasRef.current) {
-              canvasRef.current.width = img.clientWidth;
-              canvasRef.current.height = img.clientHeight;
-            }
             if (img.naturalWidth > 0 && img.naturalHeight > 0) {
               onImageMetrics(img.naturalWidth, img.naturalHeight);
             }

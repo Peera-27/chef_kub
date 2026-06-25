@@ -483,40 +483,54 @@ export function useChefKub() {
   };
 
   useEffect(() => {
-    if (viewMode === "edit" && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const imgW = editingImage?.imageWidth ?? canvas.width;
-        const imgH = editingImage?.imageHeight ?? canvas.height;
+    if (viewMode !== "edit" || !canvasRef.current || !editingImage) return;
 
-        editingImage?.boxes?.forEach((box) => {
-          const display = imagePixelsToCanvas(
-            box,
-            imgW,
-            imgH,
-            canvas.width,
-            canvas.height,
-          );
-          const valid = resolveClassId(box.label) !== null;
-          ctx.strokeStyle = valid ? "#10b981" : "#f59e0b";
-          ctx.strokeRect(display.x, display.y, display.w, display.h);
-          ctx.fillStyle = valid ? "#10b981" : "#f59e0b";
-          ctx.fillText(box.label, display.x, display.y - 5);
-        });
-        if (currentRect) {
-          ctx.strokeStyle = "#3b82f6";
-          ctx.setLineDash([5, 5]);
-          ctx.strokeRect(
-            currentRect.x,
-            currentRect.y,
-            currentRect.w,
-            currentRect.h,
-          );
-          ctx.setLineDash([]);
-        }
-      }
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const imgW = editingImage.imageWidth;
+    const imgH = editingImage.imageHeight;
+
+    // ยังไม่มีขนาดภาพ — รอให้ onLoad ของ <img> ตั้งค่าก่อน
+    if (!imgW || !imgH) return;
+
+    // ปรับขนาด canvas ให้ตรงกับภาพจริง (ถ้ายังไม่ตรง)
+    if (canvas.width !== imgW || canvas.height !== imgH) {
+      canvas.width = imgW;
+      canvas.height = imgH;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    editingImage.boxes?.forEach((box) => {
+      const display = imagePixelsToCanvas(
+        box,
+        imgW,
+        imgH,
+        canvas.width,
+        canvas.height,
+      );
+      const valid = resolveClassId(box.label) !== null;
+      ctx.strokeStyle = valid ? "#10b981" : "#f59e0b";
+      ctx.lineWidth = Math.max(2, Math.round(imgW / 200));
+      ctx.strokeRect(display.x, display.y, display.w, display.h);
+      ctx.fillStyle = valid ? "#10b981" : "#f59e0b";
+      const fontSize = Math.max(12, Math.round(imgW / 40));
+      ctx.font = `${fontSize}px sans-serif`;
+      ctx.fillText(box.label, display.x, display.y - 5);
+    });
+
+    if (currentRect) {
+      ctx.strokeStyle = "#3b82f6";
+      ctx.setLineDash([5, 5]);
+      ctx.strokeRect(
+        currentRect.x,
+        currentRect.y,
+        currentRect.w,
+        currentRect.h,
+      );
+      ctx.setLineDash([]);
     }
   }, [currentRect, editingImage, viewMode]);
 

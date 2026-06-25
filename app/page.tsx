@@ -61,7 +61,12 @@ export default function Home() {
 
   const showBottomNav = ["home", "recipes", "favorites"].includes(viewMode);
 
-  const navItems: { key: "home" | "recipes" | "favorites"; icon: string; label: string; badge?: number }[] = [
+  const navItems: {
+    key: "home" | "recipes" | "favorites";
+    icon: string;
+    label: string;
+    badge?: number;
+  }[] = [
     { key: "home", icon: "🏠", label: "หน้าแรก" },
     { key: "recipes", icon: "🍳", label: "เมนู", badge: recipes.length },
     { key: "favorites", icon: "❤️", label: "โปรด", badge: favorites.length },
@@ -77,7 +82,9 @@ export default function Home() {
             <h1 className="text-2xl font-bold text-[var(--color-brand)] tracking-tight leading-none">
               Chef Kub
             </h1>
-            <p className="text-xs text-[var(--color-muted)] mt-1">สแกนแล้วเริ่มทำได้เลย</p>
+            <p className="text-xs text-[var(--color-muted)] mt-1">
+              สแกนแล้วเริ่มทำได้เลย
+            </p>
           </div>
 
           <nav className="flex-1 px-3 space-y-1">
@@ -92,9 +99,13 @@ export default function Home() {
                   <span className="text-lg">{item.icon}</span>
                   <span>{item.label}</span>
                   {item.badge ? (
-                    <span className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      isActive ? "bg-white/25 text-white" : "bg-[var(--color-brand)] text-white"
-                    }`}>
+                    <span
+                      className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        isActive
+                          ? "bg-white/25 text-white"
+                          : "bg-[var(--color-brand)] text-white"
+                      }`}
+                    >
                       {item.badge}
                     </span>
                   ) : null}
@@ -113,29 +124,6 @@ export default function Home() {
 
         {/* Main content area */}
         <div className="flex-1 flex flex-col min-h-dvh">
-          {/* Header (hidden on home for desktop since sidebar shows it) */}
-          {viewMode !== "home" && (
-            <header className="sticky top-0 z-30 bg-[var(--color-page)]/80 backdrop-blur-md px-4 md:px-8 py-4 border-b border-[var(--color-line)]">
-              <div className="max-w-2xl mx-auto lg:max-w-3xl flex justify-between items-center">
-                <div>
-                  <h2 className="text-lg font-bold text-[var(--color-ink)]">
-                    {viewMode === "recipes" && "เมนูที่แนะนำ"}
-                    {viewMode === "edit" && "แก้ไข Label"}
-                    {viewMode === "camera" && "ถ่ายรูป"}
-                    {viewMode === "cook" && "โหมดทำอาหาร"}
-                    {viewMode === "favorites" && "รายการโปรด"}
-                  </h2>
-                </div>
-                <button
-                  onClick={goHome}
-                  className="btn-secondary text-xs px-3 py-1.5"
-                >
-                  กลับหน้าแรก
-                </button>
-              </div>
-            </header>
-          )}
-
           {/* Page content */}
           <div className="flex-1 px-4 md:px-8 lg:px-12 py-5 md:py-8 pb-8">
             <div className="max-w-2xl mx-auto lg:max-w-3xl">
@@ -340,11 +328,15 @@ export default function Home() {
                     key={item.key}
                     onClick={() => setViewMode(item.key)}
                     className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 tap transition-colors relative ${
-                      isActive ? "text-[var(--color-brand)]" : "text-[var(--color-muted)]"
+                      isActive
+                        ? "text-[var(--color-brand)]"
+                        : "text-[var(--color-muted)]"
                     }`}
                   >
                     <span className="text-lg leading-none">{item.icon}</span>
-                    <span className="text-[10px] font-medium">{item.label}</span>
+                    <span className="text-[10px] font-medium">
+                      {item.label}
+                    </span>
                     {item.badge ? (
                       <span className="absolute top-1 right-1/2 translate-x-4 w-4 h-4 bg-[var(--color-brand)] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                         {item.badge}

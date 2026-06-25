@@ -74,7 +74,9 @@ export function RecipesView({
           <button
             onClick={() => setViewMode("hero")}
             className={`w-8 h-8 md:w-9 md:h-9 rounded-full text-sm flex items-center justify-center transition-colors tap ${
-              viewMode === "hero" ? "bg-[var(--color-brand)] text-white" : "text-[var(--color-muted)]"
+              viewMode === "hero"
+                ? "bg-[var(--color-brand)] text-white"
+                : "text-[var(--color-muted)]"
             }`}
             aria-label="ดูแบบ Hero"
           >
@@ -83,7 +85,9 @@ export function RecipesView({
           <button
             onClick={() => setViewMode("list")}
             className={`w-8 h-8 md:w-9 md:h-9 rounded-full text-sm flex items-center justify-center transition-colors tap ${
-              viewMode === "list" ? "bg-[var(--color-brand)] text-white" : "text-[var(--color-muted)]"
+              viewMode === "list"
+                ? "bg-[var(--color-brand)] text-white"
+                : "text-[var(--color-muted)]"
             }`}
             aria-label="ดูแบบ List"
           >
@@ -122,16 +126,18 @@ export function RecipesView({
       )}
 
       {/* Recipe grid: 1 col mobile, 2 cols tablet, 3 cols desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-5">
         {viewMode === "hero"
-          ? filteredRecipes.slice(1).map((r, i) => (
-              <RecipeCard
-                key={`${r.name}-${i}`}
-                recipe={r}
-                onFavoriteChange={onFavoriteChange}
-                onStartCook={onStartCook}
-              />
-            ))
+          ? filteredRecipes
+              .slice(1)
+              .map((r, i) => (
+                <RecipeCard
+                  key={`${r.name}-${i}`}
+                  recipe={r}
+                  onFavoriteChange={onFavoriteChange}
+                  onStartCook={onStartCook}
+                />
+              ))
           : filteredRecipes.map((r, i) => (
               <RecipeCard
                 key={`${r.name}-${i}`}
