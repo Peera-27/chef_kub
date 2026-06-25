@@ -72,19 +72,24 @@ export function LabelPickerModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:bg-black/40 md:backdrop-blur-sm p-0 md:p-4"
       onClick={() => {
         reset();
         onCancel();
       }}
     >
       <div
-        className="card w-full max-w-md max-h-[70vh] flex flex-col"
+        className="card w-full md:max-w-lg md:max-h-[80vh] max-h-[85vh] flex flex-col rounded-t-[var(--radius-xl)] md:rounded-[var(--radius-xl)] sheet-enter"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-4 border-b border-orange-100/70">
-          <h2 className="font-semibold text-gray-800">{title}</h2>
-          <p className="text-xs text-gray-400 mt-1">
+        {/* Mobile drag handle */}
+        <div className="md:hidden flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 bg-[var(--color-line)] rounded-full" />
+        </div>
+
+        <div className="p-5 md:p-6 pb-4 border-b border-[var(--color-line)]">
+          <h2 className="font-bold text-[var(--color-ink)] text-base md:text-lg">{title}</h2>
+          <p className="text-xs md:text-sm text-[var(--color-muted)] mt-1">
             เลือกจากรายการ หรือเพิ่มชื่อใหม่ (ระบบจะเช็คชื่อซ้ำให้)
           </p>
           <input
@@ -96,14 +101,14 @@ export function LabelPickerModal({
               setSimilar([]);
             }}
             placeholder="ค้นหา เช่น แครอท, ไข่..."
-            className="mt-3 w-full rounded-xl border border-orange-100 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-300"
+            className="input-search mt-3"
             autoFocus
           />
         </div>
 
-        <ul className="overflow-y-auto flex-1 p-2">
+        <ul className="overflow-y-auto flex-1 p-2 md:p-3 no-scrollbar">
           {options.length === 0 && !canAddNew ? (
-            <li className="px-3 py-6 text-center text-sm text-gray-400">
+            <li className="px-3 py-8 text-center text-sm text-[var(--color-muted)]">
               ไม่พบรายการที่ตรงกับ &quot;{query}&quot;
             </li>
           ) : (
@@ -115,7 +120,7 @@ export function LabelPickerModal({
                     reset();
                     onSelect(label);
                   }}
-                  className="w-full text-left px-3 py-2.5 rounded-xl text-sm hover:bg-orange-50 active:bg-orange-100"
+                  className="w-full text-left px-4 py-3 md:py-3.5 rounded-[var(--radius-md)] text-sm md:text-base hover:bg-[var(--color-brand-pale)] active:bg-[var(--color-brand-soft)] transition-colors tap"
                 >
                   {label}
                 </button>
@@ -124,12 +129,12 @@ export function LabelPickerModal({
           )}
 
           {canAddNew && (
-            <li className="mt-2 pt-2 border-t border-orange-100/70">
+            <li className="mt-2 pt-2 border-t border-[var(--color-line)]">
               <button
                 type="button"
                 onClick={handleAddNew}
                 disabled={adding}
-                className="w-full text-left px-3 py-2.5 rounded-xl text-sm bg-orange-50 text-orange-700 hover:bg-orange-100 disabled:opacity-50"
+                className="w-full text-left px-4 py-3 md:py-3.5 rounded-[var(--radius-md)] text-sm md:text-base bg-[var(--color-brand-pale)] text-[var(--color-brand)] font-medium hover:bg-[var(--color-brand-soft)] disabled:opacity-50 transition-colors tap"
               >
                 {adding ? "กำลังเพิ่ม..." : `+ เพิ่ม "${trimmedQuery}" เป็นวัตถุดิบใหม่`}
               </button>
@@ -137,7 +142,7 @@ export function LabelPickerModal({
           )}
 
           {error && (
-            <li className="px-3 py-3 mt-2 rounded-xl bg-amber-50 text-amber-800 text-sm">
+            <li className="px-4 py-3 mt-2 rounded-[var(--radius-md)] bg-[var(--color-warn-soft)] text-[var(--color-warn)] text-sm">
               <p>{error}</p>
               {(similar.length > 0
                 ? similar
@@ -150,7 +155,7 @@ export function LabelPickerModal({
                     reset();
                     onSelect(name);
                   }}
-                  className="block mt-2 text-orange-600 underline"
+                  className="block mt-2 text-[var(--color-brand)] underline tap py-1"
                 >
                   ใช้ &quot;{name}&quot; แทน
                 </button>
@@ -159,14 +164,14 @@ export function LabelPickerModal({
           )}
         </ul>
 
-        <div className="p-3 border-t border-orange-100/70">
+        <div className="p-3 md:p-4 border-t border-[var(--color-line)]">
           <button
             type="button"
             onClick={() => {
               reset();
               onCancel();
             }}
-            className="w-full py-2.5 text-sm text-gray-500 rounded-xl hover:bg-gray-50"
+            className="w-full py-3 md:py-3.5 text-sm text-[var(--color-muted)] rounded-[var(--radius-md)] hover:bg-gray-50 transition-colors tap"
           >
             ยกเลิก
           </button>

@@ -12,7 +12,7 @@
 | จำ Label รูปเดิม | ใช้ `image_hash` โหลด label จาก DB หลัง refresh |
 | จัดการ Class | ตาราง `classes` กลาง ป้องกันชื่อซ้ำ/คล้ายกัน |
 | สร้างสูตรอาหาร | Gemini สร้าง 3 เมนูไทยจากวัตถุดิบที่มี |
-| รูปประกอบเมนู | Unsplash API ค้นหารูปอาหารตามชื่อเมนู |
+| รูปประกอบเมนู | Gemini (`gemini-2.5-flash-image`) สร้างรูปจากชื่อเมนู |
 | โหมดทำอาหาร | แสดงขั้นตอนทีละ step + อ่านให้ฟัง (Web Speech API) |
 | รายการโปรด / ประวัติ | localStorage |
 | กรองเมนู | กรองสูตรตาม tag (เผ็ด, ทำง่าย ฯลฯ) |
@@ -29,9 +29,9 @@
           ┌────────────────────────┼────────────────────────┐
           ▼                        ▼                        ▼
    ┌─────────────┐         ┌─────────────┐          ┌──────────────┐
-   │ YOLO11n     │         │ Supabase    │          │ Gemini       │
-   │ (TF.js)     │         │ Postgres +  │          │ สร้างสูตร    │
-   │ ในเบราว์เซอร์│         │ Storage     │          │ Unsplash รูป │
+   │ YOLO11n     │         │ Supabase    │          │ Gemini           │
+   │ (TF.js)     │         │ Postgres +  │          │ สร้างสูตร +    │
+   │ ในเบราว์เซอร์│         │ Storage     │          │ รูปเมนู        │
    └──────┬──────┘         └──────┬──────┘          └──────┬───────┘
           │                         │                        │
           │    user แก้ label       │ เก็บ training data     │
@@ -39,7 +39,7 @@
                        ▼                                     ▼
                 ┌─────────────┐                       ┌─────────────┐
                 │ Export →    │                       │ สร้างสูตร +  │
-                │ Train YOLO  │                       │ รูป Unsplash │
+                │ Train YOLO  │                       │ รูปเมนู      │
                 │ ใหม่        │                       └─────────────┘
                 └─────────────┘
 ```
@@ -60,9 +60,8 @@
 - **Frontend:** Next.js 16, React 19, Tailwind CSS 4
 - **Object Detection:** YOLO11n → TensorFlow.js Graph Model (`public/model/`)
 - **Database:** Supabase (PostgreSQL + Storage)
-- **AI API:** Google Gemini (`gemini-flash-latest`) — สร้างสูตรเท่านั้น
-- **รูปเมนู:** [Unsplash API](https://unsplash.com/developers) (free tier)
-- **SDK:** `@supabase/supabase-js`, `@google/generative-ai`
+- **AI API:** Google Gemini — สร้างสูตร (`gemini-2.5-flash`) + รูปเมนู (`gemini-2.5-flash-image`)
+- **SDK:** `@supabase/supabase-js`, `@google/genai`
 
 ## โครงสร้างโปรเจกต
 
@@ -73,7 +72,7 @@ app/
 │   ├── getLabeledImage.ts    # โหลด label จาก image_hash
 │   ├── classes.ts            # รายการ class + เพิ่มชื่อใหม่
 │   ├── generateRecipe.ts     # Gemini สร้างสูตร
-│   └── fetchRecipeImage.ts   # Unsplash ค้นหารูปเมนู
+│   └── generateRecipeImage.ts # Gemini สร้างรูปเมนู
 ├── hooks/
 │   ├── useChefKub.ts         # state หลักของแอป
 │   └── useYoloModel.ts       # โหลดโมเดล YOLO
@@ -82,8 +81,7 @@ app/
 │   └── views/                # Home, Camera, Edit, Recipes, Cook, Favorites
 ├── lib/
 │   ├── yolo/runYoloDetection.ts
-│   ├── supabase/server.ts
-│   └── foodImageCache.ts     # cache URL รูปเมนู
+│   └── supabase/server.ts
 └── utils/
     ├── labels.ts / labelsTh.ts   # class เดิมของ YOLO (~118)
     ├── classRegistry.ts          # class list ฝั่ง client
@@ -115,16 +113,13 @@ GEMINI_API_KEY=your_gemini_key
 
 NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-
-UNSPLASH_ACCESS_KEY=your_unsplash_access_key
 ```
 
 | ตัวแปร | คำอธิบาย |
 |--------|----------|
-| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) — สร้างสูตร |
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) — สร้างสูตร + รูปเมนู |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API |
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role key (ใช้ฝั่ง server เท่านั้น) |
-| `UNSPLASH_ACCESS_KEY` | [Unsplash Developers](https://unsplash.com/developers) — รูปเมนู |
 
 ### 3. ตั้งค่า Supabase
 
@@ -186,7 +181,7 @@ vercel deploy
 - YOLO รู้จักแค่ class ในโมเดลปัจจุบัน (~118) — class ใหม่ (เช่น ใบโหระพา) ต้อง train โมเดลใหม่
 - Label YOLO เดิมเป็นภาษาอังกฤษ — แปลเป็นไทยด้วย mapping ใน `labelsTh.ts`
 - รูปที่ label ก่อนมี `image_hash` ต้องกด "เสร็จสิ้น" อีกครั้ง 1 รอบเพื่อให้จำรูปซ้ำได้
-- รูปเมนูจาก Unsplash อาจไม่ตรงเมนูไทย 100% (ค้นด้วยชื่อเมนู + "thai food")
+- รูปเมนูจาก Gemini อาจไม่ตรงเมนูไทย 100% (ประเภทรูปอาหารทั่วไป)
 - โหมดทำอาหารใช้ Web Speech API — เสียงขึ้นกับ browser/OS
 
 ## ผู้พัฒนา

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Kanit } from "next/font/google";
 import "./globals.css";
 
@@ -6,11 +6,19 @@ const kanit = Kanit({
   subsets: ["thai", "latin"],
   weight: ["300", "400", "500", "700"],
   variable: "--font-kanit",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "Chef Kub — สแกนวัตถุดิบ คิดสูตรอาหารด้วย AI",
   description: "ถ่ายรูปวัตถุดิบ ให้ AI วิเคราะห์และแนะนำสูตรอาหารไทย",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#e8630a",
 };
 
 export default function RootLayout({
@@ -20,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th">
-      <body className={`${kanit.className} antialiased`}>{children}</body>
+      <body className={kanit.className}>{children}</body>
     </html>
   );
 }

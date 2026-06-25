@@ -1,17 +1,14 @@
 "use server";
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import type { Recipe } from "../types/recipe";
 
 export async function generateRecipes(ingredients: string[]) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return [];
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-flash-latest",
-    generationConfig: { responseMimeType: "application/json" },
-  });
+  const ai = new GoogleGenAI({ apiKey });
+  const model = "gemini-2.5-flash";
 
   const prompt = `
 คุณเป็นเชฟมืออาชีพ ผู้ใช้พร้อมทำอาหารแล้ว — อย่าถามคำถามเพิ่ม ให้คำตอบที่ทำได้ทันที
@@ -38,8 +35,14 @@ Raw JSON เท่านั้น ไม่มี markdown
   `;
 
   try {
-    const result = await model.generateContent(prompt);
-    return JSON.parse(result.response.text()) as Recipe[];
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+      config: { responseMimeType: "application/json" },
+    });
+    const text = response.text;
+    if (!text) return [];
+    return JSON.parse(text) as Recipe[];
   } catch (error) {
     console.error("Recipe Error:", error);
     return [];

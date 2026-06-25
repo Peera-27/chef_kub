@@ -16,7 +16,7 @@ export function RecipeCard({
 
   const handleCopy = () => {
     const text = [
-      `${recipe.name}`,
+      recipe.name,
       `${recipe.calories}`,
       "",
       "วัตถุดิบ:",
@@ -30,43 +30,37 @@ export function RecipeCard({
   };
 
   return (
-    <div className="rounded-2xl bg-orange-50 border border-orange-100 overflow-hidden">
+    <div className="card overflow-hidden fade-in flex flex-col">
       {recipe.imageUrl && (
-        <img
-          src={recipe.imageUrl}
-          alt={recipe.name}
-          className="w-full h-40 object-cover"
-        />
+        <div className="relative h-40 md:h-48 lg:h-52 bg-[var(--color-brand-pale)]">
+          <img
+            src={recipe.imageUrl}
+            alt={recipe.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute top-3 right-3 flex gap-2">
+            <button
+              onClick={() => {
+                toggleFavorite(recipe);
+                onFavoriteChange();
+              }}
+              className="icon-btn w-9 h-9 bg-white/90 backdrop-blur-sm shadow-sm text-lg tap"
+              aria-label={favorited ? "เอาออกจากโปรด" : "เพิ่มในโปรด"}
+            >
+              {favorited ? "❤️" : "🤍"}
+            </button>
+          </div>
+        </div>
       )}
 
-      <div className="p-4 space-y-4">
-        <div className="flex justify-between items-start gap-3">
-          <h3 className="text-lg font-bold text-orange-600 leading-snug flex-1">
+      <div className="p-4 md:p-5 space-y-3 flex-1 flex flex-col">
+        <div className="flex items-baseline gap-2">
+          <h3 className="flex-1 text-base font-bold text-[var(--color-ink)] leading-snug md:text-lg line-clamp-2 md:line-clamp-none">
             {recipe.name}
           </h3>
-          <div className="flex flex-col items-end gap-2 shrink-0">
-            <span className="text-[10px] bg-gray-900 text-white px-2.5 py-1 rounded-full whitespace-nowrap">
-              🔥 {recipe.calories}
-            </span>
-            <div className="flex gap-1">
-              <button
-                onClick={() => {
-                  toggleFavorite(recipe);
-                  onFavoriteChange();
-                }}
-                className="cursor-pointer text-lg leading-none"
-                aria-label={favorited ? "เอาออกจากโปรด" : "เพิ่มในโปรด"}
-              >
-                {favorited ? "❤️" : "🤍"}
-              </button>
-              <button
-                onClick={handleCopy}
-                className="cursor-pointer text-[10px] bg-orange-500 text-white px-2 py-1 rounded-lg"
-              >
-                คัดลอก
-              </button>
-            </div>
-          </div>
+          <span className="pill bg-gray-100 text-gray-600 shrink-0">
+            🔥 {recipe.calories}
+          </span>
         </div>
 
         {recipe.tags.length > 0 && (
@@ -74,7 +68,7 @@ export function RecipeCard({
             {recipe.tags.map((tag, idx) => (
               <span
                 key={idx}
-                className="text-[10px] px-2 py-0.5 rounded-full bg-white text-orange-600 border border-orange-200"
+                className="pill bg-[var(--color-brand-soft)] text-[var(--color-brand)]"
               >
                 #{tag}
               </span>
@@ -82,45 +76,34 @@ export function RecipeCard({
           </div>
         )}
 
-        <div>
-          <h4 className="text-xs font-bold text-orange-500 uppercase tracking-wide mb-2">
-            • วัตถุดิบ
+        <div className="flex-1">
+          <h4 className="text-xs font-bold text-[var(--color-brand)] uppercase tracking-wide mb-2">
+            วัตถุดิบ
           </h4>
-          <ul className="space-y-1.5">
-            {recipe.ingredients.map((ing, idx) => (
+          <ul className="space-y-1">
+            {recipe.ingredients.slice(0, 4).map((ing, idx) => (
               <li
                 key={idx}
-                className="text-sm text-orange-700/80 flex gap-2 leading-relaxed"
+                className="text-sm text-gray-600 flex gap-2 leading-relaxed"
               >
-                <span className="text-orange-400 shrink-0">•</span>
+                <span className="text-[var(--color-brand)] shrink-0">•</span>
                 <span>{ing}</span>
               </li>
             ))}
+            {recipe.ingredients.length > 4 && (
+              <li className="text-xs text-[var(--color-muted)] pl-4">
+                +{recipe.ingredients.length - 4} รายการ
+              </li>
+            )}
           </ul>
-        </div>
-
-        <div>
-          <h4 className="text-xs font-bold text-orange-500 uppercase tracking-wide mb-3">
-            • วิธีทำ
-          </h4>
-          <div className="space-y-3">
-            {recipe.instructions.map((step, idx) => (
-              <div key={idx} className="flex gap-3 text-sm text-orange-700/80">
-                <span className="w-6 h-6 shrink-0 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center">
-                  {idx + 1}
-                </span>
-                <p className="leading-relaxed pt-0.5">{step}</p>
-              </div>
-            ))}
-          </div>
         </div>
 
         {onStartCook && (
           <button
             onClick={() => onStartCook(recipe)}
-            className="btn-primary w-full py-3.5 text-sm font-medium"
+            className="btn-primary w-full py-3 md:py-3.5 text-sm font-medium mt-2 tap"
           >
-            เริ่มทำอาหาร (Voice AI)
+            เริ่มทำอาหาร
           </button>
         )}
       </div>

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { generateRecipes } from "../actions/generateRecipe";
-import { fetchRecipeImage } from "../actions/fetchRecipeImage";
+import { generateRecipeImage } from "../actions/generateRecipeImage";
 import { listClasses } from "../actions/classes";
 import { getLabeledImageByHash } from "../actions/getLabeledImage";
 import { saveLabeledImage } from "../actions/saveLabeledImage";
@@ -167,7 +167,7 @@ export function useChefKub() {
     return Promise.all(
       recipeList.map(async (recipe) => {
         try {
-          const imageUrl = await fetchRecipeImage(recipe.name);
+          const imageUrl = await generateRecipeImage(recipe.name);
           return imageUrl ? { ...recipe, imageUrl } : recipe;
         } catch {
           return recipe;

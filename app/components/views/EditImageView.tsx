@@ -47,16 +47,17 @@ export function EditImageView({
   const invalidCount = boxes.filter((b) => resolveClassId(b.label) === null).length;
 
   return (
-    <div className="flex flex-col items-center">
-      <p className="text-sm text-gray-400 mb-4 text-center">
+    <div className="flex flex-col items-center fade-in">
+      <p className="text-sm md:text-base text-[var(--color-muted)] mb-4 text-center px-4">
         วาดกรอบรอบวัตถุดิบแล้วเลือกชื่อจากรายการ
       </p>
 
-      <div className="relative rounded-2xl overflow-hidden shadow-md ring-2 ring-orange-400/60">
+      {/* Image + canvas: responsive height */}
+      <div className="relative rounded-[var(--radius-lg)] overflow-hidden shadow-md ring-2 ring-[var(--color-brand)]/40 w-full md:max-w-xl">
         <img
           src={editingImage.url}
           alt="แก้ไข"
-          className="block max-w-full h-auto max-h-[50vh] opacity-50"
+          className="block w-full h-auto max-h-[50vh] md:max-h-[60vh] opacity-50"
           onLoad={(e) => {
             const img = e.currentTarget;
             if (canvasRef.current) {
@@ -76,45 +77,47 @@ export function EditImageView({
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onMouseUp}
-          className="absolute inset-0 z-10 cursor-crosshair touch-none"
+          className="absolute inset-0 z-10 cursor-crosshair touch-none w-full h-full"
         />
       </div>
 
       {boxes.length > 0 && (
-        <div className="w-full mt-4 space-y-2">
-          <p className="text-xs text-gray-400">
-            กรอบที่ระบุ ({boxes.length})
+        <div className="w-full mt-4 space-y-2 md:max-w-xl">
+          <div className="flex justify-between items-center">
+            <p className="text-xs text-[var(--color-muted)]">
+              กรอบที่ระบุ ({boxes.length})
+            </p>
             {invalidCount > 0 && (
-              <span className="text-amber-600 ml-1">
-                · {invalidCount} รายการต้องแก้ไข
+              <span className="pill bg-[var(--color-warn-soft)] text-[var(--color-warn)]">
+                {invalidCount} รายการต้องแก้ไข
               </span>
             )}
-          </p>
-          <ul className="space-y-2 max-h-36 overflow-y-auto">
+          </div>
+          <ul className="space-y-2 max-h-48 md:max-h-64 overflow-y-auto no-scrollbar">
             {boxes.map((box, index) => {
               const valid = resolveClassId(box.label) !== null;
               return (
                 <li
                   key={`${index}-${box.label}`}
-                  className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm ${
-                    valid ? "bg-emerald-50" : "bg-amber-50 ring-1 ring-amber-200"
+                  className={`flex items-center justify-between gap-2 rounded-[var(--radius-md)] px-3 py-3 md:px-4 md:py-3 text-sm ${
+                    valid ? "bg-[var(--color-success-soft)]" : "bg-[var(--color-warn-soft)] ring-1 ring-[var(--color-warn)]/30"
                   }`}
                 >
-                  <span className={valid ? "text-gray-800" : "text-amber-800"}>
+                  <span className={`font-medium ${valid ? "text-[var(--color-ink)]" : "text-[var(--color-warn)]"}`}>
                     {box.label || "(ยังไม่มีชื่อ)"}
                   </span>
-                  <div className="flex gap-1 shrink-0">
+                  <div className="flex gap-1.5 shrink-0">
                     <button
                       type="button"
                       onClick={() => onEditBox(index)}
-                      className="px-2 py-1 text-xs rounded-lg bg-white/80 hover:bg-white"
+                      className="px-3 py-2 text-xs rounded-lg bg-white/80 hover:bg-white text-[var(--color-ink)] transition-colors tap"
                     >
                       แก้ไข
                     </button>
                     <button
                       type="button"
                       onClick={() => onRemoveBox(index)}
-                      className="px-2 py-1 text-xs rounded-lg bg-white/80 hover:bg-white text-red-500"
+                      className="px-3 py-2 text-xs rounded-lg bg-white/80 hover:bg-white text-red-500 transition-colors tap"
                     >
                       ลบ
                     </button>
@@ -129,7 +132,7 @@ export function EditImageView({
       <button
         onClick={onDone}
         disabled={invalidCount > 0}
-        className="btn-primary mt-6 w-full py-3.5 font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+        className="btn-primary mt-6 w-full md:max-w-xl py-4 md:py-5 font-bold tap"
       >
         เสร็จสิ้น
       </button>

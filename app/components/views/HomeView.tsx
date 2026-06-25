@@ -1,5 +1,6 @@
 import type { Recipe } from "../../types/recipe";
 import { ImageItem, ScanHistoryEntry } from "../../utils/types";
+import { EmptyState } from "../EmptyState";
 
 interface HomeViewProps {
   gallery: ImageItem[];
@@ -37,41 +38,44 @@ export function HomeView({
   const topFavorite = favorites[0];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 fade-in">
+      {/* Quick-cook favorite */}
       {topFavorite && (
-        <div className="card-outline p-4">
-          <p className="text-xs text-pink-500 font-medium mb-2">
-            ทำเมนูโปรดอีกครั้ง
-          </p>
-          <div className="flex items-center justify-between gap-3">
-            <span className="font-semibold text-gray-800 truncate">
+        <div className="card p-4 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs text-[var(--color-favorite)] font-medium mb-1">
+              ❤️ ทำเมนูโปรดอีกครั้ง
+            </p>
+            <p className="font-semibold text-[var(--color-ink)] truncate">
               {topFavorite.name}
-            </span>
-            <button
-              onClick={() => onQuickCookFavorite(topFavorite)}
-              className="btn-primary shrink-0 text-sm px-4 py-2"
-            >
-              เริ่มทำเลย
-            </button>
+            </p>
           </div>
+          <button
+            onClick={() => onQuickCookFavorite(topFavorite)}
+            className="btn-primary shrink-0 text-sm px-4 py-2.5 tap"
+          >
+            เริ่มทำเลย
+          </button>
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* Action buttons: 2 cols on mobile, 2 cols on tablet too but wider */}
+      <div className="grid grid-cols-2 gap-3 md:gap-4">
         <button
           onClick={onStartCamera}
-          className="btn-primary flex flex-col items-center justify-center gap-2 py-8 rounded-2xl"
+          className="btn-primary flex flex-col items-center justify-center gap-2 py-8 md:py-10 rounded-[var(--radius-lg)] tap"
         >
-          <span className="text-2xl leading-none opacity-90">📷</span>
-          <span>ถ่ายรูป</span>
+          <span className="text-3xl md:text-4xl leading-none opacity-90">📷</span>
+          <span className="font-semibold md:text-lg">ถ่ายรูป</span>
         </button>
-        <label className="btn-primary flex flex-col items-center justify-center gap-2 py-8 rounded-2xl cursor-pointer">
-          <span className="text-2xl leading-none opacity-90">🖼️</span>
-          <span>อัปโหลด</span>
+        <label className="btn-secondary flex flex-col items-center justify-center gap-2 py-8 md:py-10 rounded-[var(--radius-lg)] cursor-pointer tap">
+          <span className="text-3xl md:text-4xl leading-none opacity-80">🖼️</span>
+          <span className="font-semibold md:text-lg">อัปโหลด</span>
           <input
             type="file"
             className="hidden"
             accept="image/*"
+            capture="environment"
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) {
@@ -86,81 +90,94 @@ export function HomeView({
         </label>
       </div>
 
+      {/* Gallery */}
       {gallery.length > 0 && (
         <div className="space-y-3">
-          {gallery.map((img) => (
-            <div key={img.id} className="card overflow-hidden relative">
-              <button
-                onClick={() => onRemoveImage(img.id)}
-                className="absolute top-3 right-3 z-10 w-7 h-7 bg-black/40 text-white rounded-full text-xs icon-btn backdrop-blur-sm"
-                aria-label="ลบรูป"
-              >
-                ✕
-              </button>
+          <div className="flex justify-between items-center">
+            <h2 className="section-title">รูปที่สแกน</h2>
+            <span className="pill bg-[var(--color-brand-soft)] text-[var(--color-brand)]">
+              {gallery.length} รูป
+            </span>
+          </div>
 
-              <div className="flex">
-                <div className="w-24 h-24 bg-orange-50 flex items-center justify-center shrink-0">
-                  <img
-                    src={img.url}
-                    alt="วัตถุดิบ"
-                    className="max-w-full max-h-full object-contain"
-                  />
-                </div>
+          {/* Multiple columns on tablet, single on mobile */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {gallery.map((img) => (
+              <div key={img.id} className="card overflow-hidden relative">
+                <button
+                  onClick={() => onRemoveImage(img.id)}
+                  className="absolute top-3 right-3 z-10 w-9 h-9 bg-black/40 text-white rounded-full text-sm icon-btn backdrop-blur-sm tap"
+                  aria-label="ลบรูป"
+                >
+                  ✕
+                </button>
 
-                <div className="p-3 flex-1 pr-10">
-                  <div className="flex flex-wrap gap-1.5">
-                    {img.items.map((it, i) => (
-                      <span key={i} className="tag flex items-center gap-1">
-                        {it.name}
-                        <button
-                          onClick={() => onRemoveItem(img.id, it.name)}
-                          className="text-orange-400 hover:text-red-500 cursor-pointer leading-none"
-                          aria-label={`ลบ ${it.name}`}
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                    {img.items.length === 0 && (
-                      <span className="text-xs text-gray-400">
-                        ไม่พบวัตถุดิบ
-                      </span>
-                    )}
+                <div className="flex">
+                  <div className="w-20 h-20 md:w-24 md:h-24 bg-[var(--color-brand-pale)] flex items-center justify-center shrink-0">
+                    <img
+                      src={img.url}
+                      alt="วัตถุดิบ"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+
+                  <div className="p-3 flex-1 min-w-0 pr-11">
+                    <div className="flex flex-wrap gap-1.5">
+                      {img.items.map((it, i) => (
+                        <span key={i} className="pill bg-[var(--color-brand-soft)] text-[var(--color-brand)] flex items-center gap-1">
+                          {it.name}
+                          <button
+                            onClick={() => onRemoveItem(img.id, it.name)}
+                            className="text-[var(--color-brand)] hover:text-red-500 cursor-pointer leading-none ml-0.5 tap"
+                            aria-label={`ลบ ${it.name}`}
+                          >
+                            <span className="text-sm">×</span>
+                          </button>
+                        </span>
+                      ))}
+                      {img.items.length === 0 && (
+                        <span className="text-xs text-[var(--color-muted)]">
+                          ไม่พบวัตถุดิบ
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <button
-                onClick={() => onEditImage(img)}
-                className="absolute right-3 bottom-3 text-xs text-blue-500 font-medium cursor-pointer hover:text-blue-600"
-              >
-                แก้ไข
-              </button>
-            </div>
-          ))}
+                <button
+                  onClick={() => onEditImage(img)}
+                  className="absolute right-3 bottom-3 text-xs text-[var(--color-brand)] font-medium cursor-pointer hover:text-[var(--color-brand-dark)] bg-white/80 backdrop-blur-sm px-2.5 py-1.5 rounded-lg tap"
+                >
+                  แก้ไข
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
+      {/* CTA: generate recipes */}
       {allItemsCount > 0 && (
         <button
           onClick={onInventRecipe}
-          className="btn-primary w-full py-4 text-base font-semibold"
+          className="btn-primary w-full py-4 md:py-5 text-base md:text-lg font-semibold tap"
         >
-          ขอสูตรอาหาร ({allItemsCount} วัตถุดิบ)
+          ขอสูตรอาหาร ({allItemsCount} วัตถุดิบ) 🍳
         </button>
       )}
 
+      {/* History quick-start */}
       {history.length > 0 && (
-        <div className="card-outline p-4">
-          <p className="text-xs font-medium text-gray-400 mb-3">
+        <div className="card-flat p-4 md:p-5">
+          <p className="text-xs font-medium text-[var(--color-muted)] mb-3">
             ทำเมนูจากวัตถุดิบเดิม
           </p>
           <div className="space-y-1">
-            {history.slice(0, 3).map((h) => (
+            {history.slice(0, 5).map((h) => (
               <button
                 key={h.id}
                 onClick={() => onQuickStartHistory(h.items)}
-                className="btn-ghost w-full text-left text-sm px-2 py-2 rounded-lg truncate"
+                className="btn-ghost w-full text-left text-sm px-3 py-3 rounded-[var(--radius-md)] hover:bg-[var(--color-brand-pale)] truncate tap"
               >
                 {h.items.join(", ")}
               </button>
@@ -169,10 +186,20 @@ export function HomeView({
         </div>
       )}
 
+      {/* View saved recipes */}
       {hasRecipes && (
-        <button onClick={onViewRecipes} className="btn-secondary w-full py-3.5">
+        <button onClick={onViewRecipes} className="btn-secondary w-full py-3.5 md:py-4 tap">
           ดูเมนูที่แนะนำแล้ว
         </button>
+      )}
+
+      {/* Empty state */}
+      {gallery.length === 0 && allItemsCount === 0 && (
+        <EmptyState
+          icon="🥬"
+          title="เริ่มสแกนวัตถุดิบ"
+          description="ถ่ายรูปหรืออัปโหลดรูปวัตถุดิบ ระบบจะวิเคราะห์และแนะนำสูตรอาหารให้"
+        />
       )}
     </div>
   );
