@@ -15,6 +15,7 @@ export default function Home() {
     loading,
     gallery,
     allItems,
+    currentRect,
     recipes,
     viewMode,
     setViewMode,
@@ -38,11 +39,9 @@ export default function Home() {
     handleInventRecipe,
     quickStartFromHistory,
     quickCookFavorite,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    handleTouchStart,
-    handleTouchMove,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
     goHome,
     startCook,
     endCook,
@@ -156,15 +155,13 @@ export default function Home() {
               {viewMode === "edit" && editingImage && (
                 <EditImageView
                   editingImage={editingImage}
-                  canvasRef={canvasRef}
                   labelPickerOpen={labelPickerOpen}
                   editingBoxIndex={editingBoxIndex}
                   classOptions={classOptions}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onTouchStart={handleTouchStart}
-                  onTouchMove={handleTouchMove}
+                  currentRect={currentRect}
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
                   onDone={finishEditing}
                   onSelectLabel={confirmLabelSelection}
                   onCancelLabel={cancelLabelPicker}
@@ -272,15 +269,13 @@ export default function Home() {
           {viewMode === "edit" && editingImage && (
             <EditImageView
               editingImage={editingImage}
-              canvasRef={canvasRef}
               labelPickerOpen={labelPickerOpen}
               editingBoxIndex={editingBoxIndex}
               classOptions={classOptions}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
+              currentRect={currentRect}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
               onDone={finishEditing}
               onSelectLabel={confirmLabelSelection}
               onCancelLabel={cancelLabelPicker}

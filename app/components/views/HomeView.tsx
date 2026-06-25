@@ -128,164 +128,166 @@ export function HomeView({
 
                   {/* Image container */}
                   <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
-                    <img
-                      src={img.url}
-                      alt="วัตถุดิบ"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
+                    {/* ✅ สร้าง Wrapper ครอบทั้งรูปและกรอบ YOLO ไว้ด้วยกัน เพื่อให้เอฟเฟกต์ซูมทำงานพร้อมกัน */}
+                    <div className="absolute inset-0 w-full h-full transition-transform duration-500 group-hover:scale-105">
+                      <img
+                        src={img.url}
+                        alt="วัตถุดิบ"
+                        className="w-full h-full object-contain"
+                      />
+
+                      {/* Bounding boxes overlay */}
+                      {hasBoxes && (
+                        <div className="absolute inset-0 z-10 pointer-events-none">
+                          <svg
+                            viewBox={`0 0 ${imgW} ${imgH}`}
+                            className="w-full h-full"
+                            preserveAspectRatio="xMidYMid meet" // ✅ จุดที่สำคัญที่สุด: สั่งให้กล่อง SVG ย่อขยายสเกลเดียวกับรูปเป๊ะๆ
+                          >
+                            {img.boxes!.map((box, i) => {
+                              const labelW = box.label
+                                ? box.label.length * Math.max(7, imgW / 55) + 10
+                                : 0;
+                              const labelH = Math.max(18, imgH / 22);
+                              return (
+                                <g key={i}>
+                                  {/* Box fill (subtle) */}
+                                  <rect
+                                    x={box.x}
+                                    y={box.y}
+                                    width={box.w}
+                                    height={box.h}
+                                    fill="rgba(16, 185, 129, 0.08)"
+                                  />
+                                  {/* Box border with corner accents */}
+                                  <rect
+                                    x={box.x}
+                                    y={box.y}
+                                    width={box.w}
+                                    height={box.h}
+                                    fill="none"
+                                    stroke="rgba(16, 185, 129, 0.95)"
+                                    strokeWidth={Math.max(2, imgW / 180)}
+                                    rx="2"
+                                  />
+                                  {/* Corner accents for modern look */}
+                                  {(() => {
+                                    const corner = Math.max(8, box.w / 6);
+                                    const sw = Math.max(2, imgW / 200);
+                                    return (
+                                      <>
+                                        {/* Top-left */}
+                                        <line
+                                          x1={box.x}
+                                          y1={box.y}
+                                          x2={box.x + corner}
+                                          y2={box.y}
+                                          stroke="#10b981"
+                                          strokeWidth={sw + 1}
+                                          strokeLinecap="round"
+                                        />
+                                        <line
+                                          x1={box.x}
+                                          y1={box.y}
+                                          x2={box.x}
+                                          y2={box.y + corner}
+                                          stroke="#10b981"
+                                          strokeWidth={sw + 1}
+                                          strokeLinecap="round"
+                                        />
+                                        {/* Top-right */}
+                                        <line
+                                          x1={box.x + box.w}
+                                          y1={box.y}
+                                          x2={box.x + box.w - corner}
+                                          y2={box.y}
+                                          stroke="#10b981"
+                                          strokeWidth={sw + 1}
+                                          strokeLinecap="round"
+                                        />
+                                        <line
+                                          x1={box.x + box.w}
+                                          y1={box.y}
+                                          x2={box.x + box.w}
+                                          y2={box.y + corner}
+                                          stroke="#10b981"
+                                          strokeWidth={sw + 1}
+                                          strokeLinecap="round"
+                                        />
+                                        {/* Bottom-left */}
+                                        <line
+                                          x1={box.x}
+                                          y1={box.y + box.h}
+                                          x2={box.x + corner}
+                                          y2={box.y + box.h}
+                                          stroke="#10b981"
+                                          strokeWidth={sw + 1}
+                                          strokeLinecap="round"
+                                        />
+                                        <line
+                                          x1={box.x}
+                                          y1={box.y + box.h}
+                                          x2={box.x}
+                                          y2={box.y + box.h - corner}
+                                          stroke="#10b981"
+                                          strokeWidth={sw + 1}
+                                          strokeLinecap="round"
+                                        />
+                                        {/* Bottom-right */}
+                                        <line
+                                          x1={box.x + box.w}
+                                          y1={box.y + box.h}
+                                          x2={box.x + box.w - corner}
+                                          y2={box.y + box.h}
+                                          stroke="#10b981"
+                                          strokeWidth={sw + 1}
+                                          strokeLinecap="round"
+                                        />
+                                        <line
+                                          x1={box.x + box.w}
+                                          y1={box.y + box.h}
+                                          x2={box.x + box.w}
+                                          y2={box.y + box.h - corner}
+                                          stroke="#10b981"
+                                          strokeWidth={sw + 1}
+                                          strokeLinecap="round"
+                                        />
+                                      </>
+                                    );
+                                  })()}
+                                  {/* Label badge */}
+                                  {box.label && (
+                                    <g>
+                                      <rect
+                                        x={box.x}
+                                        y={box.y - labelH - 2}
+                                        width={labelW}
+                                        height={labelH}
+                                        rx="4"
+                                        fill="#10b981"
+                                      />
+                                      <text
+                                        x={box.x + 5}
+                                        y={box.y - 5}
+                                        fill="white"
+                                        fontSize={Math.max(11, imgH / 32)}
+                                        fontWeight="600"
+                                        fontFamily="system-ui, sans-serif"
+                                      >
+                                        {box.label}
+                                      </text>
+                                    </g>
+                                  )}
+                                </g>
+                              );
+                            })}
+                          </svg>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Subtle gradient overlay at bottom for readability */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-
-                    {/* Bounding boxes overlay */}
-                    {hasBoxes && (
-                      <div className="absolute inset-0 z-10 pointer-events-none">
-                        <svg
-                          viewBox={`0 0 ${imgW} ${imgH}`}
-                          className="w-full h-full"
-                          preserveAspectRatio="none"
-                        >
-                          {img.boxes!.map((box, i) => {
-                            const labelW = box.label
-                              ? box.label.length * Math.max(7, imgW / 55) + 10
-                              : 0;
-                            const labelH = Math.max(18, imgH / 22);
-                            return (
-                              <g key={i}>
-                                {/* Box fill (subtle) */}
-                                <rect
-                                  x={box.x}
-                                  y={box.y}
-                                  width={box.w}
-                                  height={box.h}
-                                  fill="rgba(16, 185, 129, 0.08)"
-                                />
-                                {/* Box border with corner accents */}
-                                <rect
-                                  x={box.x}
-                                  y={box.y}
-                                  width={box.w}
-                                  height={box.h}
-                                  fill="none"
-                                  stroke="rgba(16, 185, 129, 0.95)"
-                                  strokeWidth={Math.max(2, imgW / 180)}
-                                  rx="2"
-                                />
-                                {/* Corner accents for modern look */}
-                                {(() => {
-                                  const corner = Math.max(8, box.w / 6);
-                                  const sw = Math.max(2, imgW / 200);
-                                  return (
-                                    <>
-                                      {/* Top-left */}
-                                      <line
-                                        x1={box.x}
-                                        y1={box.y}
-                                        x2={box.x + corner}
-                                        y2={box.y}
-                                        stroke="#10b981"
-                                        strokeWidth={sw + 1}
-                                        strokeLinecap="round"
-                                      />
-                                      <line
-                                        x1={box.x}
-                                        y1={box.y}
-                                        x2={box.x}
-                                        y2={box.y + corner}
-                                        stroke="#10b981"
-                                        strokeWidth={sw + 1}
-                                        strokeLinecap="round"
-                                      />
-                                      {/* Top-right */}
-                                      <line
-                                        x1={box.x + box.w}
-                                        y1={box.y}
-                                        x2={box.x + box.w - corner}
-                                        y2={box.y}
-                                        stroke="#10b981"
-                                        strokeWidth={sw + 1}
-                                        strokeLinecap="round"
-                                      />
-                                      <line
-                                        x1={box.x + box.w}
-                                        y1={box.y}
-                                        x2={box.x + box.w}
-                                        y2={box.y + corner}
-                                        stroke="#10b981"
-                                        strokeWidth={sw + 1}
-                                        strokeLinecap="round"
-                                      />
-                                      {/* Bottom-left */}
-                                      <line
-                                        x1={box.x}
-                                        y1={box.y + box.h}
-                                        x2={box.x + corner}
-                                        y2={box.y + box.h}
-                                        stroke="#10b981"
-                                        strokeWidth={sw + 1}
-                                        strokeLinecap="round"
-                                      />
-                                      <line
-                                        x1={box.x}
-                                        y1={box.y + box.h}
-                                        x2={box.x}
-                                        y2={box.y + box.h - corner}
-                                        stroke="#10b981"
-                                        strokeWidth={sw + 1}
-                                        strokeLinecap="round"
-                                      />
-                                      {/* Bottom-right */}
-                                      <line
-                                        x1={box.x + box.w}
-                                        y1={box.y + box.h}
-                                        x2={box.x + box.w - corner}
-                                        y2={box.y + box.h}
-                                        stroke="#10b981"
-                                        strokeWidth={sw + 1}
-                                        strokeLinecap="round"
-                                      />
-                                      <line
-                                        x1={box.x + box.w}
-                                        y1={box.y + box.h}
-                                        x2={box.x + box.w}
-                                        y2={box.y + box.h - corner}
-                                        stroke="#10b981"
-                                        strokeWidth={sw + 1}
-                                        strokeLinecap="round"
-                                      />
-                                    </>
-                                  );
-                                })()}
-                                {/* Label badge */}
-                                {box.label && (
-                                  <g>
-                                    <rect
-                                      x={box.x}
-                                      y={box.y - labelH - 2}
-                                      width={labelW}
-                                      height={labelH}
-                                      rx="4"
-                                      fill="#10b981"
-                                    />
-                                    <text
-                                      x={box.x + 5}
-                                      y={box.y - 5}
-                                      fill="white"
-                                      fontSize={Math.max(11, imgH / 32)}
-                                      fontWeight="600"
-                                      fontFamily="system-ui, sans-serif"
-                                    >
-                                      {box.label}
-                                    </text>
-                                  </g>
-                                )}
-                              </g>
-                            );
-                          })}
-                        </svg>
-                      </div>
-                    )}
-
                     {/* Item count badge - top left */}
                     <div className="absolute top-3 left-3 z-20">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/95 backdrop-blur-md shadow-sm text-[var(--color-ink)]">

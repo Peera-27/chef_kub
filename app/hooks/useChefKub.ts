@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useMemo,useEffect } from "react";
 import { generateRecipes } from "../actions/generateRecipe";
 import { generateRecipeImage } from "../actions/generateRecipeImage";
 import { listClasses } from "../actions/classes";
@@ -94,8 +94,8 @@ export function useChefKub() {
   const [activeRecipe, setActiveRecipe] = useState<Recipe | null>(null);
 
   const [editingImage, setEditingImage] = useState<ImageItem | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+const isDrawingRef = useRef(false);
+  const startPosRef = useRef({ x: 0, y: 0 });
   const [currentRect, setCurrentRect] = useState<{
     x: number;
     y: number;
@@ -360,24 +360,13 @@ export function useChefKub() {
       );
       applyImageUpdate({ ...editingImage, boxes, items });
     } else if (pendingRect) {
-      const canvas = canvasRef.current;
-      const imgW = editingImage.imageWidth;
-      const imgH = editingImage.imageHeight;
-      let boxCoords = {
+      
+      const boxCoords = {
         x: pendingRect.x,
         y: pendingRect.y,
         w: pendingRect.w,
         h: pendingRect.h,
       };
-      if (canvas && imgW && imgH) {
-        boxCoords = canvasToImagePixels(
-          pendingRect,
-          canvas.width,
-          canvas.height,
-          imgW,
-          imgH,
-        );
-      }
       const newBox: BoundingBox = { ...boxCoords, label };
       boxes.push(newBox);
       applyImageUpdate({
@@ -388,7 +377,10 @@ export function useChefKub() {
           { name: label, source: "manual" as const },
         ]),
       });
-    }
+      }
+      
+      
+    
 
     cancelLabelPicker();
   };
@@ -418,32 +410,50 @@ export function useChefKub() {
     setActiveRecipe(recipe);
     setViewMode("cook");
   };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
+const getPointerCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = e.currentTarget; 
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  };
+const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (labelPickerOpen) return;
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (rect) {
-      setStartPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-      setIsDrawing(true);
+    e.preventDefault(); 
+    e.currentTarget.setPointerCapture(e.pointerId);
+    
+    const pos = getPointerCoords(e); // ส่ง e เข้าไป
+    if (pos) {
+      startPosRef.current = pos;
+      isDrawingRef.current = true;
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDrawing) return;
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (rect) {
+const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current) return;
+    e.preventDefault();
+
+    const pos = getPointerCoords(e); // ส่ง e เข้าไป
+    if (pos) {
+      // ✅ ดึงพิกัดจาก Ref มาใช้ จะได้ค่าที่สดใหม่เสมอ
       setCurrentRect({
-        x: startPos.x,
-        y: startPos.y,
-        w: e.clientX - rect.left - startPos.x,
-        h: e.clientY - rect.top - startPos.y,
+        x: startPosRef.current.x,
+        y: startPosRef.current.y,
+        w: pos.x - startPosRef.current.x,
+        h: pos.y - startPosRef.current.y,
       });
     }
   };
 
-  const handleMouseUp = () => {
-    if (!isDrawing || !currentRect || labelPickerOpen) return;
-    setIsDrawing(false);
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    e.currentTarget.releasePointerCapture(e.pointerId); // ปลดล็อคเมาส์
+    if (!isDrawingRef.current) return;
+    isDrawingRef.current = false;
+
+    if (!currentRect || labelPickerOpen) return;
 
     const rect = normalizePixelRect(currentRect);
     if (Math.abs(rect.w) < 8 || Math.abs(rect.h) < 8) {
@@ -456,32 +466,6 @@ export function useChefKub() {
     setLabelPickerOpen(true);
     setCurrentRect(null);
   };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (labelPickerOpen) return;
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (rect && e.touches.length > 0) {
-      setStartPos({
-        x: e.touches[0].clientX - rect.left,
-        y: e.touches[0].clientY - rect.top,
-      });
-      setIsDrawing(true);
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDrawing) return;
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (rect && e.touches.length > 0) {
-      setCurrentRect({
-        x: startPos.x,
-        y: startPos.y,
-        w: e.touches[0].clientX - rect.left - startPos.x,
-        h: e.touches[0].clientY - rect.top - startPos.y,
-      });
-    }
-  };
-
   useEffect(() => {
     if (viewMode !== "edit" || !canvasRef.current || !editingImage) return;
 
@@ -501,7 +485,6 @@ export function useChefKub() {
       canvas.height = imgH;
     }
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     editingImage.boxes?.forEach((box) => {
       const display = imagePixelsToCanvas(
@@ -622,11 +605,14 @@ export function useChefKub() {
       setViewMode("home");
     }
   };
+  
+  
 
   return {
     loading,
     gallery,
     allItems,
+    currentRect,
     recipes,
     viewMode,
     setViewMode,
@@ -650,11 +636,9 @@ export function useChefKub() {
     handleInventRecipe,
     quickStartFromHistory,
     quickCookFavorite,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    handleTouchStart,
-    handleTouchMove,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
     goHome,
     startCook,
     endCook,
