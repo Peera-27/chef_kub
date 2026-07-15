@@ -29,14 +29,18 @@ export function FavoritesView({
           description="กดไอคอนหัวใจที่สูตรอาหารเพื่อเพิ่มในรายการโปรด"
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 stagger">
           {favorites.map((r, i) => (
-            <RecipeCompactCard
+            <div
               key={`${r.name}-${i}-${favVersion}`}
-              recipe={r}
-              onFavoriteChange={onFavoriteChange}
-              onStartCook={onStartCook}
-            />
+              style={{ "--i": i } as Record<string, string | number>}
+            >
+              <RecipeCompactCard
+                recipe={r}
+                onFavoriteChange={onFavoriteChange}
+                onStartCook={onStartCook}
+              />
+            </div>
           ))}
         </div>
       )}

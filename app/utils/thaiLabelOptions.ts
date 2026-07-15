@@ -10,13 +10,12 @@ export function getThaiLabelOptions(): string[] {
   for (const english of labels) {
     set.add(labelThMap[english] ?? english);
   }
+  // Include every Thai label explicitly defined in labelsTh.ts, even when its
+  // English key isn't part of the labels array, so the full dataset shows up.
+  for (const thai of Object.values(labelThMap)) {
+    set.add(thai);
+  }
+
   cached = Array.from(set).sort((a, b) => a.localeCompare(b, "th"));
   return cached;
-}
-
-export function filterThaiLabels(query: string): string[] {
-  const q = query.trim().toLowerCase();
-  const options = getThaiLabelOptions();
-  if (!q) return options;
-  return options.filter((label) => label.toLowerCase().includes(q));
 }

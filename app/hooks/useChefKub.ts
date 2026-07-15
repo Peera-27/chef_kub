@@ -1,8 +1,9 @@
 import { useState, useRef, useMemo,useEffect } from "react";
 import { generateRecipes } from "../actions/generateRecipe";
 import { generateRecipeImage } from "../actions/generateRecipeImage";
+import { detectIngredients } from "../actions/detectIngredients";
 import { listClasses } from "../actions/classes";
-import { getLabeledImageByHash } from "../actions/getLabeledImage";
+import { findLabeledImage } from "../actions/getLabeledImage";
 import { saveLabeledImage } from "../actions/saveLabeledImage";
 import { runYoloDetection } from "../lib/yolo/runYoloDetection";
 import type { Recipe } from "../types/recipe";
@@ -19,17 +20,19 @@ import {
   loadHistory,
 } from "../utils/storage";
 import { hashImageBase64 } from "../utils/imageHash";
+import { perceptualHashBase64 } from "../utils/perceptualHash";
 import { getOrCreateSessionId } from "../utils/sessionId";
+import { normalizePixelRect } from "../utils/toYoloBBox";
 import {
-  canvasToImagePixels,
-  imagePixelsToCanvas,
-  normalizePixelRect,
-} from "../utils/toYoloBBox";
-import {
+  resolveClassId,
   setClassRegistry,
   type ClassEntry,
 } from "../utils/classRegistry";
-import { resolveClassId } from "../utils/resolveClassId";
+import {
+  DEFAULT_COOKING_MODE,
+  getCookingMode,
+  type CookingMode,
+} from "../utils/cookingModes";
 import { useYoloModel } from "./useYoloModel";
 
 function syncItemsFromBoxes(
@@ -83,6 +86,8 @@ export function useChefKub() {
   const model = useYoloModel();
 
   const [loading, setLoading] = useState({ state: false, message: "" });
+  // true ระหว่างทยอย gen รูปอาหารหลังได้สูตรแล้ว — การ์ดจะโชว์ skeleton แทน overlay ทับจอ
+  const [imageGenPending, setImageGenPending] = useState(false);
   const [gallery, setGallery] = useState<ImageItem[]>([]);
   const [allItems, setAllItems] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -92,6 +97,8 @@ export function useChefKub() {
   const [history, setHistory] = useState<ScanHistoryEntry[]>([]);
   const [favVersion, setFavVersion] = useState(0);
   const [activeRecipe, setActiveRecipe] = useState<Recipe | null>(null);
+  const [cookingMode, setCookingMode] =
+    useState<CookingMode>(DEFAULT_COOKING_MODE);
 
   const [editingImage, setEditingImage] = useState<ImageItem | null>(null);
 const isDrawingRef = useRef(false);
@@ -109,7 +116,6 @@ const isDrawingRef = useRef(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageCache = useRef<Map<string, CachedImageResult>>(new Map());
 
   useEffect(() => {
@@ -149,7 +155,11 @@ const isDrawingRef = useRef(false);
     setViewMode("camera");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
       });
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
@@ -163,17 +173,39 @@ const isDrawingRef = useRef(false);
     setGallery((prev) => prev.filter((img) => img.id !== imageId));
   };
 
-  const attachRecipeImages = async (recipeList: Recipe[]): Promise<Recipe[]> => {
-    return Promise.all(
-      recipeList.map(async (recipe) => {
-        try {
-          const imageUrl = await generateRecipeImage(recipe.name);
-          return imageUrl ? { ...recipe, imageUrl } : recipe;
-        } catch {
-          return recipe;
+  // ยิงทีละรูป ไม่ใช่ Promise.all — Workers AI free tier จำกัด request ต่อนาที
+  // และถ้าโควตารายวันหมด ให้เลิกยิงที่เหลือทันที ยิงไปก็โดนปฏิเสธเหมือนกันหมด
+  // ทยอย gen รูปทีละเมนูแล้วอัปเดต state ทันทีที่ได้ — การ์ดโชว์สูตรก่อน รูปค่อยตามมา
+  const attachRecipeImages = async (
+    recipeList: Recipe[],
+    mode: CookingMode,
+  ): Promise<{ quotaExhausted: boolean }> => {
+    const { imageStyle } = getCookingMode(mode);
+    let quotaExhausted = false;
+
+    for (const recipe of recipeList) {
+      if (quotaExhausted) break;
+
+      try {
+        const result = await generateRecipeImage(
+          recipe.imagePrompt || recipe.name,
+          imageStyle,
+        );
+        if (result.ok) {
+          setRecipes((prev) =>
+            prev.map((r) =>
+              r.name === recipe.name ? { ...r, imageUrl: result.imageUrl } : r,
+            ),
+          );
+        } else if (result.reason === "quota") {
+          quotaExhausted = true;
         }
-      }),
-    );
+      } catch {
+        // รูปเมนูนี้พลาดก็ข้ามไป — สูตรยังใช้ได้
+      }
+    }
+
+    return { quotaExhausted };
   };
 
   const generateRecipesFlow = async (
@@ -184,24 +216,31 @@ const isDrawingRef = useRef(false);
 
     setLoading({ state: true, message: "กำลังจัดเมนูให้คุณทำเลย..." });
     try {
-      const res = await generateRecipes(ingredients);
+      const res = await generateRecipes(ingredients, cookingMode);
       if (res.length === 0) {
-        alert("ไม่พบเมนูที่เหมาะกับวัตถุดิบนี้ ลองเพิ่มรูปอีกใบ");
+        alert(
+          "ไม่พบเมนูที่เหมาะกับวัตถุดิบนี้ ลองเพิ่มรูปอีกใบ หรือเช็คว่าของที่สแกนมากินได้จริง",
+        );
         return false;
       }
 
-      setLoading({
-        state: true,
-        message: `กำลังหารูปอาหาร (${res.length} เมนู)...`,
-      });
-      const recipesWithImages = await attachRecipeImages(res);
-
-      setRecipes(recipesWithImages);
+      // โชว์สูตรทันที ปิด overlay แล้วค่อยทยอยเติมรูป (การ์ดโชว์ skeleton ระหว่างรอ)
+      setRecipes(res);
       setTagFilter(null);
       if (options.navigate) setViewMode("recipes");
+      setLoading({ state: false, message: "" });
 
       addHistoryEntry(ingredients, gallery.length);
       setHistory(loadHistory());
+
+      setImageGenPending(true);
+      const { quotaExhausted } = await attachRecipeImages(res, cookingMode);
+
+      if (quotaExhausted) {
+        alert(
+          "โควตาสร้างรูปอาหารของวันนี้หมดแล้ว (รีเซ็ตพรุ่งนี้)\nสูตรอาหารยังใช้ได้ตามปกติ แค่ไม่มีรูปประกอบ",
+        );
+      }
 
       return true;
     } catch (err) {
@@ -210,6 +249,7 @@ const isDrawingRef = useRef(false);
       return false;
     } finally {
       setLoading({ state: false, message: "" });
+      setImageGenPending(false);
     }
   };
 
@@ -237,12 +277,22 @@ const isDrawingRef = useRef(false);
     try {
       const { width: imageWidth, height: imageHeight } =
         await measureImage(base64Url);
-      const hash = await hashImageBase64(base64Url);
+      const [hash, phash] = await Promise.all([
+        hashImageBase64(base64Url),
+        perceptualHashBase64(base64Url),
+      ]);
 
-      setLoading({ state: true, message: "กำลังเช็ค label ที่เคยบันทึก..." });
-      const saved = await getLabeledImageByHash(hash);
+      setLoading({ state: true, message: "กำลังเช็คภาพที่เคยบันทึก..." });
+      const saved = await findLabeledImage({ imageHash: hash, phash });
 
       if (saved) {
+        setLoading({
+          state: true,
+          message:
+            saved.matchType === "similar"
+              ? "เจอรูปคล้ายกับที่เคยบันทึก — ใช้ label เดิม ✨"
+              : "เจอรูปที่เคยบันทึก — โหลด label ทันที ⚡",
+        });
         const result: CachedImageResult = {
           items: saved.items,
           boxes: saved.boxes,
@@ -270,12 +320,42 @@ const isDrawingRef = useRef(false);
         ? await runYoloDetection(model, base64Url)
         : { items: [], boxes: [], ms: 0 };
 
-      const combined = yoloResult.items;
+      // Gemini เป็นตัวตัดสินสุดท้ายของทุกภาพ — YOLO "มั่นใจแต่มั่ว" ได้ จึงไม่เชื่อ
+      // count/confidence ของมันตรง ๆ ส่ง label ที่ YOLO เดาไปให้ Gemini ยืนยัน/ปฏิเสธ
+      let items = yoloResult.items;
+      let boxes = yoloResult.boxes;
 
-      if (combined.length > 0 || yoloResult.boxes.length > 0) {
+      setLoading({ state: true, message: "ให้ AI ตรวจสอบวัตถุดิบ..." });
+      const verdict = await detectIngredients(
+        base64Url,
+        yoloResult.items.map((item) => item.name),
+      );
+
+      if (verdict.ok) {
+        // เก็บเฉพาะ box ที่ Gemini ยืนยัน — ที่เหลือคือของมั่ว ตัดทิ้งทั้งใน list และบนรูป
+        const confirmed = new Set(verdict.confirmed);
+        boxes = yoloResult.boxes.filter((box) => confirmed.has(box.label));
+        items = mergeIngredients([
+          ...verdict.confirmed.map((name) => ({
+            name,
+            source: "yolo" as const,
+          })),
+          ...verdict.added.map((name) => ({
+            name,
+            source: "gemini" as const,
+          })),
+        ]);
+      } else if (verdict.reason === "quota") {
+        // โควตา Gemini หมด — ตรวจสอบไม่ได้ ใช้ผล YOLO ดิบ ๆ ไปก่อน (ดีกว่าไม่มีอะไรเลย)
+        alert(
+          "โควตา AI ตรวจสอบของวันนี้หมดแล้ว (รีเซ็ตพรุ่งนี้)\nแสดงผลจาก YOLO ตรง ๆ อาจมีของที่ไม่แม่น ลบ/แก้เองได้",
+        );
+      }
+
+      if (items.length > 0 || boxes.length > 0) {
         imageCache.current.set(base64Url, {
-          items: combined,
-          boxes: yoloResult.boxes,
+          items,
+          boxes,
           imageWidth,
           imageHeight,
         });
@@ -286,8 +366,8 @@ const isDrawingRef = useRef(false);
         {
           id: `${Date.now()}`,
           url: base64Url,
-          items: combined,
-          boxes: yoloResult.boxes,
+          items,
+          boxes,
           imageWidth,
           imageHeight,
         },
@@ -466,57 +546,6 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     setLabelPickerOpen(true);
     setCurrentRect(null);
   };
-  useEffect(() => {
-    if (viewMode !== "edit" || !canvasRef.current || !editingImage) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const imgW = editingImage.imageWidth;
-    const imgH = editingImage.imageHeight;
-
-    // ยังไม่มีขนาดภาพ — รอให้ onLoad ของ <img> ตั้งค่าก่อน
-    if (!imgW || !imgH) return;
-
-    // ปรับขนาด canvas ให้ตรงกับภาพจริง (ถ้ายังไม่ตรง)
-    if (canvas.width !== imgW || canvas.height !== imgH) {
-      canvas.width = imgW;
-      canvas.height = imgH;
-    }
-
-
-    editingImage.boxes?.forEach((box) => {
-      const display = imagePixelsToCanvas(
-        box,
-        imgW,
-        imgH,
-        canvas.width,
-        canvas.height,
-      );
-      const valid = resolveClassId(box.label) !== null;
-      ctx.strokeStyle = valid ? "#10b981" : "#f59e0b";
-      ctx.lineWidth = Math.max(2, Math.round(imgW / 200));
-      ctx.strokeRect(display.x, display.y, display.w, display.h);
-      ctx.fillStyle = valid ? "#10b981" : "#f59e0b";
-      const fontSize = Math.max(12, Math.round(imgW / 40));
-      ctx.font = `${fontSize}px sans-serif`;
-      ctx.fillText(box.label, display.x, display.y - 5);
-    });
-
-    if (currentRect) {
-      ctx.strokeStyle = "#3b82f6";
-      ctx.setLineDash([5, 5]);
-      ctx.strokeRect(
-        currentRect.x,
-        currentRect.y,
-        currentRect.w,
-        currentRect.h,
-      );
-      ctx.setLineDash([]);
-    }
-  }, [currentRect, editingImage, viewMode]);
-
   const startCook = (recipe: Recipe) => {
     setActiveRecipe(recipe);
     setViewMode("cook");
@@ -581,8 +610,15 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
       const imageWidth = editingImage.imageWidth ?? img.naturalWidth;
       const imageHeight = editingImage.imageHeight ?? img.naturalHeight;
 
+      const [imageHash, phash] = await Promise.all([
+        hashImageBase64(editingImage.url),
+        perceptualHashBase64(editingImage.url),
+      ]);
+
       await saveLabeledImage({
         imageBase64: editingImage.url,
+        imageHash,
+        phash,
         sessionId: getOrCreateSessionId(),
         imageWidth,
         imageHeight,
@@ -610,6 +646,7 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
 
   return {
     loading,
+    imageGenPending,
     gallery,
     allItems,
     currentRect,
@@ -622,10 +659,11 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     history,
     favVersion,
     activeRecipe,
+    cookingMode,
+    setCookingMode,
     editingImage,
     setEditingImage,
     videoRef,
-    canvasRef,
     allTags,
     filteredRecipes,
     startCamera,

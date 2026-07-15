@@ -11,10 +11,6 @@ export function setClassRegistry(entries: ClassEntry[]) {
   registry = entries;
 }
 
-export function getClassRegistry(): ClassEntry[] {
-  return registry;
-}
-
 export function resolveClassId(label: string): number | null {
   const normalized = normalizeLabelName(label);
   const found = registry.find(
@@ -23,7 +19,7 @@ export function resolveClassId(label: string): number | null {
   return found?.id ?? null;
 }
 
-export function getClassNames(): string[] {
+function getClassNames(): string[] {
   return registry.map((entry) => entry.name);
 }
 

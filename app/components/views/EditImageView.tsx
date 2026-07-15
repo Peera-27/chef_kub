@@ -1,7 +1,6 @@
-import { RefObject, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { LabelPickerModal } from "../LabelPickerModal";
-import { resolveClassId } from "../../utils/resolveClassId";
-import type { ClassEntry } from "../../utils/classRegistry";
+import { resolveClassId, type ClassEntry } from "../../utils/classRegistry";
 import { ImageItem } from "../../utils/types";
 import { imagePixelsToCanvas } from "../../utils/toYoloBBox";
 interface EditImageViewProps {
@@ -96,19 +95,34 @@ export function EditImageView({
     }
   }, [currentRect, editingImage]);
 
-  return (
-    <div className="flex flex-col items-center fade-in">
-      <p className="text-sm md:text-base text-[var(--color-muted)] mb-4 text-center px-4">
-        วาดกรอบรอบวัตถุดิบแล้วเลือกชื่อจากรายการ
-      </p>
+  // ยังไม่มีกรอบเลย = โมเดลตรวจไม่เจอ ผู้ใช้เข้ามาเพื่อ label เอง ต้องบอกวิธีให้ชัด
+  const isBlank = boxes.length === 0;
 
-      {/* Image + canvas: responsive height */}
-      <div className="relative rounded-[var(--radius-lg)] overflow-hidden shadow-md ring-2 ring-[var(--color-brand)]/40 w-fit mx-auto max-w-full md:max-w-xl">
+  return (
+    <div className="flex flex-col items-center slide-up">
+      <div className="flex items-center gap-2 mb-4 text-center px-4">
+        <span
+          className={`tile text-base ${
+            isBlank
+              ? "bg-[var(--color-warn-soft)]"
+              : "bg-[var(--color-brand-soft)]"
+          }`}
+        >
+          {isBlank ? "🏷️" : "✏️"}
+        </span>
+        <p className="text-sm md:text-base text-[var(--color-muted)]">
+          {isBlank
+            ? "ช่วยระบุวัตถุดิบให้หน่อย — ลากกรอบคร่อมทีละชิ้น"
+            : "ลากกรอบรอบวัตถุดิบแล้วกดเลือกชื่อ"}
+        </p>
+      </div>
+
+      {/* Image + canvas: responsive height — DO NOT change structure/canvas handlers (crop logic) */}
+      <div className="relative rounded-[var(--radius-lg)] overflow-hidden shadow-lg ring-2 ring-[var(--color-brand)]/30 w-fit mx-auto max-w-full md:max-w-xl">
         <img
           src={editingImage.url}
           alt="แก้ไข"
           draggable={false}
-          /* ปรับความกว้างให้ยืดหยุ่นตามสัดส่วนภาพจริง ไม่บังคับ w-full */
           className="block h-auto max-w-full max-h-[50vh] md:max-h-[60vh] opacity-50 select-none object-contain"
           onLoad={(e) => {
             const img = e.currentTarget;
@@ -125,6 +139,23 @@ export function EditImageView({
           onDragStart={(e) => e.preventDefault()}
           className="absolute inset-0 z-10 cursor-crosshair touch-none select-none w-full h-full"
         />
+
+        {/* คำใบ้ตอนภาพยังว่าง — pointer-events-none เพื่อไม่ให้บังการลากกรอบ */}
+        {isBlank && !currentRect && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center p-4 pointer-events-none">
+            <div className="flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-black/65 backdrop-blur-sm text-white text-center max-w-[85%] pop-in">
+              <span className="text-3xl leading-none" aria-hidden>
+                👆
+              </span>
+              <p className="text-sm font-semibold">ลากคร่อมวัตถุดิบทีละชิ้น</p>
+              <p className="text-xs text-white/75 leading-relaxed">
+                ใช้นิ้วลากบนมือถือ หรือคลิกค้างแล้วลากบนคอมฯ
+                <br />
+                ปล่อยแล้วเลือกชื่อได้เลย
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {boxes.length > 0 && (
@@ -139,13 +170,14 @@ export function EditImageView({
               </span>
             )}
           </div>
-          <ul className="space-y-2 max-h-48 md:max-h-64 overflow-y-auto no-scrollbar">
+          <ul className="stagger space-y-2 max-h-48 md:max-h-64 overflow-y-auto no-scrollbar">
             {boxes.map((box, index) => {
               const valid = resolveClassId(box.label) !== null;
               return (
                 <li
                   key={`${index}-${box.label}`}
-                  className={`flex items-center justify-between gap-2 rounded-[var(--radius-md)] px-3 py-3 md:px-4 md:py-3 text-sm ${
+                  style={{ "--i": index } as Record<string, string | number>}
+                  className={`flex items-center justify-between gap-2 rounded-[var(--radius-md)] px-3 py-2.5 md:px-4 md:py-3 text-sm card-lift ${
                     valid
                       ? "bg-[var(--color-success-soft)]"
                       : "bg-[var(--color-warn-soft)] ring-1 ring-[var(--color-warn)]/30"
@@ -160,14 +192,14 @@ export function EditImageView({
                     <button
                       type="button"
                       onClick={() => onEditBox(index)}
-                      className="px-3 py-2 text-xs rounded-lg bg-white/80 hover:bg-white text-[var(--color-ink)] transition-colors tap"
+                      className="px-3 py-2 text-xs font-medium rounded-lg bg-white shadow-sm hover:shadow-md text-[var(--color-ink)] active:scale-95 transition-all tap"
                     >
                       แก้ไข
                     </button>
                     <button
                       type="button"
                       onClick={() => onRemoveBox(index)}
-                      className="px-3 py-2 text-xs rounded-lg bg-white/80 hover:bg-white text-red-500 transition-colors tap"
+                      className="px-3 py-2 text-xs font-medium rounded-lg bg-white shadow-sm hover:shadow-md text-red-500 active:scale-95 transition-all tap"
                     >
                       ลบ
                     </button>
@@ -182,7 +214,7 @@ export function EditImageView({
       <button
         onClick={onDone}
         disabled={invalidCount > 0}
-        className="btn-primary mt-6 w-full md:max-w-xl py-4 md:py-5 font-bold tap"
+        className="btn-primary mt-6 w-full md:max-w-xl py-4 md:py-5 font-bold tap bg-gradient-to-r from-[var(--color-brand)] to-[var(--color-brand-dark)]"
       >
         เสร็จสิ้น
       </button>

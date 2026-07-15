@@ -3,12 +3,14 @@ import type { Recipe } from "../../types/recipe";
 import { RecipeCard } from "../RecipeCard";
 import { RecipeHeroCard } from "../RecipeHeroCard";
 import { EmptyState } from "../EmptyState";
+import { IconList, IconStar } from "../Icons";
 
 interface RecipesViewProps {
   recipes: Recipe[];
   filteredRecipes: Recipe[];
   allTags: string[];
   tagFilter: string | null;
+  imageGenPending?: boolean;
   onTagFilterChange: (tag: string | null) => void;
   onFavoriteChange: () => void;
   onStartCook: (recipe: Recipe) => void;
@@ -19,6 +21,7 @@ export function RecipesView({
   filteredRecipes,
   allTags,
   tagFilter,
+  imageGenPending = false,
   onTagFilterChange,
   onFavoriteChange,
   onStartCook,
@@ -68,30 +71,27 @@ export function RecipesView({
 
   return (
     <div className="space-y-5 md:space-y-6 pb-6 fade-in">
-      <div className="flex justify-between items-center">
-        <h2 className="section-title">เมนูที่แนะนำ</h2>
-        <div className="flex gap-1 bg-white rounded-full p-1 border border-[var(--color-line)]">
+      <div className="flex justify-between items-center gap-3">
+        <div>
+          <h2 className="section-title">เมนูที่แนะนำ</h2>
+          <p className="section-subtitle">
+            {filteredRecipes.length} เมนูจากวัตถุดิบของคุณ
+          </p>
+        </div>
+        <div className="seg">
           <button
             onClick={() => setViewMode("hero")}
-            className={`w-8 h-8 md:w-9 md:h-9 rounded-full text-sm flex items-center justify-center transition-colors tap ${
-              viewMode === "hero"
-                ? "bg-[var(--color-brand)] text-white"
-                : "text-[var(--color-muted)]"
-            }`}
+            className={`seg-btn ${viewMode === "hero" ? "seg-btn-active" : "seg-btn-idle"}`}
             aria-label="ดูแบบ Hero"
           >
-            ★
+            <IconStar size={16} filled={viewMode === "hero"} />
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`w-8 h-8 md:w-9 md:h-9 rounded-full text-sm flex items-center justify-center transition-colors tap ${
-              viewMode === "list"
-                ? "bg-[var(--color-brand)] text-white"
-                : "text-[var(--color-muted)]"
-            }`}
+            className={`seg-btn ${viewMode === "list" ? "seg-btn-active" : "seg-btn-idle"}`}
             aria-label="ดูแบบ List"
           >
-            ≡
+            <IconList size={16} />
           </button>
         </div>
       </div>
@@ -120,32 +120,29 @@ export function RecipesView({
       {viewMode === "hero" && filteredRecipes.length > 0 && (
         <RecipeHeroCard
           recipe={filteredRecipes[0]}
+          imageLoading={imageGenPending}
           onFavoriteChange={onFavoriteChange}
           onStartCook={onStartCook}
         />
       )}
 
-      {/* Recipe grid: 1 col mobile, 2 cols tablet, 3 cols desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-5">
-        {viewMode === "hero"
-          ? filteredRecipes
-              .slice(1)
-              .map((r, i) => (
-                <RecipeCard
-                  key={`${r.name}-${i}`}
-                  recipe={r}
-                  onFavoriteChange={onFavoriteChange}
-                  onStartCook={onStartCook}
-                />
-              ))
-          : filteredRecipes.map((r, i) => (
+      {/* Recipe grid: 1 col mobile, 2 cols tablet */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-5 stagger">
+        {(viewMode === "hero" ? filteredRecipes.slice(1) : filteredRecipes).map(
+          (r, i) => (
+            <div
+              key={`${r.name}-${i}`}
+              style={{ "--i": i } as Record<string, string | number>}
+            >
               <RecipeCard
-                key={`${r.name}-${i}`}
                 recipe={r}
+                imageLoading={imageGenPending}
                 onFavoriteChange={onFavoriteChange}
                 onStartCook={onStartCook}
               />
-            ))}
+            </div>
+          ),
+        )}
       </div>
     </div>
   );

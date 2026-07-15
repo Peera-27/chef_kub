@@ -1,6 +1,6 @@
-# Chef Kub — สแกนวัตถุดิบ แนะนำสูตร และเก็บ Dataset สำหรับ Train YOLO
+# Chef Kub — สแกนวัตถุดิบ แนะนำสูตรอาหารไทย
 
-โปรเจกตจบที่ใช้ **Computer Vision + Generative AI** ช่วยผู้ใช้สแกนวัตถุดิบจากรูปภาพ แนะนำสูตรอาหารไทย และเก็บ label จากผู้ใช้ลง Supabase เพื่อนำไป train โมเดล YOLO ใหม่
+โปรเจกตจบที่ใช้ **Computer Vision + Generative AI** ช่วยผู้ใช้สแกนวัตถุดิบจากรูปภาพ แนะนำสูตรอาหารไทย และจำ label ที่ผู้ใช้เคยแก้ไว้ใน Cloudflare D1 — เจอรูปเดิมหรือรูปที่**คล้ายกัน**ก็โหลด label เดิมได้ทันทีโดยไม่ต้องสแกนซ้ำ
 
 ## ฟีเจอร์หลัก
 
@@ -8,11 +8,11 @@
 |---------|------------|
 | ตรวจจับวัตถุดิบ (YOLO) | YOLO11n (~118 class) รันในเบราว์เซอร์ด้วย TensorFlow.js |
 | แก้ไข / Label ด้วยมือ | วาดกรอบ เลือกชื่อจากรายการ หรือเพิ่ม class ใหม่ |
-| เก็บ Dataset | บันทึกรูป + bounding box (YOLO format) ลง Supabase |
-| จำ Label รูปเดิม | ใช้ `image_hash` โหลด label จาก DB หลัง refresh |
+| จำ Label | บันทึก bounding box (YOLO format) ลง Cloudflare D1 — ไม่เก็บไฟล์รูป |
+| จำรูปเดิม + รูปคล้าย | SHA-256 จับรูปเดิมเป๊ะ ๆ / dHash + Hamming distance จับรูปคล้ายกัน |
 | จัดการ Class | ตาราง `classes` กลาง ป้องกันชื่อซ้ำ/คล้ายกัน |
 | สร้างสูตรอาหาร | Gemini สร้าง 3 เมนูไทยจากวัตถุดิบที่มี |
-| รูปประกอบเมนู | Gemini (`gemini-2.5-flash-image`) สร้างรูปจากชื่อเมนู |
+| รูปประกอบเมนู | Cloudflare Workers AI (`flux-1-schnell`) สร้างรูปจากชื่อเมนู |
 | โหมดทำอาหาร | แสดงขั้นตอนทีละ step + อ่านให้ฟัง (Web Speech API) |
 | รายการโปรด / ประวัติ | localStorage |
 | กรองเมนู | กรองสูตรตาม tag (เผ็ด, ทำง่าย ฯลฯ) |
@@ -29,19 +29,12 @@
           ┌────────────────────────┼────────────────────────┐
           ▼                        ▼                        ▼
    ┌─────────────┐         ┌─────────────┐          ┌──────────────┐
-   │ YOLO11n     │         │ Supabase    │          │ Gemini           │
-   │ (TF.js)     │         │ Postgres +  │          │ สร้างสูตร +    │
-   │ ในเบราว์เซอร์│         │ Storage     │          │ รูปเมนู        │
-   └──────┬──────┘         └──────┬──────┘          └──────┬───────┘
-          │                         │                        │
-          │    user แก้ label       │ เก็บ training data     │
-          └────────────┬────────────┘                        │
-                       ▼                                     ▼
-                ┌─────────────┐                       ┌─────────────┐
-                │ Export →    │                       │ สร้างสูตร +  │
-                │ Train YOLO  │                       │ รูปเมนู      │
-                │ ใหม่        │                       └─────────────┘
-                └─────────────┘
+   │ YOLO11n     │         │ Cloudflare  │          │ Gemini           │
+   │ (TF.js)     │         │ D1 (SQLite) │          │ สร้างสูตร +    │
+   │ ในเบราว์เซอร์│         │ label memory│          │ รูปเมนู        │
+   └─────────────┘         └─────────────┘          └──────────────┘
+          user แก้ label → เก็บ hash + annotations ลง D1
+          เจอรูปเดิม/คล้ายกัน → โหลด label เดิม (ข้าม YOLO)
 ```
 
 ## Flow สแกนรูป
@@ -49,30 +42,33 @@
 ```
 อัปรูป
   → แคชใน memory? → แสดงทันที
-  → hash รูป → เจอใน DB? → โหลด label (ข้าม YOLO)
+  → hash รูป (SHA-256 + dHash)
+      → เจอเป๊ะใน DB? → โหลด label (ข้าม YOLO)
+      → เจอรูปคล้ายกัน (Hamming ≤ 8)? → โหลด label เดิม (ข้าม YOLO)
   → ไม่เจอ → YOLO ตรวจจับ → แสดงผล
   → user กด "แก้ไข" → วาดกรอบ / เลือกชื่อ → กด "เสร็จสิ้น"
-  → บันทึก Supabase (รูป + annotations)
+  → บันทึก hash + annotations ลง Cloudflare D1 (ไม่เก็บไฟล์รูป)
 ```
 
 ## Tech Stack
 
 - **Frontend:** Next.js 16, React 19, Tailwind CSS 4
 - **Object Detection:** YOLO11n → TensorFlow.js Graph Model (`public/model/`)
-- **Database:** Supabase (PostgreSQL + Storage)
-- **AI API:** Google Gemini — สร้างสูตร (`gemini-2.5-flash`) + รูปเมนู (`gemini-2.5-flash-image`)
-- **SDK:** `@supabase/supabase-js`, `@google/genai`
+- **Database:** Cloudflare D1 (SQLite) — ไม่มี auto-pause เหมือน Supabase free tier
+- **AI API:** Google Gemini — สร้างสูตร (`gemini-3.1-flash-lite`)
+- **Image API:** Cloudflare Workers AI — รูปเมนู (`@cf/black-forest-labs/flux-1-schnell`)
+- **SDK:** `@google/genai` (D1 เรียกผ่าน Cloudflare REST API ตรง ๆ)
 
 ## โครงสร้างโปรเจกต
 
 ```
 app/
 ├── actions/
-│   ├── saveLabeledImage.ts   # บันทึกรูป + annotations ลง Supabase
-│   ├── getLabeledImage.ts    # โหลด label จาก image_hash
+│   ├── saveLabeledImage.ts   # บันทึก hash + annotations ลง D1
+│   ├── getLabeledImage.ts    # หา label จากรูปเดิม (SHA-256) หรือรูปคล้าย (dHash)
 │   ├── classes.ts            # รายการ class + เพิ่มชื่อใหม่
 │   ├── generateRecipe.ts     # Gemini สร้างสูตร
-│   └── generateRecipeImage.ts # Gemini สร้างรูปเมนู
+│   └── generateRecipeImage.ts # Workers AI สร้างรูปเมนู
 ├── hooks/
 │   ├── useChefKub.ts         # state หลักของแอป
 │   └── useYoloModel.ts       # โหลดโมเดล YOLO
@@ -81,17 +77,17 @@ app/
 │   └── views/                # Home, Camera, Edit, Recipes, Cook, Favorites
 ├── lib/
 │   ├── yolo/runYoloDetection.ts
-│   └── supabase/server.ts
+│   └── cloudflare/d1.ts          # query D1 ผ่าน REST API
 └── utils/
     ├── labels.ts / labelsTh.ts   # class เดิมของ YOLO (~118)
     ├── classRegistry.ts          # class list ฝั่ง client
+    ├── imageHash.ts              # SHA-256 (รูปเดิมเป๊ะ ๆ)
+    ├── perceptualHash.ts         # dHash 64 bit (รูปคล้ายกัน)
     ├── toYoloBBox.ts             # แปลงพิกัดกรอบ
     └── storage/                  # localStorage (โปรด + ประวัติ)
 
-supabase/
-├── schema.sql                  # สร้างตารางทั้งหมด
-├── migration-classes.sql       # เพิ่มตาราง classes (ถ้ารัน schema เก่าแล้ว)
-└── migration-image-hash.sql    # เพิ่มคอลัมน์ image_hash
+cloudflare/
+└── schema.sql                  # สร้างตารางทั้งหมด (SQLite สำหรับ D1)
 
 public/model/                   # โมเดล YOLO (model.json + weights)
 ```
@@ -110,22 +106,29 @@ bun install   # หรือ npm install
 
 ```env
 GEMINI_API_KEY=your_gemini_key
+GEMINI_DETECT_API_KEY=your_second_gemini_key
 
-NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+CLOUDFLARE_ACCOUNT_ID=your_account_id
+CLOUDFLARE_API_TOKEN=your_api_token
+CLOUDFLARE_D1_DATABASE_ID=your_d1_database_id
 ```
 
 | ตัวแปร | คำอธิบาย |
 |--------|----------|
-| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) — สร้างสูตร + รูปเมนู |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API |
-| `SUPABASE_SERVICE_ROLE_KEY` | service_role key (ใช้ฝั่ง server เท่านั้น) |
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) — สร้างสูตร |
+| `GEMINI_DETECT_API_KEY` | key ตัวที่ 2 สำหรับ detect วัตถุดิบ (แยกโควตา free tier จาก gen สูตร) — ไม่ตั้งก็ได้ จะ fallback ไปใช้ `GEMINI_API_KEY` |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Dashboard → Workers & Pages → Account ID |
+| `CLOUDFLARE_API_TOKEN` | API token สิทธิ์ **Workers AI: Read + D1: Edit** |
+| `CLOUDFLARE_D1_DATABASE_ID` | ได้จากตอนสร้าง DB (`wrangler d1 create`) หรือ Dashboard → D1 |
 
-### 3. ตั้งค่า Supabase
+### 3. ตั้งค่า Cloudflare D1
 
-1. สร้าง Storage bucket ชื่อ `training-images` (public: **ปิด**)
-2. รัน SQL ใน `supabase/schema.sql` (หรือ migration แยกถ้ามีตารางเก่าอยู่แล้ว)
-3. เปิดแอปครั้งแรก → ระบบ seed class จาก `labelsTh.ts` เข้าตาราง `classes` อัตโนมัติ
+```bash
+npx wrangler d1 create chef-kub                                    # จด database_id ใส่ .env
+npx wrangler d1 execute chef-kub --remote --file=cloudflare/schema.sql
+```
+
+เปิดแอปครั้งแรก → ระบบ seed class จาก `labelsTh.ts` เข้าตาราง `classes` อัตโนมัติ
 
 ### 4. รัน Dev Server
 
@@ -135,37 +138,19 @@ bun dev
 
 เปิด [http://localhost:3000](http://localhost:3000)
 
-## ฐานข้อมูล Supabase
+## ฐานข้อมูล (Cloudflare D1)
 
 | ตาราง | หน้าที่ |
 |-------|--------|
-| `images` | รูปที่ label แล้ว (`storage_path`, `image_hash`, ขนาดรูป) |
+| `images` | รูปที่ label แล้ว — เก็บแค่ `image_hash` (SHA-256), `phash` (dHash) และขนาดรูป **ไม่เก็บไฟล์รูป** |
 | `annotations` | กรอบ + ชื่อ class (YOLO normalized format) |
 | `classes` | รายการชื่อวัตถุดิบ (`seed` จาก dataset เดิม / `user` เพิ่มใหม่) |
 
-Storage: `training-images/{session_id}/{uuid}.jpg`
+### การจับรูปคล้ายกัน
 
-## นำข้อมูลไป Train YOLO ใหม่
-
-ข้อมูลใน `annotations` เป็น YOLO format อยู่แล้ว — export แล้ว train ได้เลย
-
-```
-1. Export จาก Supabase
-   ├── ดาวน์โหลดรูปจาก Storage → dataset/images/
-   ├── สร้างไฟล์ .txt จาก annotations → dataset/labels/
-   └── สร้าง data.yaml จากตาราง classes
-
-2. Train (Python / Colab)
-   pip install ultralytics
-   yolo train model=yolo11n.pt data=data.yaml epochs=100 imgsz=640
-
-3. แปลงเป็น TensorFlow.js
-   yolo export model=best.pt format=tfjs
-
-4. แทนที่ public/model/ และ sync labels.ts ให้ตรง class ใหม่
-```
-
-> บันทึกลง DB **ไม่ได้** ทำให้ YOLO ในแอปฉลาดขึ้นทันที — ต้อง train + deploy โมเดลใหม่
+- Client คำนวณ **dHash 64 bit**: ย่อรูปเหลือ 9×8 grayscale แล้วเทียบความสว่างพิกเซลข้างเคียง
+- Server เทียบกับ hash ในตาราง `images` ด้วย **Hamming distance** — ต่างกัน ≤ 8 bit ถือว่าเป็นรูปเดียวกัน
+- ทนต่อการ resize / บีบอัด / ปรับแสงเล็กน้อย แต่ถ้าครอปหรือหมุนรูปจะถือเป็นรูปใหม่
 
 ## Deploy
 
@@ -180,8 +165,9 @@ vercel deploy
 
 - YOLO รู้จักแค่ class ในโมเดลปัจจุบัน (~118) — class ใหม่ (เช่น ใบโหระพา) ต้อง train โมเดลใหม่
 - Label YOLO เดิมเป็นภาษาอังกฤษ — แปลเป็นไทยด้วย mapping ใน `labelsTh.ts`
-- รูปที่ label ก่อนมี `image_hash` ต้องกด "เสร็จสิ้น" อีกครั้ง 1 รอบเพื่อให้จำรูปซ้ำได้
-- รูปเมนูจาก Gemini อาจไม่ตรงเมนูไทย 100% (ประเภทรูปอาหารทั่วไป)
+- การจับรูปคล้ายใช้ dHash — รูปที่ครอป/หมุน/องค์ประกอบเปลี่ยนมากจะถือเป็นรูปใหม่ (ตั้งใจ เพื่อไม่ให้ label ผิดรูป)
+- โมเดลสร้างรูปอ่านภาษาไทยไม่ออก — Gemini จึงคืน `imagePrompt` ภาษาอังกฤษมาให้ใช้แทนชื่อเมนู
+- Workers AI free tier ให้ 10,000 neurons/วัน ≈ 170 รูป/วัน
 - โหมดทำอาหารใช้ Web Speech API — เสียงขึ้นกับ browser/OS
 
 ## ผู้พัฒนา

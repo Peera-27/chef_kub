@@ -1,5 +1,3 @@
-import { labels } from "./labels";
-
 export const labelThMap: Record<string, string> = {
   "Akabare Khursani": "พริกขี้หนู",
   Apple: "แอปเปิ้ล",
@@ -125,12 +123,4 @@ export const labelThMap: Record<string, string> = {
 
 export function toThaiLabel(englishLabel: string): string {
   return labelThMap[englishLabel] ?? englishLabel;
-}
-
-export function buildLabelThIndex(): Record<string, string> {
-  const map: Record<string, string> = { ...labelThMap };
-  labels.forEach((label) => {
-    if (!map[label]) map[label] = label;
-  });
-  return map;
 }

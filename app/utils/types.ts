@@ -1,4 +1,4 @@
-export type DetectionSource = "yolo" | "manual";
+export type DetectionSource = "yolo" | "gemini" | "manual";
 
 export interface IngredientItem {
   name: string;
@@ -27,9 +27,4 @@ export interface ScanHistoryEntry {
   date: string;
   items: string[];
   imageCount: number;
-}
-
-export interface TimingStats {
-  yoloMs?: number;
-  totalMs: number;
 }

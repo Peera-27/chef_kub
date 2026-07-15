@@ -1,67 +1,67 @@
 "use server";
 
-import { createSupabaseAdmin } from "../lib/supabase/server";
+import { chunkRows, d1Query, isD1Configured } from "../lib/cloudflare/d1";
 import type { ClassEntry } from "../utils/classRegistry";
 import { findSimilarLabels, normalizeLabelName } from "../utils/normalizeLabel";
 import { getThaiLabelOptions } from "../utils/thaiLabelOptions";
 
-async function seedClassesIfEmpty(): Promise<ClassEntry[]> {
-  const supabase = createSupabaseAdmin();
-  if (!supabase) return [];
+interface ClassRow {
+  id: number;
+  name_th: string;
+}
 
-  const { count } = await supabase
-    .from("classes")
-    .select("id", { count: "exact", head: true });
+function localFallback(): ClassEntry[] {
+  return getThaiLabelOptions().map((name, index) => ({ id: index, name }));
+}
 
-  if (count && count > 0) {
-    const { data } = await supabase
-      .from("classes")
-      .select("id, name_th")
-      .order("id");
-    return (data ?? []).map((row) => ({ id: row.id, name: row.name_th }));
+async function loadClasses(): Promise<ClassEntry[]> {
+  const rows = await d1Query<ClassRow>(
+    "SELECT id, name_th FROM classes ORDER BY id",
+  );
+  return rows.map((row) => ({ id: row.id, name: row.name_th }));
+}
+
+// คอยเติม label จาก labelsTh.ts ที่ยังไม่มีใน DB ทุกครั้งที่เรียก (ไม่ใช่แค่ตอนตารางว่าง)
+async function ensureSeededClasses(): Promise<ClassEntry[]> {
+  if (!isD1Configured()) return localFallback();
+
+  try {
+    const knownLabels = getThaiLabelOptions();
+    const existing = await loadClasses();
+
+    const existingNames = new Set(
+      existing.map((entry) => normalizeLabelName(entry.name)),
+    );
+
+    // เติมเฉพาะ label ที่ยังไม่มีใน DB (รองรับ label ใหม่ที่เพิ่มใน labelsTh.ts)
+    const missing = knownLabels
+      .filter((name) => !existingNames.has(normalizeLabelName(name)))
+      .map((name) => [name, normalizeLabelName(name)]);
+
+    if (missing.length === 0) {
+      return existing.length > 0 ? existing : localFallback();
+    }
+
+    for (const chunk of chunkRows(missing, 30)) {
+      const placeholders = chunk.map(() => "(?, ?, 'seed')").join(", ");
+      await d1Query(
+        `INSERT INTO classes (name_th, name_normalized, source) VALUES ${placeholders}
+         ON CONFLICT (name_normalized) DO NOTHING`,
+        chunk.flat(),
+      );
+    }
+
+    const result = await loadClasses();
+    // ฟอลแบ็กถ้า DB ว่างเปล่าจริง ๆ
+    return result.length > 0 ? result : localFallback();
+  } catch (error) {
+    console.error("ensureSeededClasses error:", error);
+    return localFallback();
   }
-
-  const rows = getThaiLabelOptions().map((name) => ({
-    name_th: name,
-    name_normalized: normalizeLabelName(name),
-    source: "seed" as const,
-  }));
-
-  const { error } = await supabase
-    .from("classes")
-    .upsert(rows, { onConflict: "name_normalized", ignoreDuplicates: true });
-
-  if (error) {
-    console.error("Seed classes error:", error);
-    return [];
-  }
-
-  const { data } = await supabase
-    .from("classes")
-    .select("id, name_th")
-    .order("id");
-
-  return (data ?? []).map((row) => ({ id: row.id, name: row.name_th }));
 }
 
 export async function listClasses(): Promise<ClassEntry[]> {
-  const supabase = createSupabaseAdmin();
-  if (!supabase) {
-    return getThaiLabelOptions().map((name, index) => ({
-      id: index,
-      name,
-    }));
-  }
-
-  try {
-    return await seedClassesIfEmpty();
-  } catch (error) {
-    console.error("listClasses error:", error);
-    return getThaiLabelOptions().map((name, index) => ({
-      id: index,
-      name,
-    }));
-  }
+  return ensureSeededClasses();
 }
 
 export async function addClass(
@@ -75,9 +75,8 @@ export async function addClass(
     return { ok: false, error: "ชื่อสั้นเกินไป (อย่างน้อย 2 ตัวอักษร)" };
   }
 
-  const supabase = createSupabaseAdmin();
-  if (!supabase) {
-    return { ok: false, error: "ยังไม่ได้ตั้งค่า Supabase" };
+  if (!isD1Configured()) {
+    return { ok: false, error: "ยังไม่ได้ตั้งค่า Cloudflare D1" };
   }
 
   const existing = await listClasses();
@@ -100,20 +99,23 @@ export async function addClass(
     };
   }
 
-  const { data, error } = await supabase
-    .from("classes")
-    .insert({
-      name_th: trimmed,
-      name_normalized: normalized,
-      source: "user",
-    })
-    .select("id, name_th")
-    .single();
+  try {
+    const rows = await d1Query<ClassRow>(
+      `INSERT INTO classes (name_th, name_normalized, source)
+       VALUES (?, ?, 'user')
+       RETURNING id, name_th`,
+      [trimmed, normalized],
+    );
 
-  if (error || !data) {
+    const row = rows[0];
+    if (!row) return { ok: false, error: "เพิ่มชื่อไม่สำเร็จ" };
+
+    return { ok: true, entry: { id: row.id, name: row.name_th } };
+  } catch (error) {
     console.error("addClass error:", error);
-    return { ok: false, error: error?.message ?? "เพิ่มชื่อไม่สำเร็จ" };
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "เพิ่มชื่อไม่สำเร็จ",
+    };
   }
-
-  return { ok: true, entry: { id: data.id, name: data.name_th } };
 }

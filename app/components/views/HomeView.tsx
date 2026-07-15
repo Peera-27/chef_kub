@@ -1,6 +1,18 @@
 import type { Recipe } from "../../types/recipe";
+import { COOKING_MODES, type CookingMode } from "../../utils/cookingModes";
 import { ImageItem, ScanHistoryEntry } from "../../utils/types";
 import { EmptyState } from "../EmptyState";
+import {
+  IconCamera,
+  IconChefHat,
+  IconClock,
+  IconHeart,
+  IconImage,
+  IconPencil,
+  IconSparkles,
+  IconTag,
+  IconX,
+} from "../Icons";
 
 interface HomeViewProps {
   gallery: ImageItem[];
@@ -8,6 +20,8 @@ interface HomeViewProps {
   favorites: Recipe[];
   allItemsCount: number;
   hasRecipes: boolean;
+  cookingMode: CookingMode;
+  onCookingModeChange: (mode: CookingMode) => void;
   onStartCamera: () => void;
   onUploadImage: (base64: string) => void;
   onRemoveImage: (imageId: string) => void;
@@ -25,6 +39,8 @@ export function HomeView({
   favorites,
   allItemsCount,
   hasRecipes,
+  cookingMode,
+  onCookingModeChange,
   onStartCamera,
   onUploadImage,
   onRemoveImage,
@@ -41,10 +57,11 @@ export function HomeView({
     <div className="space-y-6 fade-in">
       {/* Quick-cook favorite */}
       {topFavorite && (
-        <div className="card p-4 flex items-center justify-between gap-3">
+        <div className="card-glass p-4 flex items-center justify-between gap-3 slide-up">
           <div className="min-w-0">
-            <p className="text-xs text-[var(--color-favorite)] font-medium mb-1">
-              ❤️ ทำเมนูโปรดอีกครั้ง
+            <p className="text-xs text-[var(--color-favorite)] font-medium mb-1 flex items-center gap-1">
+              <IconHeart size={12} filled />
+              ทำเมนูโปรดอีกครั้ง
             </p>
             <p className="font-semibold text-[var(--color-ink)] truncate">
               {topFavorite.name}
@@ -52,34 +69,35 @@ export function HomeView({
           </div>
           <button
             onClick={() => onQuickCookFavorite(topFavorite)}
-            className="btn-primary shrink-0 text-sm px-4 py-2.5 tap"
+            className="btn-primary shrink-0 text-sm px-4 py-2.5 tap micro-bounce"
           >
             เริ่มทำเลย
           </button>
         </div>
       )}
 
-      {/* Action buttons: 2 cols on mobile, 2 cols on tablet too but wider */}
+      {/* Action buttons: 2 cols */}
       <div className="grid grid-cols-2 gap-3 md:gap-4">
         <button
           onClick={onStartCamera}
-          className="btn-primary flex flex-col items-center justify-center gap-2 py-8 md:py-10 rounded-[var(--radius-lg)] tap"
+          className="group relative flex flex-col items-center justify-center gap-3 py-8 md:py-10 rounded-[var(--radius-xl)] tap slide-up overflow-hidden bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-dark)] text-white shadow-[var(--shadow-glow)] active:scale-[0.97] transition-all duration-200"
         >
-          <span className="text-3xl md:text-4xl leading-none opacity-90">
-            📷
+          <span className="tile bg-white/20 group-hover:scale-110 transition-transform duration-300">
+            <IconCamera size={22} />
           </span>
           <span className="font-semibold md:text-lg">ถ่ายรูป</span>
         </button>
-        <label className="btn-secondary flex flex-col items-center justify-center gap-2 py-8 md:py-10 rounded-[var(--radius-lg)] cursor-pointer tap">
-          <span className="text-3xl md:text-4xl leading-none opacity-80">
-            🖼️
+        <label className="group flex flex-col items-center justify-center gap-3 py-8 md:py-10 rounded-[var(--radius-xl)] cursor-pointer tap pop-in overflow-hidden bg-white border border-[var(--color-line)] shadow-[var(--shadow-sm)] hover:border-[var(--color-brand)] hover:shadow-[var(--shadow-md)] active:scale-[0.97] transition-all duration-200">
+          <span className="tile bg-[var(--color-brand-soft)] text-[var(--color-brand)] group-hover:scale-110 transition-transform duration-300">
+            <IconImage size={22} />
           </span>
-          <span className="font-semibold md:text-lg">อัปโหลด</span>
+          <span className="font-semibold md:text-lg text-[var(--color-ink)]">
+            อัปโหลด
+          </span>
           <input
             type="file"
             className="hidden"
             accept="image/*"
-            capture="environment"
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) {
@@ -105,17 +123,21 @@ export function HomeView({
           </div>
 
           {/* Multiple columns on tablet, single on mobile */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {gallery.map((img) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger">
+            {gallery.map((img, idx) => {
               const items = img.items ?? [];
-              const imgW = img.imageWidth;
-              const imgH = img.imageHeight;
-              const hasBoxes = imgW && imgH && (img.boxes ?? []).length > 0;
+              // โมเดลไม่รู้จักอะไรในรูปนี้เลย — รูปแบบนี้แหละที่มีค่าที่สุดถ้าผู้ใช้ช่วย label
+              const unidentified = items.length === 0;
 
               return (
                 <div
                   key={img.id}
-                  className="group relative rounded-2xl overflow-hidden bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-black/[0.04] transition-all duration-300 hover:shadow-[0_8px_32px_rgba(0,0,0,0.1)]"
+                  style={{ "--i": idx } as Record<string, string | number>}
+                  className={`group relative rounded-2xl overflow-hidden bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)] card-lift ${
+                    unidentified
+                      ? "border-2 border-[var(--color-warn)]/40 attention-ring"
+                      : "border border-black/[0.04]"
+                  }`}
                 >
                   {/* Delete button */}
                   <button
@@ -123,12 +145,12 @@ export function HomeView({
                     className="absolute top-3 right-3 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white text-sm backdrop-blur-md transition-all duration-200 hover:bg-red-500 hover:scale-110 active:scale-95 shadow-lg"
                     aria-label="ลบรูป"
                   >
-                    ✕
+                    <IconX size={14} />
                   </button>
 
                   {/* Image container */}
                   <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
-                    {/* ✅ สร้าง Wrapper ครอบทั้งรูปและกรอบ YOLO ไว้ด้วยกัน เพื่อให้เอฟเฟกต์ซูมทำงานพร้อมกัน */}
+                    {/* กล่อง crop รูปให้พอดีกรอบ + ทำ zoom ตอน hover */}
                     <div className="absolute inset-0 w-full h-full transition-transform duration-500 group-hover:scale-105">
                       <img
                         src={img.url}
@@ -136,163 +158,29 @@ export function HomeView({
                         className="w-full h-full object-contain"
                       />
 
-                      {/* Bounding boxes overlay */}
-                      {hasBoxes && (
-                        <div className="absolute inset-0 z-10 pointer-events-none">
-                          <svg
-                            viewBox={`0 0 ${imgW} ${imgH}`}
-                            className="w-full h-full"
-                            preserveAspectRatio="xMidYMid meet" // ✅ จุดที่สำคัญที่สุด: สั่งให้กล่อง SVG ย่อขยายสเกลเดียวกับรูปเป๊ะๆ
-                          >
-                            {img.boxes!.map((box, i) => {
-                              const labelW = box.label
-                                ? box.label.length * Math.max(7, imgW / 55) + 10
-                                : 0;
-                              const labelH = Math.max(18, imgH / 22);
-                              return (
-                                <g key={i}>
-                                  {/* Box fill (subtle) */}
-                                  <rect
-                                    x={box.x}
-                                    y={box.y}
-                                    width={box.w}
-                                    height={box.h}
-                                    fill="rgba(16, 185, 129, 0.08)"
-                                  />
-                                  {/* Box border with corner accents */}
-                                  <rect
-                                    x={box.x}
-                                    y={box.y}
-                                    width={box.w}
-                                    height={box.h}
-                                    fill="none"
-                                    stroke="rgba(16, 185, 129, 0.95)"
-                                    strokeWidth={Math.max(2, imgW / 180)}
-                                    rx="2"
-                                  />
-                                  {/* Corner accents for modern look */}
-                                  {(() => {
-                                    const corner = Math.max(8, box.w / 6);
-                                    const sw = Math.max(2, imgW / 200);
-                                    return (
-                                      <>
-                                        {/* Top-left */}
-                                        <line
-                                          x1={box.x}
-                                          y1={box.y}
-                                          x2={box.x + corner}
-                                          y2={box.y}
-                                          stroke="#10b981"
-                                          strokeWidth={sw + 1}
-                                          strokeLinecap="round"
-                                        />
-                                        <line
-                                          x1={box.x}
-                                          y1={box.y}
-                                          x2={box.x}
-                                          y2={box.y + corner}
-                                          stroke="#10b981"
-                                          strokeWidth={sw + 1}
-                                          strokeLinecap="round"
-                                        />
-                                        {/* Top-right */}
-                                        <line
-                                          x1={box.x + box.w}
-                                          y1={box.y}
-                                          x2={box.x + box.w - corner}
-                                          y2={box.y}
-                                          stroke="#10b981"
-                                          strokeWidth={sw + 1}
-                                          strokeLinecap="round"
-                                        />
-                                        <line
-                                          x1={box.x + box.w}
-                                          y1={box.y}
-                                          x2={box.x + box.w}
-                                          y2={box.y + corner}
-                                          stroke="#10b981"
-                                          strokeWidth={sw + 1}
-                                          strokeLinecap="round"
-                                        />
-                                        {/* Bottom-left */}
-                                        <line
-                                          x1={box.x}
-                                          y1={box.y + box.h}
-                                          x2={box.x + corner}
-                                          y2={box.y + box.h}
-                                          stroke="#10b981"
-                                          strokeWidth={sw + 1}
-                                          strokeLinecap="round"
-                                        />
-                                        <line
-                                          x1={box.x}
-                                          y1={box.y + box.h}
-                                          x2={box.x}
-                                          y2={box.y + box.h - corner}
-                                          stroke="#10b981"
-                                          strokeWidth={sw + 1}
-                                          strokeLinecap="round"
-                                        />
-                                        {/* Bottom-right */}
-                                        <line
-                                          x1={box.x + box.w}
-                                          y1={box.y + box.h}
-                                          x2={box.x + box.w - corner}
-                                          y2={box.y + box.h}
-                                          stroke="#10b981"
-                                          strokeWidth={sw + 1}
-                                          strokeLinecap="round"
-                                        />
-                                        <line
-                                          x1={box.x + box.w}
-                                          y1={box.y + box.h}
-                                          x2={box.x + box.w}
-                                          y2={box.y + box.h - corner}
-                                          stroke="#10b981"
-                                          strokeWidth={sw + 1}
-                                          strokeLinecap="round"
-                                        />
-                                      </>
-                                    );
-                                  })()}
-                                  {/* Label badge */}
-                                  {box.label && (
-                                    <g>
-                                      <rect
-                                        x={box.x}
-                                        y={box.y - labelH - 2}
-                                        width={labelW}
-                                        height={labelH}
-                                        rx="4"
-                                        fill="#10b981"
-                                      />
-                                      <text
-                                        x={box.x + 5}
-                                        y={box.y - 5}
-                                        fill="white"
-                                        fontSize={Math.max(11, imgH / 32)}
-                                        fontWeight="600"
-                                        fontFamily="system-ui, sans-serif"
-                                      >
-                                        {box.label}
-                                      </text>
-                                    </g>
-                                  )}
-                                </g>
-                              );
-                            })}
-                          </svg>
-                        </div>
-                      )}
                     </div>
 
                     {/* Subtle gradient overlay at bottom for readability */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
                     {/* Item count badge - top left */}
                     <div className="absolute top-3 left-3 z-20">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/95 backdrop-blur-md shadow-sm text-[var(--color-ink)]">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        {items.length} รายการ
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/95 backdrop-blur-md shadow-sm ${
+                          unidentified
+                            ? "text-[var(--color-warn)]"
+                            : "text-[var(--color-ink)]"
+                        }`}
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full animate-pulse ${
+                            unidentified
+                              ? "bg-[var(--color-warn)]"
+                              : "bg-emerald-500"
+                          }`}
+                        />
+                        {unidentified
+                          ? "ยังไม่รู้จัก"
+                          : `${items.length} รายการ`}
                       </span>
                     </div>
 
@@ -302,59 +190,63 @@ export function HomeView({
                         <button
                           key={i}
                           onClick={() => onRemoveItem(img.id, it.name)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/95 backdrop-blur-md shadow-sm text-[var(--color-ink)] hover:bg-red-50 hover:text-red-600 transition-all duration-200 active:scale-95 border border-black/[0.06]"
+                          style={
+                            { "--i": i } as Record<string, string | number>
+                          }
+                          className="chip-in inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/95 backdrop-blur-md shadow-sm text-[var(--color-ink)] hover:bg-red-50 hover:text-red-600 transition-all duration-200 active:scale-95 border border-black/[0.06]"
                         >
                           {it.name}
-                          <span className="text-[10px] opacity-50 hover:opacity-100">
-                            ✕
+                          <span className="opacity-50 hover:opacity-100">
+                            <IconX size={10} />
                           </span>
                         </button>
                       ))}
-                      {items.length === 0 && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-white/80 backdrop-blur-md text-[var(--color-muted)]">
-                          ไม่พบวัตถุดิบ
-                        </span>
-                      )}
                     </div>
                   </div>
 
                   {/* Action bar */}
-                  <div className="px-4 py-3 flex items-center justify-between bg-white border-t border-black/[0.04]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center text-sm">
-                        🍳
+                  {unidentified ? (
+                    <div className="px-4 py-3 bg-[var(--color-warn-soft)] border-t border-[var(--color-warn)]/20 space-y-2.5">
+                      <div className="flex items-start gap-2">
+                        <span className="text-base leading-none mt-0.5 wiggle">
+                          🤔
+                        </span>
+                        <p className="text-xs text-[var(--color-ink)] leading-relaxed">
+                          ยังไม่รู้จักวัตถุดิบในรูปนี้{" "}
+                          <span className="text-[var(--color-muted)]">
+                            ช่วยระบุให้หน่อย แล้วครั้งหน้าจะจำได้
+                          </span>
+                        </p>
                       </div>
-                      <div>
+                      <button
+                        onClick={() => onEditImage(img)}
+                        className="w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-[var(--color-warn)] to-amber-600 text-white shadow-[0_2px_8px_rgba(245,158,11,0.3)] hover:shadow-[0_4px_16px_rgba(245,158,11,0.4)] transition-all duration-200 active:scale-[0.97] tap"
+                      >
+                        <IconTag size={16} />
+                        ช่วยระบุวัตถุดิบ
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="px-4 py-3 bg-white border-t border-black/[0.04] space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center text-[var(--color-brand)] shrink-0">
+                          <IconChefHat size={16} />
+                        </div>
                         <p className="text-sm font-semibold text-[var(--color-ink)] leading-tight">
                           {items.length} วัตถุดิบ
                         </p>
-                        {imgW && imgH && (
-                          <p className="text-[10px] text-[var(--color-muted)] leading-tight">
-                            {imgW} × {imgH} px
-                          </p>
-                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => onEditImage(img)}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 min-h-[40px] rounded-xl text-xs font-semibold bg-white border border-[var(--color-line)] text-[var(--color-ink)] hover:border-[var(--color-brand)] transition-all duration-200 active:scale-95"
+                        >
+                          <IconPencil size={14} />
+                          แก้ไข
+                        </button>
                       </div>
                     </div>
-                    <button
-                      onClick={() => onEditImage(img)}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-[var(--color-brand)] to-[var(--color-brand-dark)] text-white shadow-[0_2px_8px_rgba(232,99,10,0.25)] hover:shadow-[0_4px_16px_rgba(232,99,10,0.35)] transition-all duration-200 active:scale-95"
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 20h9" />
-                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                      </svg>
-                      แก้ไข
-                    </button>
-                  </div>
+                  )}
                 </div>
               );
             })}
@@ -362,19 +254,61 @@ export function HomeView({
         </div>
       )}
 
-      {/* CTA: generate recipes */}
+      {/* Cooking mode + CTA: generate recipes */}
       {allItemsCount > 0 && (
-        <button
-          onClick={onInventRecipe}
-          className="btn-primary w-full py-4 md:py-5 text-base md:text-lg font-semibold tap"
-        >
-          ขอสูตรอาหาร ({allItemsCount} วัตถุดิบ) 🍳
-        </button>
+        <div className="space-y-3">
+          <div className="card-glass p-4 md:p-5 space-y-3">
+            <p className="text-xs font-medium text-[var(--color-muted)]">
+              อยากได้เมนูแนวไหน
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {COOKING_MODES.map((mode) => {
+                const isActive = mode.id === cookingMode;
+                return (
+                  <button
+                    key={mode.id}
+                    onClick={() => onCookingModeChange(mode.id)}
+                    aria-pressed={isActive}
+                    className={`flex flex-col items-center gap-1 px-2 py-3 rounded-[var(--radius-lg)] border tap transition-all duration-200 active:scale-[0.97] ${
+                      isActive
+                        ? "border-[var(--color-brand)] bg-[var(--color-brand-soft)] shadow-[var(--shadow-sm)]"
+                        : "border-[var(--color-line)] bg-white hover:border-[var(--color-brand)]"
+                    }`}
+                  >
+                    <span className="text-xl leading-none">{mode.emoji}</span>
+                    <span
+                      className={`text-xs font-semibold ${
+                        isActive
+                          ? "text-[var(--color-brand)]"
+                          : "text-[var(--color-ink)]"
+                      }`}
+                    >
+                      {mode.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-[var(--color-muted)] text-center">
+              {COOKING_MODES.find((mode) => mode.id === cookingMode)?.hint}
+            </p>
+          </div>
+
+          <button
+            onClick={onInventRecipe}
+            className="group relative w-full py-4 md:py-5 text-base md:text-lg font-semibold tap overflow-hidden bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-dark)] text-white rounded-[var(--radius-xl)] shadow-[var(--shadow-glow)] active:scale-[0.98] transition-all duration-200 micro-bounce"
+          >
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              <IconSparkles size={20} />
+              ขอสูตรอาหาร ({allItemsCount} วัตถุดิบ)
+            </span>
+          </button>
+        </div>
       )}
 
       {/* History quick-start */}
       {history.length > 0 && (
-        <div className="card-flat p-4 md:p-5">
+        <div className="card-glass p-4 md:p-5">
           <p className="text-xs font-medium text-[var(--color-muted)] mb-3">
             ทำเมนูจากวัตถุดิบเดิม
           </p>
@@ -383,9 +317,10 @@ export function HomeView({
               <button
                 key={h.id}
                 onClick={() => onQuickStartHistory(h.items)}
-                className="btn-ghost w-full text-left text-sm px-3 py-3 rounded-[var(--radius-md)] hover:bg-[var(--color-brand-pale)] truncate tap"
+                className="btn-ghost w-full flex items-center gap-2 text-left text-sm px-3 py-3 rounded-[var(--radius-md)] hover:bg-[var(--color-brand-pale)] tap"
               >
-                {h.items.join(", ")}
+                <IconClock size={14} className="shrink-0 opacity-60" />
+                <span className="truncate">{h.items.join(", ")}</span>
               </button>
             ))}
           </div>

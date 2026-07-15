@@ -25,31 +25,6 @@ export function normalizePixelRect(box: PixelBBox): PixelBBox {
   return { x, y, w, h };
 }
 
-export function toYoloBBox(
-  box: PixelBBox,
-  canvasWidth: number,
-  canvasHeight: number,
-  imageWidth: number,
-  imageHeight: number,
-): YoloBBox {
-  const rect = normalizePixelRect(box);
-
-  const scaleX = imageWidth / canvasWidth;
-  const scaleY = imageHeight / canvasHeight;
-
-  const x = rect.x * scaleX;
-  const y = rect.y * scaleY;
-  const w = rect.w * scaleX;
-  const h = rect.h * scaleY;
-
-  return {
-    x_center: (x + w / 2) / imageWidth,
-    y_center: (y + h / 2) / imageHeight,
-    width: w / imageWidth,
-    height: h / imageHeight,
-  };
-}
-
 export function toYoloBBoxFromImagePixels(
   box: PixelBBox,
   imageWidth: number,
@@ -94,21 +69,4 @@ export function imagePixelsToCanvas(
     w: box.w * scaleX,
     h: box.h * scaleY,
   };
-}
-
-export function canvasToImagePixels(
-  box: PixelBBox,
-  canvasWidth: number,
-  canvasHeight: number,
-  imageWidth: number,
-  imageHeight: number,
-): PixelBBox {
-  const scaleX = imageWidth / canvasWidth;
-  const scaleY = imageHeight / canvasHeight;
-  return normalizePixelRect({
-    x: box.x * scaleX,
-    y: box.y * scaleY,
-    w: box.w * scaleX,
-    h: box.h * scaleY,
-  });
 }
