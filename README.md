@@ -1,28 +1,38 @@
-# Chef Kub — สแกนวัตถุดิบ แนะนำสูตรอาหาร
+<div align="center">
 
-โปรเจกต์จบที่ใช้ **Computer Vision + Generative AI** ช่วยผู้ใช้สแกนวัตถุดิบจากรูปภาพ แนะนำสูตรอาหาร และจำ label ที่ผู้ใช้เคยแก้ไว้ใน Cloudflare D1 — เจอรูปเดิมหรือรูปที่**คล้ายกัน**ก็โหลด label เดิมได้ทันทีโดยไม่ต้องสแกนซ้ำ
+# 🍳 Chef Kub — สแกนวัตถุดิบ แนะนำสูตรอาหาร 🥘
 
-การตรวจจับใช้ **YOLO เดาในเบราว์เซอร์ แล้วให้ Gemini เป็นคนตัดสินสุดท้าย** — YOLO เร็วแต่ "มั่นใจแต่มั่ว" ได้ Gemini จึงยืนยันของที่เดาถูกและเติมของที่ YOLO พลาด
+*📸 ถ่ายรูปวัตถุดิบ → 🤖 AI แนะนำเมนู → 👨‍🍳 ลงมือทำ*
 
-## ฟีเจอร์หลัก
+🥕 🍅 🧄 🧅 🥚 🌶️ 🥬 🍆 🐟 🍗
+
+</div>
+
+---
+
+โปรเจกต์จบที่ใช้ **🧠 Computer Vision + ✨ Generative AI** ช่วยผู้ใช้สแกนวัตถุดิบจากรูปภาพ แนะนำสูตรอาหาร และจำ label ที่ผู้ใช้เคยแก้ไว้ใน Cloudflare D1 — เจอรูปเดิมหรือรูปที่**คล้ายกัน**ก็โหลด label เดิมได้ทันทีโดยไม่ต้องสแกนซ้ำ
+
+การตรวจจับใช้ **⚡ YOLO เดาในเบราว์เซอร์ แล้วให้ 🔮 Gemini เป็นคนตัดสินสุดท้าย** — YOLO เร็วแต่ "มั่นใจแต่มั่ว" ได้ Gemini จึงยืนยันของที่เดาถูกและเติมของที่ YOLO พลาด
+
+## ✨ ฟีเจอร์หลัก
 
 | ฟีเจอร์ | รายละเอียด |
 |---------|------------|
-| ตรวจจับวัตถุดิบ (YOLO) | YOLO11n (~122 class) รันในเบราว์เซอร์ด้วย TensorFlow.js |
-| ตัดสินด้วย Gemini | Gemini ดูรูปจริง ยืนยันของที่ YOLO เดาถูก + เติมของที่ YOLO พลาด (source: `yolo` / `gemini` / `manual`) |
-| แก้ไข / Label ด้วยมือ | วาดกรอบ เลือกชื่อจากรายการ หรือเพิ่ม class ใหม่ |
-| จำ Label | บันทึก bounding box (YOLO format) ลง Cloudflare D1 |
-| เก็บรูปเป็น training data | อัพรูปขึ้น Cloudflare R2 ตอน label เพื่อใช้ train โมเดลรอบต่อไป (ถ้าไม่ตั้งค่า R2 ก็ยังเซฟ label ได้) |
-| จำรูปเดิม + รูปคล้าย | SHA-256 จับรูปเดิมเป๊ะ ๆ / dHash + Hamming distance จับรูปคล้ายกัน |
-| จัดการ Class | ตาราง `classes` กลาง ป้องกันชื่อซ้ำ/คล้ายกัน |
-| สร้างสูตรอาหาร | Gemini สร้าง 3 เมนูจากวัตถุดิบที่มี |
-| โหมดทำอาหาร | ปกติ / ฟิวชั่น / จากอนิเมะ — แต่ละโหมดปรับสไตล์เมนู + สไตล์รูป |
-| รูปประกอบเมนู | Cloudflare Workers AI (`flux-1-schnell`) สร้างรูปจากคำบรรยายเมนู (โฟโต้ / ภาพวาด) |
-| โหมดทำครัว | แสดงขั้นตอนทีละ step + อ่านให้ฟัง (Web Speech API) |
-| รายการโปรด / ประวัติ | localStorage |
-| กรองเมนู | กรองสูตรตาม tag (เผ็ด, ทำง่าย ฯลฯ) |
+| 📷 ตรวจจับวัตถุดิบ (YOLO) | YOLO11n (~122 class) รันในเบราว์เซอร์ด้วย TensorFlow.js |
+| 🔮 ตัดสินด้วย Gemini | Gemini ดูรูปจริง ยืนยันของที่ YOLO เดาถูก + เติมของที่ YOLO พลาด (source: `yolo` / `gemini` / `manual`) |
+| ✏️ แก้ไข / Label ด้วยมือ | วาดกรอบ เลือกชื่อจากรายการ หรือเพิ่ม class ใหม่ |
+| 💾 จำ Label | บันทึก bounding box (YOLO format) ลง Cloudflare D1 |
+| 🗂️ เก็บรูปเป็น training data | อัพรูปขึ้น Cloudflare R2 ตอน label เพื่อใช้ train โมเดลรอบต่อไป (ถ้าไม่ตั้งค่า R2 ก็ยังเซฟ label ได้) |
+| 🔍 จำรูปเดิม + รูปคล้าย | SHA-256 จับรูปเดิมเป๊ะ ๆ / dHash + Hamming distance จับรูปคล้ายกัน |
+| 🏷️ จัดการ Class | ตาราง `classes` กลาง ป้องกันชื่อซ้ำ/คล้ายกัน |
+| 🍲 สร้างสูตรอาหาร | Gemini สร้าง 3 เมนูจากวัตถุดิบที่มี |
+| 🎭 โหมดทำอาหาร | ปกติ / ฟิวชั่น / จากอนิเมะ — แต่ละโหมดปรับสไตล์เมนู + สไตล์รูป |
+| 🖼️ รูปประกอบเมนู | Cloudflare Workers AI (`flux-1-schnell`) สร้างรูปจากคำบรรยายเมนู (โฟโต้ / ภาพวาด) |
+| 🔊 โหมดทำครัว | แสดงขั้นตอนทีละ step + อ่านให้ฟัง (Web Speech API) |
+| ⭐ รายการโปรด / ประวัติ | localStorage |
+| 🧃 กรองเมนู | กรองสูตรตาม tag (เผ็ด, ทำง่าย ฯลฯ) |
 
-## สถาปัตยกรรมระบบ
+## 🏗️ สถาปัตยกรรมระบบ
 
 ```
 ┌─────────────┐     ┌──────────────────────────────────────────┐
@@ -42,7 +52,7 @@
         เจอรูปเดิม/คล้ายกัน → โหลด label เดิม (ข้าม YOLO + Gemini)
 ```
 
-## Flow สแกนรูป
+## 🔄 Flow สแกนรูป
 
 ```
 อัปรูป
@@ -56,17 +66,17 @@
   → บันทึก hash + annotations ลง D1 และอัพรูปขึ้น R2
 ```
 
-## Tech Stack
+## 🧰 Tech Stack
 
-- **Frontend:** Next.js 16, React 19, Tailwind CSS 4
-- **Object Detection:** YOLO11n → TensorFlow.js Graph Model (`public/model/`)
-- **AI ตัดสินภาพ + สร้างสูตร:** Google Gemini (`gemini-3.1-flash-lite`)
-- **Database:** Cloudflare D1 (SQLite) — เก็บ label memory
-- **Object Storage:** Cloudflare R2 — เก็บไฟล์รูปที่ label แล้วไว้เป็น training data
-- **Image API:** Cloudflare Workers AI — รูปเมนู (`@cf/black-forest-labs/flux-1-schnell`)
-- **SDK:** `@google/genai` (D1 / R2 / Workers AI เรียกผ่าน Cloudflare REST API ตรง ๆ)
+- ⚛️ **Frontend:** Next.js 16, React 19, Tailwind CSS 4
+- 🎯 **Object Detection:** YOLO11n → TensorFlow.js Graph Model (`public/model/`)
+- 🔮 **AI ตัดสินภาพ + สร้างสูตร:** Google Gemini (`gemini-3.1-flash-lite`)
+- 🗄️ **Database:** Cloudflare D1 (SQLite) — เก็บ label memory
+- 🪣 **Object Storage:** Cloudflare R2 — เก็บไฟล์รูปที่ label แล้วไว้เป็น training data
+- 🎨 **Image API:** Cloudflare Workers AI — รูปเมนู (`@cf/black-forest-labs/flux-1-schnell`)
+- 🔌 **SDK:** `@google/genai` (D1 / R2 / Workers AI เรียกผ่าน Cloudflare REST API ตรง ๆ)
 
-## โครงสร้างโปรเจกต์
+## 📁 โครงสร้างโปรเจกต์
 
 ```
 app/
@@ -102,15 +112,15 @@ app/
 public/model/                   # โมเดล YOLO (model.json + weights + metadata.yaml)
 ```
 
-## การติดตั้ง
+## 🚀 การติดตั้ง
 
-### 1. Dependencies
+### 1️⃣ Dependencies
 
 ```bash
 bun install   # หรือ npm install
 ```
 
-### 2. Environment Variables
+### 2️⃣ Environment Variables 🔐
 
 สร้างไฟล์ `.env` ที่ root โปรเจกต์:
 
@@ -133,7 +143,7 @@ CLOUDFLARE_R2_BUCKET=your_r2_bucket_name
 | `CLOUDFLARE_D1_DATABASE_ID` | ได้จากตอนสร้าง DB (`wrangler d1 create`) หรือ Dashboard → D1 |
 | `CLOUDFLARE_R2_BUCKET` | ชื่อ bucket R2 สำหรับเก็บรูป training — ถ้าไม่ตั้งจะข้ามการอัพรูป แต่ยังเซฟ label ได้ |
 
-### 3. ตั้งค่า Cloudflare D1 + R2
+### 3️⃣ ตั้งค่า Cloudflare D1 + R2 ☁️
 
 ```bash
 # สร้าง D1 database — จด database_id ที่ได้ใส่ .env
@@ -179,7 +189,7 @@ CREATE TABLE annotations (
 
 > เปิดแอปครั้งแรก → ระบบ seed class จาก `labelsTh.ts` เข้าตาราง `classes` อัตโนมัติ และจะเติม label ใหม่ที่เพิ่มใน `labelsTh.ts` ให้ทุกครั้งที่โหลดรายการ class
 
-### 4. รัน Dev Server
+### 4️⃣ รัน Dev Server ▶️
 
 ```bash
 bun dev
@@ -187,7 +197,7 @@ bun dev
 
 เปิด [http://localhost:3000](http://localhost:3000)
 
-## ฐานข้อมูล (Cloudflare D1 + R2)
+## 🗃️ ฐานข้อมูล (Cloudflare D1 + R2)
 
 | ที่เก็บ | หน้าที่ |
 |---------|--------|
@@ -196,13 +206,13 @@ bun dev
 | `classes` (D1) | รายการชื่อวัตถุดิบ (`seed` จาก dataset เดิม / `user` เพิ่มใหม่) |
 | R2 bucket | ไฟล์รูปจริง (key = `<sessionId>/<imageId>.<ext>`) ไว้ใช้ train โมเดลรอบต่อไป |
 
-### การจับรูปคล้ายกัน
+### 🧬 การจับรูปคล้ายกัน
 
 - Client คำนวณ **dHash 64 bit**: ย่อรูปเหลือ 9×8 grayscale แล้วเทียบความสว่างพิกเซลข้างเคียง
 - Server เทียบกับ hash ในตาราง `images` ด้วย **Hamming distance** — ต่างกัน ≤ 8 bit ถือว่าเป็นรูปเดียวกัน (สแกนรูปล่าสุดสูงสุด 1000 รูป)
 - ทนต่อการ resize / บีบอัด / ปรับแสงเล็กน้อย แต่ถ้าครอปหรือหมุนรูปจะถือเป็นรูปใหม่
 
-## โหมดทำอาหาร
+## 🎭 โหมดทำอาหาร
 
 | โหมด | สไตล์เมนู | สไตล์รูป |
 |------|----------|----------|
@@ -210,7 +220,7 @@ bun dev
 | 🌏 ฟิวชั่น | จับอาหารสองชาติมาชนกัน | โฟโต้ |
 | 🍜 จากอนิเมะ | เมนูที่ปรากฏในอนิเมะ/ภาพยนตร์/ซีรีส์ | ภาพวาด (cel shading) |
 
-## Deploy
+## 🚢 Deploy
 
 ```bash
 bun run build
@@ -219,7 +229,7 @@ vercel deploy
 
 ตั้ง Environment Variables ทั้งหมดใน Vercel
 
-## ข้อจำกัด
+## ⚠️ ข้อจำกัด
 
 - YOLO รู้จักแค่ class ในโมเดลปัจจุบัน (~122) — class ใหม่ (เช่น ใบโหระพา) ต้อง train โมเดลใหม่ (รูปที่ label แล้วถูกเก็บใน R2 ไว้เพื่อการนี้)
 - Label YOLO เดิมเป็นภาษาอังกฤษ — แปลเป็นไทยด้วย mapping ใน `labelsTh.ts`
@@ -229,9 +239,15 @@ vercel deploy
 - Workers AI free tier ให้ 10,000 neurons/วัน ≈ 170 รูป/วัน
 - โหมดทำครัวใช้ Web Speech API — เสียงขึ้นกับ browser/OS
 
-## ผู้พัฒนา
+## 👨‍🍳 ผู้พัฒนา
 
-โปรเจกต์จบ — Chef Kub
+โปรเจกต์จบ — Chef Kub 🧑‍🍳✨
 
-- ธนวัฒน์ น้อยหัวหาด (เอ็ม)
-- พีรภัทร์ ชมภูศรี (พี)
+- 👨‍💻 ธนวัฒน์ น้อยหัวหาด (เอ็ม)
+- 👨‍💻 พีรภัทร์ ชมภูศรี (พี)
+
+<div align="center">
+
+🍳 *Made with love & a lot of 🍚* 🥢
+
+</div>
