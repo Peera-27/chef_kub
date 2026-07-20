@@ -199,7 +199,7 @@ export function EditImageView({
                     <button
                       type="button"
                       onClick={() => onRemoveBox(index)}
-                      className="px-3 py-2 text-xs font-medium rounded-lg bg-white shadow-sm hover:shadow-md text-red-500 active:scale-95 transition-all tap"
+                      className="px-3 py-2 text-xs font-medium rounded-lg bg-white shadow-sm hover:shadow-md text-[var(--color-danger)] active:scale-95 transition-all tap"
                     >
                       ลบ
                     </button>

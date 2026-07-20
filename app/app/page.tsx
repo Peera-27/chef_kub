@@ -1,20 +1,21 @@
 "use client";
 
 import "@tensorflow/tfjs-backend-webgl";
-import { LoadingOverlay } from "./components/LoadingOverlay";
-import { CameraView } from "./components/views/CameraView";
-import { EditImageView } from "./components/views/EditImageView";
-import { FavoritesView } from "./components/views/FavoritesView";
-import { HomeView } from "./components/views/HomeView";
-import { CookView } from "./components/views/CookView";
-import { RecipesView } from "./components/views/RecipesView";
+import Link from "next/link";
+import { LoadingOverlay } from "../components/LoadingOverlay";
+import { CameraView } from "../components/views/CameraView";
+import { EditImageView } from "../components/views/EditImageView";
+import { FavoritesView } from "../components/views/FavoritesView";
+import { HomeView } from "../components/views/HomeView";
+import { CookView } from "../components/views/CookView";
+import { RecipesView } from "../components/views/RecipesView";
 import {
   IconCamera,
   IconChefHat,
   IconHeart,
   IconHome,
-} from "./components/Icons";
-import { useChefKub } from "./hooks/useChefKub";
+} from "../components/Icons";
+import { useChefKub } from "../hooks/useChefKub";
 
 export default function Home() {
   const {
@@ -26,8 +27,6 @@ export default function Home() {
     recipes,
     viewMode,
     setViewMode,
-    tagFilter,
-    setTagFilter,
     favorites,
     history,
     favVersion,
@@ -37,8 +36,6 @@ export default function Home() {
     editingImage,
     setEditingImage,
     videoRef,
-    allTags,
-    filteredRecipes,
     startCamera,
     capturePhoto,
     processImage,
@@ -96,7 +93,11 @@ export default function Home() {
         {/* Sidebar */}
         <aside className="md:w-64 lg:w-72 md:flex-col md:border-r md:border-white/60 md:bg-white/70 md:backdrop-blur-xl md:sticky md:top-0 md:h-dvh shrink-0 flex flex-col">
           <div className="p-6 pb-4">
-            <div className="flex items-center gap-3">
+            {/* กดโลโก้เพื่อกลับหน้าแนะนำ */}
+            <Link
+              href="/"
+              className="flex items-center gap-3 rounded-[var(--radius-md)] -m-1 p-1 transition-opacity hover:opacity-80 tap"
+            >
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-dark)] grid place-items-center text-white shadow-[var(--shadow-glow)]">
                 <IconChefHat size={22} />
               </div>
@@ -108,7 +109,7 @@ export default function Home() {
                   สแกนแล้วเริ่มทำได้เลย
                 </p>
               </div>
-            </div>
+            </Link>
           </div>
 
           <nav className="flex-1 px-3 space-y-1.5">
@@ -221,18 +222,17 @@ export default function Home() {
               {viewMode === "recipes" && (
                 <RecipesView
                   recipes={recipes}
-                  filteredRecipes={filteredRecipes}
-                  allTags={allTags}
-                  tagFilter={tagFilter}
                   imageGenPending={imageGenPending}
-                  onTagFilterChange={setTagFilter}
                   onFavoriteChange={refreshFavorites}
                   onStartCook={startCook}
                 />
               )}
 
               {viewMode === "cook" && activeRecipe && (
-                <CookView recipe={activeRecipe} onDone={endCook} />
+                <CookView
+                  recipe={activeRecipe}
+                  onDone={endCook}
+                />
               )}
 
               {viewMode === "favorites" && (
@@ -254,14 +254,18 @@ export default function Home() {
         {viewMode !== "camera" && (
           <header className="sticky top-0 z-30 bg-[var(--color-page)]/80 backdrop-blur-md px-5 pt-5 pb-3 safe-top border-b border-black/[0.04]">
             <div className="flex justify-between items-center">
-              <div>
+              {/* กดโลโก้เพื่อกลับหน้าแนะนำ */}
+              <Link
+                href="/"
+                className="rounded-[var(--radius-sm)] transition-opacity hover:opacity-80 tap"
+              >
                 <h1 className="text-xl font-bold text-gradient-brand tracking-tight leading-none">
                   Chef Kub
                 </h1>
                 <p className="text-[11px] text-[var(--color-muted)] mt-0.5">
                   สแกนแล้วเริ่มทำได้เลย
                 </p>
-              </div>
+              </Link>
               <div className="flex items-center gap-2">
                 {favorites.length > 0 && viewMode === "home" && (
                   <button
@@ -341,18 +345,17 @@ export default function Home() {
           {viewMode === "recipes" && (
             <RecipesView
               recipes={recipes}
-              filteredRecipes={filteredRecipes}
-              allTags={allTags}
-              tagFilter={tagFilter}
               imageGenPending={imageGenPending}
-              onTagFilterChange={setTagFilter}
               onFavoriteChange={refreshFavorites}
               onStartCook={startCook}
             />
           )}
 
           {viewMode === "cook" && activeRecipe && (
-            <CookView recipe={activeRecipe} onDone={endCook} />
+            <CookView
+              recipe={activeRecipe}
+              onDone={endCook}
+            />
           )}
 
           {viewMode === "favorites" && (
@@ -363,6 +366,7 @@ export default function Home() {
               onStartCook={startCook}
             />
           )}
+
         </div>
 
         {/* FAB สแกน — หน้าเมนู/โปรด ไม่ต้องกลับหน้าแรกก่อนถึงจะสแกนได้ */}
@@ -382,8 +386,10 @@ export default function Home() {
             <div className="relative flex">
               {/* Sliding active indicator */}
               <span
-                className="absolute top-0 left-0 h-1 w-1/3 rounded-b-full bg-[var(--color-brand)] transition-transform duration-300 ease-out"
+                className="absolute top-0 left-0 h-1 rounded-b-full bg-[var(--color-brand)] transition-transform duration-300 ease-out"
                 style={{
+                  // อิงจำนวนแท็บจริง ไม่ fix เป็น 1/3 ไว้ เพิ่มแท็บทีหลังจะได้ไม่เพี้ยน
+                  width: `${100 / navItems.length}%`,
                   transform: `translateX(${
                     Math.max(
                       0,

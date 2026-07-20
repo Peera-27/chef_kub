@@ -5,3 +5,4 @@ export {
   isFavorite,
 } from "./favorites";
 export { loadHistory, addHistoryEntry } from "./history";
+export { loadCookLog, recordCookRating, getCookRating } from "./cookLog";

@@ -2,27 +2,41 @@
 
 @theme {
   --color-surface: #ffffff;
-  --color-surface-2: #fffdfa;
+  --color-surface-2: #fcfdfb;
   --color-glass: rgba(255, 255, 255, 0.72);
-  --color-page: #faf7f2;
+  /* นิวทรัลลดความอมส้มลง ให้เข้ากับแบรนด์เขียว และดัน contrast ของ muted ขึ้น */
+  --color-page: #f9f9f5;
   --color-ink: #1a1a1a;
-  --color-muted: #8a857b;
-  --color-line: #f0e9df;
-  --color-line-soft: #f6f1e9;
+  --color-muted: #767c74;
+  --color-line: #e8ebe5;
+  --color-line-soft: #f2f4ef;
 
-  --color-brand: #e8630a;
-  --color-brand-dark: #c54e00;
-  --color-brand-soft: #fff5eb;
-  --color-brand-pale: #fff9f2;
-  --color-brand-glow: rgba(232, 99, 10, 0.28);
+  /* เขียวสน — ตัวขาวบนปุ่มได้ contrast 7.59 ผ่าน WCAG AA สบาย ๆ */
+  --color-brand: #1f5f3f;
+  --color-brand-dark: #17472f;
+  --color-brand-soft: #edf2f0;
+  --color-brand-pale: #f7f9f8;
+  --color-brand-glow: rgba(31, 95, 63, 0.28);
 
   --color-favorite: #ec4899;
   --color-favorite-soft: #fdf2f8;
 
-  --color-success: #10b981;
-  --color-success-soft: #ecfdf5;
+  /* ขยับเป็น teal เพราะแบรนด์เป็นเขียวแล้ว เขียวสถานะกับเขียวแบรนด์จะกลืนกัน */
+  --color-success: #0f766e;
+  --color-success-soft: #e9f6f4;
   --color-warn: #f59e0b;
   --color-warn-soft: #fffbeb;
+  /* ปลายไล่สีของปุ่มเตือน — เดิม hardcode เป็น amber-600 ไว้ในคอมโพเนนต์ */
+  --color-warn-dark: #d97706;
+
+  /* ธีมเดิมไม่มีสีสำหรับการกระทำอันตราย ทุกที่เลย hardcode red-500/600/700 กันเอง
+     ทำให้เฉดไม่ตรงกันและเปลี่ยนธีมทีต้องไล่แก้ทีละจุด */
+  --color-danger: #c62828;
+  --color-danger-soft: #fdecec;
+
+  /* ดาวให้คะแนน — ต้องตรงกับค่า STAR ใน recipeCard.ts ที่วาดลง canvas
+     (canvas อ่าน CSS variable ไม่ได้ เลยต้องล็อกค่าไว้สองที่) */
+  --color-star: #f5b642;
 
   --font-sans: "Kanit", "Noto Sans Thai", system-ui, sans-serif;
 
@@ -50,7 +64,7 @@
 
   body {
     background:
-      radial-gradient(1200px 600px at 100% -10%, rgba(232, 99, 10, 0.06), transparent 60%),
+      radial-gradient(1200px 600px at 100% -10%, rgba(47, 125, 79, 0.07), transparent 60%),
       radial-gradient(900px 500px at -10% 10%, rgba(236, 72, 153, 0.04), transparent 55%),
       var(--color-page);
     color: var(--color-ink);

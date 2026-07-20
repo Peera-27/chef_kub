@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo,useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { generateRecipes } from "../actions/generateRecipe";
 import { generateRecipeImage } from "../actions/generateRecipeImage";
 import { detectIngredients } from "../actions/detectIngredients";
@@ -92,7 +92,6 @@ export function useChefKub() {
   const [allItems, setAllItems] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("home");
-  const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<Recipe[]>([]);
   const [history, setHistory] = useState<ScanHistoryEntry[]>([]);
   const [favVersion, setFavVersion] = useState(0);
@@ -134,17 +133,6 @@ const isDrawingRef = useRef(false);
     });
     setAllItems(Array.from(merged));
   }, [gallery]);
-
-  const allTags = useMemo(() => {
-    const tags = new Set<string>();
-    recipes.forEach((r) => r.tags.forEach((t) => tags.add(t)));
-    return Array.from(tags);
-  }, [recipes]);
-
-  const filteredRecipes = useMemo(() => {
-    if (!tagFilter) return recipes;
-    return recipes.filter((r) => r.tags.includes(tagFilter));
-  }, [recipes, tagFilter]);
 
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -226,7 +214,6 @@ const isDrawingRef = useRef(false);
 
       // โชว์สูตรทันที ปิด overlay แล้วค่อยทยอยเติมรูป (การ์ดโชว์ skeleton ระหว่างรอ)
       setRecipes(res);
-      setTagFilter(null);
       if (options.navigate) setViewMode("recipes");
       setLoading({ state: false, message: "" });
 
@@ -653,8 +640,6 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     recipes,
     viewMode,
     setViewMode,
-    tagFilter,
-    setTagFilter,
     favorites,
     history,
     favVersion,
@@ -664,8 +649,6 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     editingImage,
     setEditingImage,
     videoRef,
-    allTags,
-    filteredRecipes,
     startCamera,
     capturePhoto,
     processImage,

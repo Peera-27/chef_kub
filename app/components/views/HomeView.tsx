@@ -142,14 +142,14 @@ export function HomeView({
                   {/* Delete button */}
                   <button
                     onClick={() => onRemoveImage(img.id)}
-                    className="absolute top-3 right-3 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white text-sm backdrop-blur-md transition-all duration-200 hover:bg-red-500 hover:scale-110 active:scale-95 shadow-lg"
+                    className="absolute top-3 right-3 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white text-sm backdrop-blur-md transition-all duration-200 hover:bg-[var(--color-danger)] hover:scale-110 active:scale-95 shadow-lg"
                     aria-label="ลบรูป"
                   >
                     <IconX size={14} />
                   </button>
 
                   {/* Image container */}
-                  <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
+                  <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-[var(--color-brand-pale)] to-[var(--color-brand-soft)] overflow-hidden">
                     {/* กล่อง crop รูปให้พอดีกรอบ + ทำ zoom ตอน hover */}
                     <div className="absolute inset-0 w-full h-full transition-transform duration-500 group-hover:scale-105">
                       <img
@@ -175,7 +175,7 @@ export function HomeView({
                           className={`w-2 h-2 rounded-full animate-pulse ${
                             unidentified
                               ? "bg-[var(--color-warn)]"
-                              : "bg-emerald-500"
+                              : "bg-[var(--color-success)]"
                           }`}
                         />
                         {unidentified
@@ -193,7 +193,7 @@ export function HomeView({
                           style={
                             { "--i": i } as Record<string, string | number>
                           }
-                          className="chip-in inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/95 backdrop-blur-md shadow-sm text-[var(--color-ink)] hover:bg-red-50 hover:text-red-600 transition-all duration-200 active:scale-95 border border-black/[0.06]"
+                          className="chip-in inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/95 backdrop-blur-md shadow-sm text-[var(--color-ink)] hover:bg-[var(--color-danger-soft)] hover:text-[var(--color-danger)] transition-all duration-200 active:scale-95 border border-black/[0.06]"
                         >
                           {it.name}
                           <span className="opacity-50 hover:opacity-100">
@@ -220,7 +220,7 @@ export function HomeView({
                       </div>
                       <button
                         onClick={() => onEditImage(img)}
-                        className="w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-[var(--color-warn)] to-amber-600 text-white shadow-[0_2px_8px_rgba(245,158,11,0.3)] hover:shadow-[0_4px_16px_rgba(245,158,11,0.4)] transition-all duration-200 active:scale-[0.97] tap"
+                        className="w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-[var(--color-warn)] to-[var(--color-warn-dark)] text-white shadow-[0_2px_8px_rgba(245,158,11,0.3)] hover:shadow-[0_4px_16px_rgba(245,158,11,0.4)] transition-all duration-200 active:scale-[0.97] tap"
                       >
                         <IconTag size={16} />
                         ช่วยระบุวัตถุดิบ
@@ -229,7 +229,7 @@ export function HomeView({
                   ) : (
                     <div className="px-4 py-3 bg-white border-t border-black/[0.04] space-y-2.5">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center text-[var(--color-brand)] shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--color-brand-soft)] to-[var(--color-brand-pale)] flex items-center justify-center text-[var(--color-brand)] shrink-0">
                           <IconChefHat size={16} />
                         </div>
                         <p className="text-sm font-semibold text-[var(--color-ink)] leading-tight">

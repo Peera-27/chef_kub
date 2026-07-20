@@ -28,3 +28,14 @@ export interface ScanHistoryEntry {
   items: string[];
   imageCount: number;
 }
+
+/** 1–5 ดาว — ไม่มีศูนย์ดาว ยังไม่ให้คะแนน = null */
+export type CookRating = 1 | 2 | 3 | 4 | 5;
+
+export const MAX_STARS = 5;
+
+export interface CookLogEntry {
+  recipeName: string;
+  rating: CookRating;
+  cookedAt: number;
+}

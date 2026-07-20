@@ -5,6 +5,7 @@ import { addClass } from "../actions/classes";
 import type { ClassEntry } from "../utils/classRegistry";
 import { filterClassNames } from "../utils/classRegistry";
 import { findSimilarLabels } from "../utils/normalizeLabel";
+import { Portal } from "./Portal";
 
 interface LabelPickerModalProps {
   open: boolean;
@@ -73,6 +74,7 @@ export function LabelPickerModal({
   if (!open) return null;
 
   return (
+    <Portal>
     <div
       className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:bg-black/40 md:backdrop-blur-sm p-0 md:p-4 backdrop-in"
       onClick={() => {
@@ -179,7 +181,7 @@ export function LabelPickerModal({
                     reset();
                     onSelect(trimmedQuery);
                   }}
-                  className="w-full text-left font-medium text-[var(--color-warn)] hover:text-red-700 transition-colors tap"
+                  className="w-full text-left font-medium text-[var(--color-warn)] hover:text-[var(--color-warn-dark)] transition-colors tap"
                 >
                   + ยืนยันที่จะเพิ่ม &quot;{trimmedQuery}&quot; อยู่ดี
                 </button>
@@ -202,5 +204,6 @@ export function LabelPickerModal({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
