@@ -173,6 +173,25 @@ export function IconTag(props: IconProps) {
   );
 }
 
+export function IconChevronDown(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="m6 9 6 6 6-6" />
+    </Svg>
+  );
+}
+
+export function IconSettings(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M20 7h-9" />
+      <path d="M14 17H5" />
+      <circle cx="17" cy="17" r="3" />
+      <circle cx="7" cy="7" r="3" />
+    </Svg>
+  );
+}
+
 export function IconPencil(props: IconProps) {
   return (
     <Svg {...props}>

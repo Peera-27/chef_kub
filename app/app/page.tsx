@@ -15,6 +15,7 @@ import {
   IconChefHat,
   IconHeart,
   IconHome,
+  IconSettings,
 } from "../components/Icons";
 import { useChefKub } from "../hooks/useChefKub";
 
@@ -65,7 +66,9 @@ export default function Home() {
     handleEditImageMetrics,
   } = useChefKub();
 
-  const showBottomNav = ["home", "recipes", "favorites"].includes(viewMode);
+  const showBottomNav = ["home", "recipes", "favorites", "settings"].includes(
+    viewMode,
+  );
 
   const navItems: {
     key: "home" | "recipes" | "favorites"| "settings";
@@ -87,10 +90,10 @@ export default function Home() {
       badge: favorites.length,
     },
     {
-    key: "settings",
-    icon: () => <span>⚙️</span>,
-    label: "ตั้งค่าครัว",
-  },
+      key: "settings",
+      icon: () => <IconSettings size={20} />,
+      label: "ตั้งค่าครัว",
+    },
   ];
 
   return (
