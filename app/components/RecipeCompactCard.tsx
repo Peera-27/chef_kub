@@ -40,7 +40,9 @@ export function RecipeCompactCard({
       </div>
 
       <div className="flex-1 min-w-0">
-        <h4 className="font-semibold text-[var(--color-ink)] truncate">{recipe.name}</h4>
+        <h4 className="font-semibold text-[var(--color-ink)] leading-snug break-words">
+          {recipe.name}
+        </h4>
         <p className="text-xs text-[var(--color-muted)] mt-0.5">
           {recipe.readyInMinutes != null && `${recipe.readyInMinutes} นาที · `}
           {recipe.calories}

@@ -34,9 +34,15 @@ const RATING_LABELS: Record<CookRating, string> = {
 interface CookViewProps {
   recipe: Recipe;
   onDone: () => void;
+  /** true = กำลัง gen รูปเมนูนี้อยู่ — โชว์ skeleton คั่นไว้ก่อน */
+  imageLoading?: boolean;
 }
 
-export function CookView({ recipe, onDone }: CookViewProps) {
+export function CookView({
+  recipe,
+  onDone,
+  imageLoading = false,
+}: CookViewProps) {
   // วัตถุดิบที่เตรียมแล้ว — ติ๊กเช็คระหว่างหยิบของ
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(
     new Set(),
@@ -222,7 +228,7 @@ export function CookView({ recipe, onDone }: CookViewProps) {
       {/* Header */}
       <div className="flex justify-between items-start mb-5">
         <div className="min-w-0 flex-1 mr-3">
-          <h2 className="section-title md:text-xl line-clamp-2 md:line-clamp-none">
+          <h2 className="section-title md:text-xl">
             {recipe.name}
           </h2>
           {recipe.inspiration && (
@@ -244,8 +250,8 @@ export function CookView({ recipe, onDone }: CookViewProps) {
         </button>
       </div>
 
-      {/* Recipe image */}
-      {recipe.imageUrl && (
+      {/* Recipe image — เมนูที่ยังไม่เคย gen รูปจะทยอยมาระหว่างอ่านสูตร */}
+      {recipe.imageUrl ? (
         <div className="relative rounded-[var(--radius-lg)] overflow-hidden mb-6 ring-1 ring-black/5 shadow-md">
           <img
             src={recipe.imageUrl}
@@ -253,7 +259,9 @@ export function CookView({ recipe, onDone }: CookViewProps) {
             className="w-full aspect-video object-cover"
           />
         </div>
-      )}
+      ) : imageLoading ? (
+        <div className="skeleton w-full aspect-video rounded-[var(--radius-lg)] mb-6" />
+      ) : null}
 
       {/* หมายเหตุของเชฟ — เหตุผลที่รสเข้ากัน หรือดัดแปลงตรงไหน ไม่ใช่ขั้นตอนทำ */}
       {recipe.note && (

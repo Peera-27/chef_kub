@@ -231,6 +231,7 @@ export default function Home() {
               {viewMode === "cook" && activeRecipe && (
                 <CookView
                   recipe={activeRecipe}
+                  imageLoading={imageGenPending}
                   onDone={endCook}
                 />
               )}
@@ -354,6 +355,7 @@ export default function Home() {
           {viewMode === "cook" && activeRecipe && (
             <CookView
               recipe={activeRecipe}
+              imageLoading={imageGenPending}
               onDone={endCook}
             />
           )}

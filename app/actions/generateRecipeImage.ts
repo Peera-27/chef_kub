@@ -1,11 +1,24 @@
 "use server";
 
+import { decodeDataUrl, r2PutObject } from "../lib/cloudflare/r2";
+import {
+  isRecipeImageCacheEnabled,
+  isRecipeImageCached,
+  recipeImageKey,
+  recipeImagePath,
+  recipeImageUrl,
+  recordRecipeImage,
+} from "../lib/recipeImageCache";
 import type { ImageResult } from "../types/imageResult";
 import type { ImageStyle } from "../utils/cookingModes";
 
 const MODEL = "@cf/black-forest-labs/flux-1-schnell";
 
 const MAX_ATTEMPTS = 3;
+
+// Workers AI คิดเงินเป็น tile 512×512 (ปัดขึ้น) คูณจำนวน steps คำขอที่โดนบล็อกก็รัน
+// inference ไปแล้วจึงจ่ายเท่ากับที่สำเร็จ — ลองซ้ำ NSFW เกินสองครั้งคือเผาโควตาทิ้ง
+const MAX_NSFW_ATTEMPTS = 2;
 
 // 429 มาได้จากสองสาเหตุที่ต่างกันมาก:
 //   - ยิงถี่เกินไปชั่วคราว → รอแล้วลองใหม่ได้
@@ -14,7 +27,7 @@ const OUT_OF_NEURONS_CODE = 4006;
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
 // ตัวกรอง NSFW ของ flux เป็นแบบสุ่ม — prompt อาหารเดิมเป๊ะ ยิง 6 ครั้งโดนบ้างไม่โดนบ้าง
-// จึงถือเป็น retryable: ยิงซ้ำมักผ่าน (วัดแล้วโดน ~17% ต่อครั้ง เหลือ ~0.5% หลังลอง 3 ครั้ง)
+// จึงถือเป็น retryable: ยิงซ้ำมักผ่าน (วัดแล้วโดน ~17% ต่อครั้ง เหลือ ~3% หลังลองสองครั้ง)
 const NSFW_CODE = 3030;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -53,9 +66,73 @@ const STYLE_PROMPT: Record<ImageStyle, (dish: string) => string> = {
     `Hand-painted food illustration of a dish: ${dish}. Cel shading, bold clean linework, vibrant saturated colours, warm inviting glow, lovingly detailed painted food art in the style of a classic animated film, simple background. ${NO_CLUTTER}`,
 };
 
+/**
+ * เมนูเดียวกันที่กำลัง gen ค้างอยู่ — แคชใน D1 ยังไม่มี row จนกว่าจะ gen เสร็จ
+ * สองคำขอที่มาพร้อมกันจึงเห็น "ยังไม่มี" ทั้งคู่แล้วจ่าย neurons สองรอบให้รูปเดียวกัน
+ * คำขอที่สองเกาะ promise ของคำขอแรกแทน (ช่วยได้เท่าที่อยู่ instance เดียวกัน)
+ */
+const inFlight = new Map<string, Promise<ImageResult>>();
+
+/**
+ * เมนูชื่อเดิมสไตล์เดิมใช้รูปเดิมได้ — ลองหยิบจาก R2 ก่อนเสมอ ยิง Workers AI
+ * เฉพาะตอนที่ยังไม่เคยมีใครสั่งเมนูนี้ โควตา neurons รายวันจึงไม่ถูกจ่ายซ้ำ
+ */
 export async function generateRecipeImage(
   dishDescription: string,
   style: ImageStyle = "photo",
+  cacheName: string = dishDescription,
+): Promise<ImageResult> {
+  if (!isRecipeImageCacheEnabled()) {
+    return generateFreshImage(dishDescription, style);
+  }
+
+  const path = recipeImagePath(cacheName, style);
+
+  try {
+    if (await isRecipeImageCached(path)) {
+      return { ok: true, imageUrl: recipeImageUrl(path) };
+    }
+  } catch (error) {
+    // เช็คแคชไม่ได้ก็แค่ gen ใหม่ ไม่ควรทำให้ผู้ใช้อดรูป
+    console.error("recipe image cache lookup error:", error);
+  }
+
+  const pending = inFlight.get(path);
+  if (pending) return pending;
+
+  const job = generateAndStore(dishDescription, style, cacheName, path);
+  // ลบทิ้งเมื่อจบไม่ว่าสำเร็จหรือไม่ — ล้มเหลวแล้วต้องให้คำขอถัดไปลองใหม่ได้
+  const tracked = job.finally(() => inFlight.delete(path));
+  inFlight.set(path, tracked);
+  return tracked;
+}
+
+async function generateAndStore(
+  dishDescription: string,
+  style: ImageStyle,
+  cacheName: string,
+  path: string,
+): Promise<ImageResult> {
+  const result = await generateFreshImage(dishDescription, style);
+  if (!result.ok) return result;
+
+  const decoded = decodeDataUrl(result.imageUrl);
+  if (!decoded) return result;
+
+  try {
+    await r2PutObject(recipeImageKey(path), decoded.bytes, decoded.contentType);
+    await recordRecipeImage(path, cacheName, style);
+    return { ok: true, imageUrl: recipeImageUrl(path) };
+  } catch (error) {
+    // เก็บไม่สำเร็จก็ยังส่งรูปที่เพิ่ง gen ให้ผู้ใช้ได้ แค่รอบหน้าต้อง gen ใหม่
+    console.error("recipe image cache write error:", error);
+    return result;
+  }
+}
+
+async function generateFreshImage(
+  dishDescription: string,
+  style: ImageStyle,
 ): Promise<ImageResult> {
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
   const apiToken = process.env.CLOUDFLARE_API_TOKEN;
@@ -78,8 +155,10 @@ export async function generateRecipeImage(
             Authorization: `Bearer ${apiToken}`,
             "Content-Type": "application/json",
           },
-          // 16:9 ให้ตรงกับกรอบ aspect-video ของการ์ดในแอป — แสดงเต็มรูปโดยไม่ต้อง crop
-          body: JSON.stringify({ prompt, steps: 4, width: 1024, height: 576 }),
+          // 1024×512 ไม่ใช่ 16:9 เป๊ะ แต่จ่ายแค่ 2 tile ส่วน 576 ล้นเส้น 512 ไป 64px
+          // แล้วโดนคิดเต็มแถวที่สอง = 4 tile ทั้งที่ตาแทบไม่เห็นความต่างหลัง object-cover
+          // steps: schnell ถูก distill มาให้ทำงานที่ 1-4 steps — 2 พอสำหรับรูปอาหาร
+          body: JSON.stringify({ prompt, steps: 2, width: 1024, height: 512 }),
         },
       );
 
@@ -96,8 +175,9 @@ export async function generateRecipeImage(
         const isNsfwFalsePositive = errors.some((e) => e.code === NSFW_CODE);
         const retryable =
           isNsfwFalsePositive || RETRYABLE_STATUS.has(res.status);
+        const limit = isNsfwFalsePositive ? MAX_NSFW_ATTEMPTS : MAX_ATTEMPTS;
 
-        if (retryable && attempt < MAX_ATTEMPTS) {
+        if (retryable && attempt < limit) {
           // NSFW เป็นการสุ่ม ไม่ใช่ rate limit — ยิงซ้ำได้เลยไม่ต้องหน่วง
           if (!isNsfwFalsePositive) await sleep(retryDelayMs(res, attempt));
           continue;

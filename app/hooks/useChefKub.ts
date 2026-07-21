@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { generateRecipes } from "../actions/generateRecipe";
 import { generateRecipeImage } from "../actions/generateRecipeImage";
+import { getCachedRecipeImages } from "../actions/getCachedRecipeImages";
 import { detectIngredients } from "../actions/detectIngredients";
 import { listClasses } from "../actions/classes";
 import { findLabeledImage } from "../actions/getLabeledImage";
@@ -18,6 +19,7 @@ import {
   addHistoryEntry,
   loadFavorites,
   loadHistory,
+  updateFavoriteImage,
 } from "../utils/storage";
 import { hashImageBase64 } from "../utils/imageHash";
 import { perceptualHashBase64 } from "../utils/perceptualHash";
@@ -161,39 +163,78 @@ const isDrawingRef = useRef(false);
     setGallery((prev) => prev.filter((img) => img.id !== imageId));
   };
 
-  // ยิงทีละรูป ไม่ใช่ Promise.all — Workers AI free tier จำกัด request ต่อนาที
-  // และถ้าโควตารายวันหมด ให้เลิกยิงที่เหลือทันที ยิงไปก็โดนปฏิเสธเหมือนกันหมด
-  // ทยอย gen รูปทีละเมนูแล้วอัปเดต state ทันทีที่ได้ — การ์ดโชว์สูตรก่อน รูปค่อยตามมา
+  const applyRecipeImage = (dishName: string, imageUrl: string) => {
+    setRecipes((prev) =>
+      prev.map((r) => (r.name === dishName ? { ...r, imageUrl } : r)),
+    );
+  };
+
+  /**
+   * โควตา neurons รายวันของ Workers AI มีจำกัด จึงไม่ gen รูปให้ทุกเมนูอีกแล้ว:
+   * เมนูที่เคย gen ไว้แล้วเติมได้ฟรีทุกใบ ส่วนที่ยังไม่มีรูป gen สดแค่การ์ดใบแรก
+   * ที่เหลือรอจนผู้ใช้กด "เริ่มทำอาหาร" ค่อย gen (ดู ensureRecipeImage)
+   */
   const attachRecipeImages = async (
     recipeList: Recipe[],
     mode: CookingMode,
   ): Promise<{ quotaExhausted: boolean }> => {
     const { imageStyle } = getCookingMode(mode);
-    let quotaExhausted = false;
 
-    for (const recipe of recipeList) {
-      if (quotaExhausted) break;
-
-      try {
-        const result = await generateRecipeImage(
-          recipe.imagePrompt || recipe.name,
-          imageStyle,
-        );
-        if (result.ok) {
-          setRecipes((prev) =>
-            prev.map((r) =>
-              r.name === recipe.name ? { ...r, imageUrl: result.imageUrl } : r,
-            ),
-          );
-        } else if (result.reason === "quota") {
-          quotaExhausted = true;
-        }
-      } catch {
-        // รูปเมนูนี้พลาดก็ข้ามไป — สูตรยังใช้ได้
-      }
+    const cached = await getCachedRecipeImages(
+      recipeList.map((r) => r.name),
+      imageStyle,
+    );
+    for (const [dishName, imageUrl] of Object.entries(cached)) {
+      applyRecipeImage(dishName, imageUrl);
     }
 
-    return { quotaExhausted };
+    const hero = recipeList[0];
+    if (!hero || cached[hero.name]) return { quotaExhausted: false };
+
+    try {
+      const result = await generateRecipeImage(
+        hero.imagePrompt || hero.name,
+        imageStyle,
+        // แคชด้วยชื่อเมนู ไม่ใช่ imagePrompt — prompt โมเดลเขียนใหม่ไม่ซ้ำเดิมทุกครั้ง
+        // ใช้เป็น key เมื่อไหร่ก็ไม่มีวันเจอของเก่า
+        hero.name,
+      );
+      if (result.ok) applyRecipeImage(hero.name, result.imageUrl);
+      return { quotaExhausted: !result.ok && result.reason === "quota" };
+    } catch {
+      // รูปพลาดก็ข้ามไป — สูตรยังใช้ได้
+      return { quotaExhausted: false };
+    }
+  };
+
+  /** gen รูปตอนผู้ใช้เปิดเมนูจริง ๆ — ถ้าเคย gen ไว้แล้วจะได้ของในแคชฟรี ๆ */
+  const ensureRecipeImage = async (recipe: Recipe) => {
+    if (recipe.imageUrl) return;
+
+    const { imageStyle } = getCookingMode(cookingMode);
+    setImageGenPending(true);
+
+    try {
+      const result = await generateRecipeImage(
+        recipe.imagePrompt || recipe.name,
+        imageStyle,
+        recipe.name,
+      );
+      if (!result.ok) return;
+
+      applyRecipeImage(recipe.name, result.imageUrl);
+      setActiveRecipe((prev) =>
+        prev?.name === recipe.name
+          ? { ...prev, imageUrl: result.imageUrl }
+          : prev,
+      );
+      // เมนูที่กดหัวใจไว้เก็บไว้ใน localStorage ตั้งแต่ตอนยังไม่มีรูป — เติมให้ด้วย
+      if (updateFavoriteImage(recipe.name, result.imageUrl)) refreshFavorites();
+    } catch {
+      // ไม่ได้รูปก็ทำอาหารต่อได้ ไม่ต้องรบกวนผู้ใช้
+    } finally {
+      setImageGenPending(false);
+    }
   };
 
   const generateRecipesFlow = async (
@@ -476,6 +517,7 @@ const isDrawingRef = useRef(false);
   const quickCookFavorite = (recipe: Recipe) => {
     setActiveRecipe(recipe);
     setViewMode("cook");
+    ensureRecipeImage(recipe);
   };
 const getPointerCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = e.currentTarget; 
@@ -536,6 +578,7 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
   const startCook = (recipe: Recipe) => {
     setActiveRecipe(recipe);
     setViewMode("cook");
+    ensureRecipeImage(recipe);
   };
 
   const endCook = () => {

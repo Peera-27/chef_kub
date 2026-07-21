@@ -53,7 +53,7 @@
 |---------|------------|
 | 🍜 สร้างสูตรอาหาร | Gemini สร้าง 3 เมนูจากวัตถุดิบที่มี เรียงจากเมนูที่เสร็จเร็วที่สุด |
 | 🎭 โหมดทำอาหาร | ปกติ / ฟิวชั่น / จากอนิเมะ — แต่ละโหมดปรับสไตล์เมนู + สไตล์รูป |
-| 🖼️ รูปประกอบเมนู | Cloudflare Workers AI (`flux-1-schnell`) สร้างรูปจากคำบรรยายเมนู (โฟโต้ / ภาพวาด) |
+| 🖼️ รูปประกอบเมนู | Cloudflare Workers AI (`flux-1-schnell`) สร้างรูปเมนูใบเด่นกับตอนลงมือทำ แล้วแคชไว้ใน R2 ใช้ซ้ำได้ตลอด |
 | ⭐ รายการโปรด / ประวัติ | เก็บใน localStorage |
 
 ### 👨‍🍳 โหมดทำครัว
@@ -122,7 +122,8 @@ app/
 ├── actions/                    # Server Actions
 │   ├── detectIngredients.ts    # Gemini ตัดสินภาพจาก label ที่ YOLO เดามา
 │   ├── generateRecipe.ts       # Gemini สร้างสูตร (ตามโหมดทำอาหาร)
-│   ├── generateRecipeImage.ts  # Workers AI สร้างรูปเมนู (โฟโต้ / ภาพวาด)
+│   ├── generateRecipeImage.ts  # Workers AI สร้างรูปเมนู — เอาจากแคชก่อนเสมอ
+│   ├── getCachedRecipeImages.ts # ถามทีเดียวว่าเมนูไหนมีรูปในแคชแล้วบ้าง
 │   ├── saveLabeledImage.ts     # บันทึก hash + annotations ลง D1, อัพรูปขึ้น R2
 │   ├── getLabeledImage.ts      # หา label จากรูปเดิม (SHA-256) หรือรูปคล้าย (dHash)
 │   └── classes.ts              # รายการ class + เพิ่มชื่อใหม่ (seed จาก labelsTh.ts)
@@ -137,11 +138,13 @@ app/
 │   ├── Portal.tsx              # render modal นอก DOM tree หลัก
 │   ├── RecipeCard / RecipeHeroCard / RecipeCompactCard
 │   └── views/                  # Home, Camera, Edit, Recipes, Cook, Favorites
+├── api/recipe-image/[...path]/ # เสิร์ฟรูปเมนูจาก R2 (แคช 1 ปี)
 ├── lib/
+│   ├── recipeImageCache.ts     # key ของรูปเมนู + index ใน D1
 │   ├── yolo/runYoloDetection.ts
 │   └── cloudflare/
 │       ├── d1.ts               # query D1 ผ่าน REST API
-│       └── r2.ts               # อัพรูปขึ้น R2 ผ่าน REST API
+│       └── r2.ts               # อัพ/ดึงรูปจาก R2 ผ่าน REST API
 ├── types/                      # recipe.ts, imageResult.ts
 └── utils/
     ├── labels.ts / labelsTh.ts   # class ของ YOLO + คำแปลไทย (~122)
@@ -236,6 +239,13 @@ CREATE TABLE annotations (
   height     REAL NOT NULL,
   source     TEXT NOT NULL                        -- 'yolo' | 'gemini' | 'manual'
 );
+
+CREATE TABLE recipe_images (
+  storage_path TEXT PRIMARY KEY,                  -- key ของรูปเมนูใน R2
+  dish_name    TEXT NOT NULL,                     -- ชื่อเมนู (normalize แล้ว)
+  style        TEXT NOT NULL,                     -- 'photo' | 'anime'
+  created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
 > เปิดแอปครั้งแรก → ระบบ seed class จาก `labelsTh.ts` เข้าตาราง `classes` อัตโนมัติ และจะเติม label ใหม่ที่เพิ่มใน `labelsTh.ts` ให้ทุกครั้งที่โหลดรายการ class
@@ -255,7 +265,54 @@ bun dev
 | `images` (D1) | รูปที่ label แล้ว — เก็บ `image_hash` (SHA-256), `phash` (dHash), ขนาดรูป และ `storage_path` ที่ชี้ไปยังไฟล์ใน R2 |
 | `annotations` (D1) | กรอบ + ชื่อ class (YOLO normalized format) + แหล่งที่มาของ label |
 | `classes` (D1) | รายการชื่อวัตถุดิบ (`seed` จาก dataset เดิม / `user` เพิ่มใหม่) |
-| R2 bucket | ไฟล์รูปจริง (key = `<sessionId>/<imageId>.<ext>`) ไว้ใช้ train โมเดลรอบต่อไป |
+| `recipe_images` (D1) | index ของรูปเมนูที่ gen แล้ว — บอกว่าเมนูไหนมีรูปอยู่ใน R2 แล้ว |
+| R2 bucket | ไฟล์รูปจริง — รูป training (key = `<sessionId>/<imageId>.<ext>`) และรูปเมนู (key = `recipes/<style>/<sha256>.jpg`) |
+
+### 🖼️ แคชรูปเมนู
+
+รูปเมนูจาก Workers AI กิน neurons ซึ่ง free tier มีโควตารายวัน จึง gen ซ้ำไม่ได้:
+
+1. `generateRecipeImage` hash `<style>:<ชื่อเมนู>` เป็น key แล้วถาม `recipe_images` ใน D1 ว่าเคย gen แล้วหรือยัง
+2. เคยแล้ว → คืน URL `/api/recipe-image/<style>/<hash>.jpg` ทันที ไม่แตะ Workers AI เลย
+3. ยังไม่เคย → gen ใหม่ → อัพขึ้น R2 → บันทึกลง `recipe_images`
+
+เมนูชื่อเดิมสไตล์เดิมจึงจ่าย neurons แค่ครั้งเดียวตลอดกาล และรูปที่ส่งกลับเป็น URL สั้น ๆ
+ไม่ใช่ base64 ทั้งก้อน — เมนูที่กดหัวใจไว้ใน localStorage เลยไม่บวมจนชนโควตาเบราว์เซอร์
+
+**และ gen เท่าที่ผู้ใช้ดูจริง** — หน้าเมนูไม่ gen รูปให้ทุกใบอีกแล้ว:
+
+| จังหวะ | ทำอะไร | จ่าย neurons |
+|--------|--------|--------------|
+| เปิดหน้าเมนู | `getCachedRecipeImages` ถาม `recipe_images` ทีเดียวทุกเมนู เติมรูปที่เคย gen ไว้เข้า state | 0 |
+| เปิดหน้าเมนู | gen สดเฉพาะการ์ดใบแรก (ถ้ายังไม่มีในแคช) | ≤ 1 รูป |
+| กด "เริ่มทำอาหาร" | `ensureRecipeImage` gen รูปของเมนูนั้นถ้ายังไม่มี แล้วเติมกลับเข้าการ์ด + รายการโปรด | ≤ 1 รูป |
+
+ผู้ใช้เปิดทำจริงแค่เมนูเดียวจาก 5 เมนู รอบหนึ่งจึงเสีย 1-2 รูปแทนที่จะเป็น 5
+และยิ่งใช้ไปแคชยิ่งเต็ม เมนูยอดฮิตก็ไม่ต้อง gen อีกเลย
+
+**และรูปหนึ่งใบก็ถูกลงด้วย** — Workers AI คิดเงิน flux เป็น tile ขนาด 512×512 (ปัดขึ้น)
+คูณจำนวน steps ขนาดรูปจึงกระโดดเป็นขั้น ไม่ใช่ค่อย ๆ ไล่ตามพิกเซล:
+
+| ขนาด | tile ที่จ่าย |
+|------|-------------|
+| 1024×576 (16:9 เป๊ะ) | 2 × 2 = 4 |
+| **1024×512 (ที่ใช้จริง)** | 2 × 1 = **2** |
+
+576 ล้นเส้น 512 ไปแค่ 64px แต่โดนคิดเต็มแถวที่สอง ทั้งที่การ์ดครอปด้วย `object-cover`
+อยู่แล้วจนตาแทบไม่เห็นความต่าง คู่กับ `steps: 2` (schnell ถูก distill มาให้ทำงานที่ 1-4
+steps) รูปหนึ่งใบจึงเหลือ ~1/4 ของราคาเดิม
+
+นอกจากนี้คำขอที่โดนตัวกรอง NSFW ก็รัน inference ไปแล้วและจ่ายเท่ากับที่สำเร็จ —
+retry เคสนี้จึงหยุดที่ 2 ครั้ง (ครอบคลุม ~97% อยู่ดี) และเมนูเดียวกันที่ gen ค้างอยู่
+จะถูก dedupe ด้วย promise ร่วมกัน ไม่ให้สองคำขอพร้อมกันจ่ายสองรอบให้รูปใบเดียว
+
+**รูปโผล่ที่ไหนบ้าง** — `RecipeHeroCard` (การ์ดใบแรกของหน้าเมนู) กับ `CookView` เท่านั้น
+การ์ดเมนูรองใน grid (`RecipeCard`) เป็นการ์ดข้อความล้วนโดยตั้งใจ ไม่โชว์รูปแม้จะมีในแคช —
+กรอบรูปเปล่าเต็มหน้าจอดูเหมือนแอปพัง และการ์ดข้อความล้วนก็สแกนหาเมนูได้ไวกว่า
+ที่ยังถามแคชตอนเปิดหน้าเมนูเพราะเมนูที่มีรูปอยู่แล้วจะเด้งรูปทันทีตอนกดเข้าไปทำ ไม่ต้องรอ gen
+
+> ⚠️ เช็คว่ามีไฟล์แล้วหรือยังต้องถาม D1 เท่านั้น ถาม R2 ตรง ๆ ไม่ได้ — REST API ของ R2
+> เสิร์ฟผ่าน edge cache ที่แคช 404 ไว้หลายนาที รูปที่เพิ่งอัพจะกลายเป็น "ไม่มี" แล้ว gen ซ้ำ
 
 ### 🧬 การจับรูปคล้ายกัน
 

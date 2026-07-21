@@ -7,15 +7,16 @@ interface RecipeCardProps {
   recipe: Recipe;
   onFavoriteChange: () => void;
   onStartCook?: (recipe: Recipe) => void;
-  /** true = กำลังทยอย gen รูปอยู่ — โชว์ skeleton แทน placeholder */
-  imageLoading?: boolean;
 }
 
+/**
+ * การ์ดเมนูรอง — ไม่มีรูปโดยตั้งใจ มีแต่ชื่อกับข้อมูลของเมนู
+ * รูปโชว์แค่การ์ดใบแรก (RecipeHeroCard) กับตอนเปิดเข้าไปทำจริง (CookView)
+ */
 export function RecipeCard({
   recipe,
   onFavoriteChange,
   onStartCook,
-  imageLoading = false,
 }: RecipeCardProps) {
   const favorited = isFavorite(recipe.name);
   const [pulse, setPulse] = useState(false);
@@ -28,48 +29,28 @@ export function RecipeCard({
   };
 
   return (
-    <div className="card overflow-hidden flex flex-col card-lift">
-      <div className="relative aspect-video bg-[var(--color-brand-pale)]">
-        {recipe.imageUrl ? (
-          <>
-            <img
-              src={recipe.imageUrl}
-              alt={recipe.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
-          </>
-        ) : imageLoading ? (
-          <div className="skeleton w-full h-full rounded-none" />
-        ) : (
-          <div className="w-full h-full grid place-items-center bg-gradient-to-br from-[var(--color-brand-soft)] to-[var(--color-brand-pale)]">
-            <span className="text-5xl md:text-6xl select-none opacity-80">
-              🍽️
-            </span>
-          </div>
-        )}
-        <div className="absolute top-3 right-3 flex gap-2">
+    // h-full + mt-auto ที่ปุ่ม = การ์ดในแถวเดียวกันสูงเท่ากัน ปุ่มเรียงตรงกันทุกใบ
+    // ไม่ว่าชื่อเมนูจะยาวกี่บรรทัดหรือมี tag ไม่เท่ากัน
+    <div className="card overflow-hidden flex flex-col card-lift h-full">
+      <div className="p-4 md:p-5 space-y-3 flex-1 flex flex-col">
+        <div className="flex items-start gap-2">
+          {/* ชื่อเมนูยาวแค่ไหนก็ต้องอ่านครบ — ตัดคำทิ้งแล้วเดาไม่ออกว่าเมนูอะไร */}
+          <h3 className="flex-1 text-base font-bold text-[var(--color-ink)] leading-snug md:text-lg">
+            {recipe.name}
+          </h3>
+          <span className="pill gap-1 bg-[var(--color-brand-soft)] text-[var(--color-brand)] shrink-0 mt-0.5">
+            <IconFlame size={13} />
+            {recipe.calories}
+          </span>
           <button
             onClick={onToggle}
-            className={`icon-btn w-9 h-9 bg-white/90 backdrop-blur-sm shadow-sm tap ${
+            className={`icon-btn w-9 h-9 shrink-0 -mt-1 -mr-1 tap ${
               pulse ? "heart-pop" : ""
             } ${favorited ? "text-[var(--color-favorite)]" : "text-[var(--color-muted)]"}`}
             aria-label={favorited ? "เอาออกจากโปรด" : "เพิ่มในโปรด"}
           >
             <IconHeart size={18} filled={favorited} />
           </button>
-        </div>
-      </div>
-
-      <div className="p-4 md:p-5 space-y-3 flex-1 flex flex-col">
-        <div className="flex items-baseline gap-2">
-          <h3 className="flex-1 text-base font-bold text-[var(--color-ink)] leading-snug md:text-lg line-clamp-2 md:line-clamp-none">
-            {recipe.name}
-          </h3>
-          <span className="pill gap-1 bg-[var(--color-brand-soft)] text-[var(--color-brand)] shrink-0">
-            <IconFlame size={13} />
-            {recipe.calories}
-          </span>
         </div>
 
         {(recipe.readyInMinutes != null || recipe.tags.length > 0) && (

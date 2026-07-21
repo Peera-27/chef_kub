@@ -1,5 +1,7 @@
 export type CookingMode = "classic" | "fusion" | "anime";
-export type ImageStyle = "photo" | "anime";
+
+export const IMAGE_STYLES = ["photo", "anime"] as const;
+export type ImageStyle = (typeof IMAGE_STYLES)[number];
 
 // tags ถูกใช้เป็น filter chips ใน RecipesView — ต้องเป็นชุดคำตายตัว
 // ไม่งั้นโมเดลสร้างคำใหม่ทุกครั้งแล้วกรองอะไรไม่ได้เลย

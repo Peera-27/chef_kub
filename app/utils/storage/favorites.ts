@@ -26,6 +26,21 @@ export function toggleFavorite(recipe: Recipe): Recipe[] {
   return updated;
 }
 
+/**
+ * เมนูถูกกดหัวใจตั้งแต่ตอนที่ยังไม่มีรูป (รูป gen ตอนกดเข้าไปทำ) — เติมรูปย้อนหลัง
+ * ให้การ์ดในหน้าโปรดมีรูปด้วย คืน true เมื่อมีการแก้จริง
+ */
+export function updateFavoriteImage(name: string, imageUrl: string): boolean {
+  const favorites = loadFavorites();
+  const target = favorites.find((r) => r.name === name);
+  if (!target || target.imageUrl === imageUrl) return false;
+
+  saveFavorites(
+    favorites.map((r) => (r.name === name ? { ...r, imageUrl } : r)),
+  );
+  return true;
+}
+
 export function isFavorite(name: string): boolean {
   return loadFavorites().some((r) => r.name === name);
 }

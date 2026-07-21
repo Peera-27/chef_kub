@@ -53,7 +53,7 @@ export function RecipeHeroCard({
         <div className="flex justify-between items-start gap-3 mb-3">
           <div className="min-w-0">
             <p className="text-xs text-white/70 mb-1">แนะนำ</p>
-            <h3 className="text-xl font-bold leading-snug line-clamp-2 md:text-2xl">
+            <h3 className="text-xl font-bold leading-snug md:text-2xl">
               {recipe.name}
             </h3>
           </div>

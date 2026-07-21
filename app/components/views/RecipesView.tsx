@@ -5,6 +5,7 @@ import { EmptyState } from "../EmptyState";
 
 interface RecipesViewProps {
   recipes: Recipe[];
+  /** gen สดแค่การ์ดใบแรก — ใบอื่นได้รูปจากแคช ไม่งั้นรอตอนกดเข้าไปทำ */
   imageGenPending?: boolean;
   onFavoriteChange: () => void;
   onStartCook: (recipe: Recipe) => void;
@@ -47,11 +48,11 @@ export function RecipesView({
         {recipes.slice(1).map((r, i) => (
           <div
             key={`${r.name}-${i}`}
+            className="h-full"
             style={{ "--i": i } as Record<string, string | number>}
           >
             <RecipeCard
               recipe={r}
-              imageLoading={imageGenPending}
               onFavoriteChange={onFavoriteChange}
               onStartCook={onStartCook}
             />
