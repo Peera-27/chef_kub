@@ -7,6 +7,7 @@ import { CameraView } from "../components/views/CameraView";
 import { EditImageView } from "../components/views/EditImageView";
 import { FavoritesView } from "../components/views/FavoritesView";
 import { HomeView } from "../components/views/HomeView";
+import  Settings  from "../components/views/Setting";
 import { CookView } from "../components/views/CookView";
 import { RecipesView } from "../components/views/RecipesView";
 import {
@@ -16,6 +17,7 @@ import {
   IconHome,
 } from "../components/Icons";
 import { useChefKub } from "../hooks/useChefKub";
+
 
 export default function Home() {
   const {
@@ -66,7 +68,7 @@ export default function Home() {
   const showBottomNav = ["home", "recipes", "favorites"].includes(viewMode);
 
   const navItems: {
-    key: "home" | "recipes" | "favorites";
+    key: "home" | "recipes" | "favorites"| "settings";
     icon: (active: boolean) => React.ReactNode;
     label: string;
     badge?: number;
@@ -84,6 +86,11 @@ export default function Home() {
       label: "โปรด",
       badge: favorites.length,
     },
+    {
+    key: "settings",
+    icon: () => <span>⚙️</span>,
+    label: "ตั้งค่าครัว",
+  },
   ];
 
   return (
@@ -244,6 +251,11 @@ export default function Home() {
                   onStartCook={startCook}
                 />
               )}
+              {viewMode === "settings" && (
+                <Settings
+                onBack={goHome}
+                />
+                )}
             </div>
           </div>
         </div>
@@ -277,6 +289,16 @@ export default function Home() {
                     {favorites.length}
                   </button>
                 )}
+
+                {viewMode === "home" &&(
+                  <button
+                  onClick={()=> setViewMode("settings")}
+                  className ="btn-secondary text-xs px-3 py-1.5 tap"
+                  >
+                    ตั้งค่า
+                  </button>
+                )}
+
                 {viewMode !== "home" && (
                   <button
                     onClick={goHome}
@@ -368,6 +390,11 @@ export default function Home() {
               onStartCook={startCook}
             />
           )}
+          {viewMode === "settings" && (
+            <Settings
+            onBack={goHome}
+            />
+            )}
 
         </div>
 

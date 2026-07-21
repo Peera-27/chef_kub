@@ -11,9 +11,9 @@ import {
 
 const MAX_ATTEMPTS = 3;
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
-// free tier โดน 503 บ่อยเวลาโมเดลคนใช้เยอะ — รอแล้วลองใหม่มักผ่าน
 const isRetryable = (error: unknown) => {
   const status = (error as { status?: number }).status;
   return status === 503 || status === 429;
@@ -53,6 +53,8 @@ const recipeListSchema = {
   },
 };
 
+
+
 // โมเดลอาจคืน object เดี่ยวหรือเมนูที่ฟิลด์ไม่ครบ — กันไม่ให้หลุดไปพังตอน render
 function isUsableRecipe(value: unknown): value is Recipe {
   const recipe = value as Partial<Recipe> | null;
@@ -66,11 +68,21 @@ function isUsableRecipe(value: unknown): value is Recipe {
   );
 }
 
-function buildPrompt(ingredients: string[], mode: CookingMode) {
+function buildPrompt(
+  ingredients: string[],
+  mode: CookingMode,
+  equipment: string[],
+) {
   return `
 คุณเป็นเชฟที่เก่งเรื่องพลิกแพลงวัตถุดิบ ผู้ใช้ยืนอยู่หน้าเตาพร้อมทำอาหารแล้ว
 
 วัตถุดิบที่ผู้ใช้มี: ${ingredients.join(", ")}
+
+อุปกรณ์ในครัวที่ผู้ใช้มี: ${
+    equipment.length > 0
+      ? equipment.join(", ")
+      : "ไม่ได้ระบุอุปกรณ์"
+  }
 
 ${getCookingMode(mode).promptBlock}
 
@@ -78,6 +90,11 @@ ${getCookingMode(mode).promptBlock}
 - ทำ 3 เมนู สำหรับ 2 ที่ ใช้วิธีปรุงต่างกันทั้ง 3 เมนู (เช่น ผัด ต้ม ยำ ทอด นึ่ง อบ)
 - เรียง readyInMinutes จากน้อยไปมาก เมนูแรกคือเมนูที่เสร็จเร็วที่สุด
 - วัตถุดิบที่ผู้ใช้มีต้องเป็นตัวหลักของจาน ทุกเมนูต้องใช้อย่างน้อย 1 อย่างจากรายการข้างบน
+- ต้องออกแบบสูตรอาหารโดยคำนึงถึงอุปกรณ์ในครัวที่ผู้ใช้มี
+- ควรเลือกวิธีปรุงที่สามารถทำได้ด้วยอุปกรณ์ที่ผู้ใช้มีเป็นหลัก
+- ห้ามกำหนดให้อุปกรณ์ที่ผู้ใช้ไม่มีเป็นอุปกรณ์หลักของขั้นตอนการทำอาหาร
+- หากสามารถเลือกวิธีปรุงได้หลายแบบ ให้เลือกวิธีที่เหมาะกับอุปกรณ์ที่ผู้ใช้มีมากที่สุด
+- หากเมนูจำเป็นต้องใช้อุปกรณ์ที่ผู้ใช้ไม่มีจริง ๆ ให้ปรับวิธีการทำเป็นทางเลือกที่ใช้ทดแทนได้
 - เพิ่มของนอกรายการได้ไม่เกิน 3 อย่างต่อเมนู ต้องหาซื้อได้ในร้านสะดวกซื้อหรือซูเปอร์ทั่วไป
   และห้ามให้ของที่เพิ่มเป็นตัวหลักของจาน มันมีไว้เสริมของที่ผู้ใช้มีอยู่แล้วเท่านั้น
   ใส่ของที่ต้องซื้อเพิ่มลงใน extraIngredients ด้วย
@@ -91,15 +108,17 @@ ${getCookingMode(mode).promptBlock}
 - calories เป็นค่าต่อ 1 ที่ เขียนแบบ "ประมาณ 350 kcal ต่อที่"
 - tags เลือกจากรายการนี้เท่านั้น เมนูละ 1-3 อัน: ${RECIPE_TAGS.join(", ")}
 - imagePrompt เขียนเป็นภาษาอังกฤษ หนึ่งประโยค บรรยายหน้าตาจานที่ทำเสร็จแล้ว
-  บอกวัตถุดิบหลัก สี และภาชนะที่ใส่ ห้ามมีคนหรือตัวหนังสือในภาพ
+บอกวัตถุดิบหลัก สี และภาชนะที่ใส่ ห้ามมีคนหรือตัวหนังสือในภาพ
 `;
 }
 
 export async function generateRecipes(
   ingredients: string[],
   mode: CookingMode = DEFAULT_COOKING_MODE,
+  equipment: string[] = [],
 ) {
   const apiKey = process.env.GEMINI_API_KEY;
+
   if (!apiKey) return [];
 
   const ai = new GoogleGenAI({ apiKey });
@@ -109,25 +128,43 @@ export async function generateRecipes(
     try {
       const response = await ai.models.generateContent({
         model,
-        contents: buildPrompt(ingredients, mode),
+        contents: buildPrompt(
+          ingredients,
+          mode,
+          equipment,
+        ),
         config: {
           responseMimeType: "application/json",
           responseSchema: recipeListSchema,
           temperature: getCookingMode(mode).temperature,
         },
       });
+
       const text = response.text;
+
       if (!text) return [];
 
       const parsed: unknown = JSON.parse(text);
+
       if (!Array.isArray(parsed)) return [];
+
       return parsed.filter(isUsableRecipe);
     } catch (error) {
-      if (isRetryable(error) && attempt < MAX_ATTEMPTS) {
-        await sleep(1000 * 2 ** (attempt - 1));
+      if (
+        isRetryable(error) &&
+        attempt < MAX_ATTEMPTS
+      ) {
+        await sleep(
+          1000 * 2 ** (attempt - 1),
+        );
         continue;
       }
-      console.error("Recipe Error:", error);
+
+      console.error(
+        "Recipe Error:",
+        error,
+      );
+
       return [];
     }
   }

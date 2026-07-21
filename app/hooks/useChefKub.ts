@@ -1,3 +1,4 @@
+import { loadKitchenSettings } from "../utils/storage/kitchenEquipment";
 import { useState, useRef, useEffect } from "react";
 import { generateRecipes } from "../actions/generateRecipe";
 import { generateRecipeImage } from "../actions/generateRecipeImage";
@@ -82,7 +83,8 @@ export type ViewMode =
   | "recipes"
   | "edit"
   | "favorites"
-  | "cook";
+  | "cook"
+  | "settings";
 
 export function useChefKub() {
   const model = useYoloModel();
@@ -245,7 +247,14 @@ const isDrawingRef = useRef(false);
 
     setLoading({ state: true, message: "กำลังจัดเมนูให้คุณทำเลย..." });
     try {
-      const res = await generateRecipes(ingredients, cookingMode);
+      const kitchenSettings = loadKitchenSettings();
+const equipment = kitchenSettings?.equipment ?? [];
+
+const res = await generateRecipes(
+  ingredients,
+  cookingMode,
+  equipment,
+);
       if (res.length === 0) {
         alert(
           "ไม่พบเมนูที่เหมาะกับวัตถุดิบนี้ ลองเพิ่มรูปอีกใบ หรือเช็คว่าของที่สแกนมากินได้จริง",
