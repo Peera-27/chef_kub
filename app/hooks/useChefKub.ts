@@ -22,6 +22,7 @@ import {
   loadHistory,
   updateFavoriteImage,
 } from "../utils/storage";
+import { downscaleImage } from "../utils/downscaleImage";
 import { hashImageBase64 } from "../utils/imageHash";
 import { perceptualHashBase64 } from "../utils/perceptualHash";
 import { getOrCreateSessionId } from "../utils/sessionId";
@@ -75,6 +76,18 @@ async function measureImage(
     img.onerror = () => reject(new Error("โหลดรูปไม่สำเร็จ"));
   });
   return { width: img.naturalWidth, height: img.naturalHeight };
+}
+
+/** แปลง error code จาก saveLabeledImage เป็นข้อความที่บอกผู้ใช้ว่าทำอะไรต่อได้ */
+function saveErrorMessage(error?: string): string {
+  switch (error) {
+    case "rate_limited":
+      return "บันทึกบ่อยเกินไปในชั่วโมงนี้ พักสักครู่แล้วกดบันทึกอีกครั้ง\nกรอบที่แก้ไว้ยังอยู่ ไม่ได้หายไปไหน";
+    case "missing_config":
+      return "ระบบยังไม่ได้เชื่อมต่อฐานข้อมูล จึงบันทึก label ไม่ได้\nกรุณาแจ้งผู้ดูแลระบบ";
+    default:
+      return "บันทึก label ไม่สำเร็จ กรุณาลองกดบันทึกอีกครั้ง\nกรอบที่แก้ไว้ยังอยู่ ไม่ได้หายไปไหน";
+  }
 }
 
 export type ViewMode =
@@ -248,13 +261,21 @@ const isDrawingRef = useRef(false);
     setLoading({ state: true, message: "กำลังจัดเมนูให้คุณทำเลย..." });
     try {
       const kitchenSettings = loadKitchenSettings();
-const equipment = kitchenSettings?.equipment ?? [];
+      const equipment = kitchenSettings?.equipment ?? [];
 
-const res = await generateRecipes(
-  ingredients,
-  cookingMode,
-  equipment,
-);
+      const result = await generateRecipes(ingredients, cookingMode, equipment);
+
+      if (!result.ok) {
+        alert(
+          result.reason === "rate_limited"
+            ? "คุณสร้างสูตรบ่อยเกินไปในชั่วโมงนี้ พักสักครู่แล้วลองใหม่นะ"
+            : "ไม่สามารถสร้างสูตรได้ กรุณาลองใหม่",
+        );
+        return false;
+      }
+
+      const res = result.recipes;
+
       if (res.length === 0) {
         alert(
           "ไม่พบเมนูที่เหมาะกับวัตถุดิบนี้ ลองเพิ่มรูปอีกใบ หรือเช็คว่าของที่สแกนมากินได้จริง",
@@ -290,7 +311,11 @@ const res = await generateRecipes(
     }
   };
 
-  const processImage = async (base64Url: string) => {
+  const processImage = async (rawBase64Url: string) => {
+    /* ย่อตรงนี้จุดเดียว เพราะทั้งกล้องและอัปโหลดไฟล์ไหลผ่าน processImage หมด
+       และต้องย่อ "ก่อน" คิด hash — ไม่งั้น hash จะไม่ตรงกับไฟล์ที่เก็บจริงใน R2 */
+    const base64Url = await downscaleImage(rawBase64Url);
+
     if (imageCache.current.has(base64Url)) {
       const cached = imageCache.current.get(base64Url)!;
       setLoading({ state: true, message: "แคชรูปภาพ — วิเคราะห์ทันที ⚡" });
@@ -386,6 +411,11 @@ const res = await generateRecipes(
         // โควตา Gemini หมด — ตรวจสอบไม่ได้ ใช้ผล YOLO ดิบ ๆ ไปก่อน (ดีกว่าไม่มีอะไรเลย)
         alert(
           "โควตา AI ตรวจสอบของวันนี้หมดแล้ว (รีเซ็ตพรุ่งนี้)\nแสดงผลจาก YOLO ตรง ๆ อาจมีของที่ไม่แม่น ลบ/แก้เองได้",
+        );
+      } else if (verdict.reason === "rate_limited") {
+        // เหมือนกรณีโควตาหมด ต่างแค่รอชั่วโมงเดียวไม่ใช่ข้ามวัน
+        alert(
+          "คุณสแกนบ่อยเกินไปในชั่วโมงนี้ พักสักครู่แล้วลองใหม่นะ\nระหว่างนี้แสดงผลจาก YOLO ตรง ๆ อาจมีของที่ไม่แม่น ลบ/แก้เองได้",
         );
       }
 
@@ -654,7 +684,7 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
         perceptualHashBase64(editingImage.url),
       ]);
 
-      await saveLabeledImage({
+      const result = await saveLabeledImage({
         imageBase64: editingImage.url,
         imageHash,
         phash,
@@ -667,17 +697,28 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
         })),
       });
 
+      /* saveLabeledImage ไม่ throw เวลาล้มเหลว มัน return { ok: false } เฉย ๆ
+         ถ้าไม่เช็คตรงนี้ catch ข้างล่างจะไม่มีวันทำงาน แล้วผู้ใช้จะเห็นหน้าจอ
+         เด้งกลับ home เหมือนบันทึกสำเร็จ ทั้งที่กรอบที่ลากมาทั้งหมดไม่ได้ถูกเก็บ */
+      if (!result.ok) {
+        console.warn("บันทึก label ไม่สำเร็จ:", result.error);
+        alert(saveErrorMessage(result.error));
+        // ค้างอยู่หน้าแก้ไขเพื่อให้กดบันทึกซ้ำได้ ไม่ทิ้งงานที่เพิ่งลากกรอบไว้
+        return;
+      }
+
       imageCache.current.set(editingImage.url, {
         items: editingImage.items,
         boxes,
         imageWidth,
         imageHeight,
       });
+      setViewMode("home");
     } catch (err) {
       console.warn("บันทึก label ไม่สำเร็จ:", err);
+      alert(saveErrorMessage());
     } finally {
       setLoading({ state: false, message: "" });
-      setViewMode("home");
     }
   };
   

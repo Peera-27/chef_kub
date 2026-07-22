@@ -31,11 +31,25 @@ export function toYoloBBoxFromImagePixels(
   imageHeight: number,
 ): YoloBBox {
   const rect = normalizePixelRect(box);
+
+  /* ตัดส่วนที่ล้นออกนอกภาพทิ้งก่อน normalize
+     ผู้ใช้ลากกรอบเลยขอบรูปได้ (ไม่มีอะไรกั้นใน EditImageView) ถ้าปล่อยผ่าน
+     จะได้พิกัดติดลบหรือเกิน 1 ซึ่งผิดสเปก YOLO — เครื่องมือเทรนบางตัว error
+     ทิ้งทั้งไฟล์ บางตัวรับไว้เงียบ ๆ แล้วโมเดลเรียนจากกรอบเพี้ยน
+     ต้อง clip เป็นสี่เหลี่ยมจริง ไม่ใช่ clamp แค่จุดกึ่งกลาง ไม่งั้นกรอบจะบิด */
+  const left = Math.max(0, rect.x);
+  const top = Math.max(0, rect.y);
+  const right = Math.min(imageWidth, rect.x + rect.w);
+  const bottom = Math.min(imageHeight, rect.y + rect.h);
+
+  const w = Math.max(0, right - left);
+  const h = Math.max(0, bottom - top);
+
   return {
-    x_center: (rect.x + rect.w / 2) / imageWidth,
-    y_center: (rect.y + rect.h / 2) / imageHeight,
-    width: rect.w / imageWidth,
-    height: rect.h / imageHeight,
+    x_center: (left + w / 2) / imageWidth,
+    y_center: (top + h / 2) / imageHeight,
+    width: w / imageWidth,
+    height: h / imageHeight,
   };
 }
 

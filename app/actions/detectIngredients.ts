@@ -2,6 +2,8 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
+import { checkRateLimit } from "../lib/rateLimit";
+
 const MAX_ATTEMPTS = 3;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -30,7 +32,8 @@ export type DetectResult =
   // added = ของที่ Gemini เห็นเพิ่มเอง (YOLO ไม่ได้เดา)
   | { ok: true; confirmed: string[]; added: string[] }
   // quota = โควตา free tier รายวันหมด | unconfigured = ไม่มี API key
-  | { ok: false; reason: "quota" | "unconfigured" | "failed" };
+  // rate_limited = ยิงถี่เกินเพดานต่อ IP รอครบชั่วโมงแล้วได้ต่อ
+  | { ok: false; reason: "quota" | "unconfigured" | "failed" | "rate_limited" };
 
 // base64Url จากแอปเป็น data URL เช่น "data:image/jpeg;base64,...."
 // Gemini ต้องการ mimeType กับ data ที่แยก prefix ออกแล้ว
@@ -83,6 +86,10 @@ export async function detectIngredients(
   // ถ้ายังไม่ตั้ง key เฉพาะ ให้ fallback ไป key หลัก จะได้ไม่พังตอน dev
   const apiKey = process.env.GEMINI_DETECT_API_KEY ?? process.env.GEMINI_API_KEY;
   if (!apiKey) return { ok: false, reason: "unconfigured" };
+
+  // เช็คก่อนแตะ Gemini — กันไม่ให้ค่าใช้จ่ายเกิดขึ้นก่อนแล้วค่อยปฏิเสธ
+  const rate = await checkRateLimit("detect");
+  if (!rate.allowed) return { ok: false, reason: "rate_limited" };
 
   const image = splitDataUrl(base64Url);
   if (!image) return { ok: false, reason: "failed" };

@@ -1,6 +1,7 @@
 "use server";
 
 import { GoogleGenAI, Type } from "@google/genai";
+import { checkRateLimit } from "../lib/rateLimit";
 import type { Recipe } from "../types/recipe";
 import {
   DEFAULT_COOKING_MODE,
@@ -56,6 +57,12 @@ const recipeListSchema = {
 
 
 // โมเดลอาจคืน object เดี่ยวหรือเมนูที่ฟิลด์ไม่ครบ — กันไม่ให้หลุดไปพังตอน render
+export type RecipeResult =
+  // recipes ว่างได้ = โมเดลตอบมาแต่ไม่มีเมนูไหนใช้ได้จริง ต่างจาก ok:false ที่ยิงไม่ถึง
+  | { ok: true; recipes: Recipe[] }
+  // rate_limited = ยิงถี่เกินเพดานต่อ IP | unconfigured = ไม่มี API key
+  | { ok: false; reason: "unconfigured" | "failed" | "rate_limited" };
+
 function isUsableRecipe(value: unknown): value is Recipe {
   const recipe = value as Partial<Recipe> | null;
   return (
@@ -116,10 +123,14 @@ export async function generateRecipes(
   ingredients: string[],
   mode: CookingMode = DEFAULT_COOKING_MODE,
   equipment: string[] = [],
-) {
+): Promise<RecipeResult> {
   const apiKey = process.env.GEMINI_API_KEY;
 
-  if (!apiKey) return [];
+  if (!apiKey) return { ok: false, reason: "unconfigured" };
+
+  // เช็คก่อนแตะ Gemini — กันไม่ให้ค่าใช้จ่ายเกิดขึ้นก่อนแล้วค่อยปฏิเสธ
+  const rate = await checkRateLimit("recipes");
+  if (!rate.allowed) return { ok: false, reason: "rate_limited" };
 
   const ai = new GoogleGenAI({ apiKey });
   const model = "gemini-3.1-flash-lite";
@@ -142,13 +153,13 @@ export async function generateRecipes(
 
       const text = response.text;
 
-      if (!text) return [];
+      if (!text) return { ok: true, recipes: [] };
 
       const parsed: unknown = JSON.parse(text);
 
-      if (!Array.isArray(parsed)) return [];
+      if (!Array.isArray(parsed)) return { ok: true, recipes: [] };
 
-      return parsed.filter(isUsableRecipe);
+      return { ok: true, recipes: parsed.filter(isUsableRecipe) };
     } catch (error) {
       if (
         isRetryable(error) &&
@@ -165,9 +176,9 @@ export async function generateRecipes(
         error,
       );
 
-      return [];
+      return { ok: false, reason: "failed" };
     }
   }
 
-  return [];
+  return { ok: false, reason: "failed" };
 }

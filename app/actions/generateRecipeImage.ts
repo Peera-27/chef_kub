@@ -9,6 +9,7 @@ import {
   recipeImageUrl,
   recordRecipeImage,
 } from "../lib/recipeImageCache";
+import { checkRateLimit } from "../lib/rateLimit";
 import type { ImageResult } from "../types/imageResult";
 import type { ImageStyle } from "../utils/cookingModes";
 
@@ -83,6 +84,9 @@ export async function generateRecipeImage(
   cacheName: string = dishDescription,
 ): Promise<ImageResult> {
   if (!isRecipeImageCacheEnabled()) {
+    const rate = await checkRateLimit("image");
+    if (!rate.allowed) return { ok: false, reason: "rate_limited" };
+
     return generateFreshImage(dishDescription, style);
   }
 
@@ -99,6 +103,11 @@ export async function generateRecipeImage(
 
   const pending = inFlight.get(path);
   if (pending) return pending;
+
+  // นับโควตาตรงนี้ ไม่ใช่ตอนเข้าฟังก์ชัน — รูปที่มีในแคชแล้วหรือเกาะคำขอที่กำลังวิ่งอยู่
+  // ไม่ได้จ่าย neurons เพิ่มสักนิด ไม่ควรไปกินสิทธิ์ของผู้ใช้
+  const rate = await checkRateLimit("image");
+  if (!rate.allowed) return { ok: false, reason: "rate_limited" };
 
   const job = generateAndStore(dishDescription, style, cacheName, path);
   // ลบทิ้งเมื่อจบไม่ว่าสำเร็จหรือไม่ — ล้มเหลวแล้วต้องให้คำขอถัดไปลองใหม่ได้

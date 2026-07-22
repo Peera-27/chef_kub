@@ -6,6 +6,7 @@ import {
   isR2Configured,
   r2PutObject,
 } from "../lib/cloudflare/r2";
+import { checkRateLimit } from "../lib/rateLimit";
 import { normalizeLabelName } from "../utils/normalizeLabel";
 import { toYoloBBoxFromImagePixels } from "../utils/toYoloBBox";
 import type { DetectionSource } from "../utils/types";
@@ -83,6 +84,12 @@ export async function saveLabeledImage(
 
   if (!input.imageHash) {
     return { ok: false, error: "missing_hash" };
+  }
+
+  // เช็คหลังตรวจ input เสร็จ — คำขอที่ผิดรูปแบบอยู่แล้วไม่ควรกินโควตาของผู้ใช้
+  const rate = await checkRateLimit("label");
+  if (!rate.allowed) {
+    return { ok: false, error: "rate_limited" };
   }
 
   try {

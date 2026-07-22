@@ -246,7 +246,16 @@ CREATE TABLE recipe_images (
   style        TEXT NOT NULL,                     -- 'photo' | 'anime'
   created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE rate_limits (
+  bucket       TEXT PRIMARY KEY,                  -- '<action>:<ip>'
+  window_start INTEGER NOT NULL,                  -- เลข window (floor(epoch_ms / 1 ชม.))
+  hits         INTEGER NOT NULL                   -- จำนวนครั้งใน window ปัจจุบัน
+);
 ```
+
+> ⚠️ ตาราง `rate_limits` **ต้องมีก่อน deploy สาธารณะ** — ถ้าไม่มี ตัวจำกัดจะปล่อยผ่านทุกคำขอ
+> (fail-open โดยตั้งใจ เพื่อไม่ให้ D1 สะดุดแล้วแอปล่มทั้งระบบ) แปลว่าโควตา AI ไม่มีอะไรคุ้มกัน
 
 > เปิดแอปครั้งแรก → ระบบ seed class จาก `labelsTh.ts` เข้าตาราง `classes` อัตโนมัติ และจะเติม label ใหม่ที่เพิ่มใน `labelsTh.ts` ให้ทุกครั้งที่โหลดรายการ class
 
