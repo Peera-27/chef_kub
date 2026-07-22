@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import { useEffect } from "react";
 import { Portal } from "../Portal";
 
 interface SheetShellProps {
@@ -28,6 +29,23 @@ export function SheetShell({
   panelClassName = "",
   children,
 }: SheetShellProps) {
+  // Esc ปิด + ล็อกไม่ให้พื้นหลังเลื่อนตาม (ไม่งั้นเลื่อนในลิสต์จนสุดแล้วหน้าข้างหลังเลื่อนต่อ)
+  useEffect(() => {
+    if (!open) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onDismiss();
+    };
+    const prevOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, onDismiss]);
+
   return (
     <Portal>
       <AnimatePresence>
@@ -42,7 +60,9 @@ export function SheetShell({
             onClick={onDismiss}
           >
             <motion.div
-              className={`card w-full flex flex-col rounded-t-[var(--radius-xl)] md:rounded-[var(--radius-xl)] ${panelClassName}`}
+              role="dialog"
+              aria-modal="true"
+              className={`card w-full flex flex-col overflow-hidden rounded-t-[var(--radius-xl)] md:rounded-[var(--radius-xl)] ${panelClassName}`}
               initial={{ y: 40, opacity: 0, scale: 0.98 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 32, opacity: 0, scale: 0.98 }}

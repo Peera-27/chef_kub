@@ -1,8 +1,11 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import Image from "next/image";
 import Link from "next/link";
 import { LoadingOverlay } from "../components/LoadingOverlay";
+import { LabelPickerModal } from "../components/LabelPickerModal";
+import { NoticeModal } from "../components/NoticeModal";
 import { ViewTransition } from "../components/motion/ViewTransition";
 import { CameraView } from "../components/views/CameraView";
 import { EditImageView } from "../components/views/EditImageView";
@@ -23,6 +26,8 @@ import { useChefKub } from "../hooks/useChefKub";
 
 export default function Home() {
   const {
+    notice,
+    dismissNotice,
     loading,
     imageGenPending,
     gallery,
@@ -108,9 +113,14 @@ export default function Home() {
               href="/"
               className="flex items-center gap-3 rounded-[var(--radius-md)] -m-1 p-1 transition-opacity hover:opacity-80 tap"
             >
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-dark)] grid place-items-center text-white shadow-[var(--shadow-glow)]">
-                <IconChefHat size={22} />
-              </div>
+              <Image
+                src="/mascot.png"
+                alt=""
+                width={384}
+                height={384}
+                className="w-10 h-10 select-none"
+                priority
+              />
               <div>
                 <h1 className="text-2xl font-bold text-gradient-brand tracking-tight leading-none">
                   Chef Kub
@@ -226,17 +236,11 @@ export default function Home() {
               {viewMode === "edit" && editingImage && (
                 <EditImageView
                   editingImage={editingImage}
-                  labelPickerOpen={labelPickerOpen}
-                  editingBoxIndex={editingBoxIndex}
-                  classOptions={classOptions}
                   currentRect={currentRect}
                   onPointerDown={handlePointerDown}
                   onPointerMove={handlePointerMove}
                   onPointerUp={handlePointerUp}
                   onDone={finishEditing}
-                  onSelectLabel={confirmLabelSelection}
-                  onCancelLabel={cancelLabelPicker}
-                  onClassesChange={handleClassesChange}
                   onEditBox={startEditBoxLabel}
                   onRemoveBox={removeBoxAtIndex}
                   onImageMetrics={handleEditImageMetrics}
@@ -361,17 +365,11 @@ export default function Home() {
           {viewMode === "edit" && editingImage && (
             <EditImageView
               editingImage={editingImage}
-              labelPickerOpen={labelPickerOpen}
-              editingBoxIndex={editingBoxIndex}
-              classOptions={classOptions}
               currentRect={currentRect}
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
               onDone={finishEditing}
-              onSelectLabel={confirmLabelSelection}
-              onCancelLabel={cancelLabelPicker}
-              onClassesChange={handleClassesChange}
               onEditBox={startEditBoxLabel}
               onRemoveBox={removeBoxAtIndex}
               onImageMetrics={handleEditImageMetrics}
@@ -494,6 +492,18 @@ export default function Home() {
           <LoadingOverlay key="loading" message={loading.message} />
         )}
       </AnimatePresence>
+
+      <NoticeModal notice={notice} onClose={dismissNotice} />
+
+      {/* Both responsive layouts stay mounted; render portaled overlays only once. */}
+      <LabelPickerModal
+        open={viewMode === "edit" && labelPickerOpen}
+        title={editingBoxIndex !== null ? "แก้ไขชื่อวัตถุดิบ" : "เลือกวัตถุดิบ"}
+        classOptions={classOptions}
+        onSelect={confirmLabelSelection}
+        onCancel={cancelLabelPicker}
+        onClassesChange={handleClassesChange}
+      />
     </div>
   );
 }

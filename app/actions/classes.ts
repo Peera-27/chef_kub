@@ -64,8 +64,16 @@ export async function listClasses(): Promise<ClassEntry[]> {
   return ensureSeededClasses();
 }
 
+/**
+ * `force` = ผู้ใช้ยืนยันแล้วว่าไม่ใช่ชื่อซ้ำ ให้ข้ามด่านเช็คชื่อคล้าย
+ *
+ * ต้องเป็น server action จริง ๆ ห้ามปลอม entry ฝั่ง client เอา —
+ * id ที่ปลอมขึ้นมาจะไม่มีใน D1 แล้วตอน saveLabeledImage หา class_id ไม่เจอ
+ * มันจะบันทึกเป็น null เงียบ ๆ ได้ annotation ที่เทรนไม่ได้
+ */
 export async function addClass(
   name: string,
+  options?: { force?: boolean },
 ): Promise<
   | { ok: true; entry: ClassEntry }
   | { ok: false; error: string; similar?: string[] }
@@ -91,7 +99,7 @@ export async function addClass(
     trimmed,
     existing.map((entry) => entry.name),
   );
-  if (similar.length > 0) {
+  if (similar.length > 0 && !options?.force) {
     return {
       ok: false,
       error: "มีชื่อที่คล้ายกันอยู่แล้ว — เลือกจากรายการแทน",

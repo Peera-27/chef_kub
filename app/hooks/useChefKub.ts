@@ -4,6 +4,7 @@ import { generateRecipes } from "../actions/generateRecipe";
 import { generateRecipeImage } from "../actions/generateRecipeImage";
 import { getCachedRecipeImages } from "../actions/getCachedRecipeImages";
 import { detectIngredients } from "../actions/detectIngredients";
+import type { Notice } from "../components/NoticeModal";
 import { listClasses } from "../actions/classes";
 import { findLabeledImage } from "../actions/getLabeledImage";
 import { saveLabeledImage } from "../actions/saveLabeledImage";
@@ -82,14 +83,28 @@ async function measureImage(
 }
 
 /** แปลง error code จาก saveLabeledImage เป็นข้อความที่บอกผู้ใช้ว่าทำอะไรต่อได้ */
-function saveErrorMessage(error?: string): string {
+function saveErrorNotice(error?: string): Notice {
+  // ทุกเคสค้างอยู่หน้าแก้ไข — hint เดียวกันคือย้ำว่ากรอบที่ลากไว้ยังอยู่
+  const keptHint = "กรอบที่แก้ไว้ยังอยู่ครบ ไม่ได้หายไปไหน";
   switch (error) {
     case "rate_limited":
-      return "บันทึกบ่อยเกินไปในชั่วโมงนี้ พักสักครู่แล้วกดบันทึกอีกครั้ง\nกรอบที่แก้ไว้ยังอยู่ ไม่ได้หายไปไหน";
+      return {
+        title: "บันทึกถี่ไปหน่อยแล้ว",
+        message: "พักสักครู่แล้วค่อยกดบันทึกอีกครั้งนะ",
+        hint: keptHint,
+      };
     case "missing_config":
-      return "ระบบยังไม่ได้เชื่อมต่อฐานข้อมูล จึงบันทึก label ไม่ได้\nกรุณาแจ้งผู้ดูแลระบบ";
+      return {
+        title: "ยังบันทึกไม่ได้",
+        message: "ระบบยังไม่ได้เชื่อมต่อฐานข้อมูล เลยเก็บ label ไว้ไม่ได้",
+        hint: "รบกวนแจ้งผู้ดูแลระบบให้หน่อยนะ",
+      };
     default:
-      return "บันทึก label ไม่สำเร็จ กรุณาลองกดบันทึกอีกครั้ง\nกรอบที่แก้ไว้ยังอยู่ ไม่ได้หายไปไหน";
+      return {
+        title: "บันทึกไม่สำเร็จ",
+        message: "ลองกดบันทึกอีกครั้งดูนะ",
+        hint: keptHint,
+      };
   }
 }
 
@@ -129,6 +144,7 @@ const isDrawingRef = useRef(false);
     w: number;
     h: number;
   } | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
   const [labelPickerOpen, setLabelPickerOpen] = useState(false);
   const [pendingRect, setPendingRect] = useState<BoundingBox | null>(null);
   const [editingBoxIndex, setEditingBoxIndex] = useState<number | null>(null);
@@ -173,7 +189,11 @@ const isDrawingRef = useRef(false);
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch {
-      alert("ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตการใช้กล้องแล้วลองใหม่");
+      setNotice({
+        title: "เปิดกล้องไม่ได้",
+        message: "เบราว์เซอร์ยังไม่ได้อนุญาตให้ใช้กล้อง",
+        hint: "กดไอคอนหน้า URL แล้วเปิดสิทธิ์กล้อง หรือเลือกรูปจากเครื่องแทนก็ได้",
+      });
       setViewMode("home");
     }
   };
@@ -270,10 +290,16 @@ const isDrawingRef = useRef(false);
       const result = await generateRecipes(ingredients, cookingMode, equipment);
 
       if (!result.ok) {
-        alert(
+        setNotice(
           result.reason === "rate_limited"
-            ? "คุณสร้างสูตรบ่อยเกินไปในชั่วโมงนี้ พักสักครู่แล้วลองใหม่นะ"
-            : "ไม่สามารถสร้างสูตรได้ กรุณาลองใหม่",
+            ? {
+                title: "คิดเมนูถี่ไปหน่อยแล้ว",
+                message: "พักสักครู่แล้วค่อยลองใหม่นะ ชั่วโมงหน้าได้ต่อ",
+              }
+            : {
+                title: "คิดเมนูไม่สำเร็จ",
+                message: "มีอะไรสะดุดระหว่างทาง ลองกดอีกครั้งดูนะ",
+              },
         );
         return false;
       }
@@ -281,9 +307,11 @@ const isDrawingRef = useRef(false);
       const res = result.recipes;
 
       if (res.length === 0) {
-        alert(
-          "ไม่พบเมนูที่เหมาะกับวัตถุดิบนี้ ลองเพิ่มรูปอีกใบ หรือเช็คว่าของที่สแกนมากินได้จริง",
-        );
+        setNotice({
+          title: "ยังนึกเมนูไม่ออกเลย",
+          message: "ของเท่าที่มีอยู่ยังจับเป็นเมนูไม่ได้",
+          hint: "ลองสแกนเพิ่มอีกสักใบ หรือเช็คว่าของที่สแกนมากินได้จริงไหม",
+        });
         return false;
       }
 
@@ -299,15 +327,20 @@ const isDrawingRef = useRef(false);
       const { quotaExhausted } = await attachRecipeImages(res, cookingMode);
 
       if (quotaExhausted) {
-        alert(
-          "โควตาสร้างรูปอาหารของวันนี้หมดแล้ว (รีเซ็ตพรุ่งนี้)\nสูตรอาหารยังใช้ได้ตามปกติ แค่ไม่มีรูปประกอบ",
-        );
+        setNotice({
+          title: "โควตารูปอาหารวันนี้หมดแล้ว",
+          message: "เดี๋ยวรีเซ็ตพรุ่งนี้ วันนี้เมนูจะไม่มีรูปประกอบนะ",
+          hint: "สูตรกับขั้นตอนทำยังใช้ได้ครบตามปกติ",
+        });
       }
 
       return true;
     } catch (err) {
       console.error(err);
-      alert("ไม่สามารถสร้างสูตรได้ กรุณาลองใหม่");
+      setNotice({
+        title: "คิดเมนูไม่สำเร็จ",
+        message: "มีอะไรสะดุดระหว่างทาง ลองกดอีกครั้งดูนะ",
+      });
       return false;
     } finally {
       setLoading({ state: false, message: "" });
@@ -427,16 +460,42 @@ const isDrawingRef = useRef(false);
             source: "gemini" as const,
           })),
         ]);
+      } else if (verdict.reason === "not_food") {
+        /* ไม่มีของกินในรูปเลย — ไม่เข้าแกลเลอรี เพราะรูปเปล่าที่เข้าไปได้แปลว่า
+           ผู้ใช้ลากกรอบแปะชื่อวัตถุดิบทับหน้าคนแล้วกดบันทึกได้ ซึ่งจะไหลไปปน
+           training data ทั้งชุด กันตั้งแต่ตรงนี้จบกว่าไปกันทีหลังตอนบันทึก */
+        setNotice({
+          title: "ไม่เจอของกินในรูปเลย",
+          message: "รูปนี้ดูไม่มีวัตถุดิบหรือของกินอยู่เลย เลยเอาไปคิดเมนูต่อไม่ได้",
+          hint: "ลองถ่ายของในตู้เย็น ของสดบนเขียง หรือถุงของจากตลาดดูนะ",
+          actionLabel: "ถ่ายใหม่",
+        });
+        return;
+      } else if (verdict.reason === "prepared_dish") {
+        // จานที่ทำเสร็จแล้วเอาไปทำต่อไม่ได้ — ทิ้งผล YOLO ไปเลย ไม่งั้นจะเหลือ
+        // ข้าวสวย/ไข่ดาว/กะเพรา ค้างอยู่ แล้วดูเหมือนแอปแตกสูตรจากจานได้จริง
+        setNotice({
+          title: "อันนี้ทำเสร็จแล้วนี่นา",
+          message:
+            "รูปนี้ดูเหมือนอาหารที่ปรุงเสร็จจัดจานแล้ว เลยเอาไปคิดเมนูต่อไม่ได้",
+          hint: "ลองถ่ายของในตู้เย็น ของสดบนเขียง หรือถุงของจากตลาดดูนะ",
+          actionLabel: "ถ่ายใหม่",
+        });
+        return;
       } else if (verdict.reason === "quota") {
         // โควตา Gemini หมด — ตรวจสอบไม่ได้ ใช้ผล YOLO ดิบ ๆ ไปก่อน (ดีกว่าไม่มีอะไรเลย)
-        alert(
-          "โควตา AI ตรวจสอบของวันนี้หมดแล้ว (รีเซ็ตพรุ่งนี้)\nแสดงผลจาก YOLO ตรง ๆ อาจมีของที่ไม่แม่น ลบ/แก้เองได้",
-        );
+        setNotice({
+          title: "โควตา AI วันนี้หมดแล้ว",
+          message: "เดี๋ยวรีเซ็ตพรุ่งนี้ ระหว่างนี้ยังสแกนต่อได้อยู่",
+          hint: "ผลที่เห็นมาจาก YOLO ตรง ๆ ยังไม่ผ่านการตรวจสอบ อาจมีของที่ไม่แม่น ลบหรือแก้เองได้",
+        });
       } else if (verdict.reason === "rate_limited") {
         // เหมือนกรณีโควตาหมด ต่างแค่รอชั่วโมงเดียวไม่ใช่ข้ามวัน
-        alert(
-          "คุณสแกนบ่อยเกินไปในชั่วโมงนี้ พักสักครู่แล้วลองใหม่นะ\nระหว่างนี้แสดงผลจาก YOLO ตรง ๆ อาจมีของที่ไม่แม่น ลบ/แก้เองได้",
-        );
+        setNotice({
+          title: "สแกนถี่ไปหน่อยแล้ว",
+          message: "พักสักครู่แล้วค่อยลองใหม่นะ ชั่วโมงหน้าได้ต่อ",
+          hint: "ผลที่เห็นมาจาก YOLO ตรง ๆ ยังไม่ผ่านการตรวจสอบ อาจมีของที่ไม่แม่น ลบหรือแก้เองได้",
+        });
       }
 
       if (items.length > 0 || boxes.length > 0) {
@@ -460,7 +519,10 @@ const isDrawingRef = useRef(false);
         },
       ]);
     } catch {
-      alert("เกิดข้อผิดพลาดในการวิเคราะห์รูป กรุณาลองใหม่");
+      setNotice({
+        title: "วิเคราะห์รูปไม่สำเร็จ",
+        message: "มีอะไรสะดุดระหว่างทาง ลองสแกนอีกครั้งดูนะ",
+      });
     } finally {
       setLoading({ state: false, message: "" });
     }
@@ -676,9 +738,11 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
 
     const invalid = boxes.filter((box) => resolveClassId(box.label) === null);
     if (invalid.length > 0) {
-      alert(
-        `มี ${invalid.length} label ที่ไม่รู้จัก (${invalid.map((b) => b.label).join(", ")})\nกรุณากด "แก้ไข" เพื่อเลือกจากรายการ`,
-      );
+      setNotice({
+        title: `ยังมี ${invalid.length} กรอบที่ไม่รู้จัก`,
+        message: invalid.map((b) => b.label).join(", "),
+        hint: 'กด "แก้ไข" ที่กรอบนั้นแล้วเลือกชื่อจากรายการก่อนบันทึกนะ',
+      });
       return;
     }
 
@@ -722,7 +786,7 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
          เด้งกลับ home เหมือนบันทึกสำเร็จ ทั้งที่กรอบที่ลากมาทั้งหมดไม่ได้ถูกเก็บ */
       if (!result.ok) {
         console.warn("บันทึก label ไม่สำเร็จ:", result.error);
-        alert(saveErrorMessage(result.error));
+        setNotice(saveErrorNotice(result.error));
         // ค้างอยู่หน้าแก้ไขเพื่อให้กดบันทึกซ้ำได้ ไม่ทิ้งงานที่เพิ่งลากกรอบไว้
         return;
       }
@@ -736,7 +800,7 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
       setViewMode("home");
     } catch (err) {
       console.warn("บันทึก label ไม่สำเร็จ:", err);
-      alert(saveErrorMessage());
+      setNotice(saveErrorNotice());
     } finally {
       setLoading({ state: false, message: "" });
     }
@@ -745,6 +809,8 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
   
 
   return {
+    notice,
+    dismissNotice: () => setNotice(null),
     loading,
     imageGenPending,
     gallery,

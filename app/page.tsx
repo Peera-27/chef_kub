@@ -48,8 +48,8 @@ const FEATURES = [
   },
   {
     icon: <IconTag size={20} />,
-    title: "สอนให้มันฉลาดขึ้นได้",
-    detail: "โมเดลทายผิดก็ลากกรอบแก้เอง เพิ่มวัตถุดิบที่ยังไม่รู้จักได้",
+    title: "ทายผิดก็แก้เองได้",
+    detail: "ลากกรอบใหม่ เปลี่ยนชื่อ หรือเพิ่มวัตถุดิบที่โมเดลมองข้าม ก่อนหาเมนู",
   },
   {
     icon: <IconSparkles size={20} />,
@@ -149,9 +149,14 @@ export default function Landing() {
       <header className="sticky top-0 z-30 border-b border-black/[0.04] bg-[var(--color-page)]/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-3.5 md:px-8">
           <div className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-2xl bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-dark)] text-white shadow-[var(--shadow-glow)]">
-              <IconChefHat size={20} />
-            </span>
+            <Image
+              src="/mascot.png"
+              alt=""
+              width={384}
+              height={384}
+              className="h-9 w-9 select-none"
+              priority
+            />
             <span className="text-xl font-bold tracking-tight text-gradient-brand">
               Chef Kub
             </span>
@@ -432,7 +437,13 @@ export default function Landing() {
       <footer className="border-t border-[var(--color-line)]">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-5 py-8 sm:flex-row md:px-8">
           <div className="flex items-center gap-2 text-[var(--color-muted)]">
-            <IconChefHat size={16} />
+            <Image
+              src="/mascot.png"
+              alt=""
+              width={384}
+              height={384}
+              className="h-5 w-5 select-none"
+            />
             <span className="text-sm font-medium">Chef Kub</span>
           </div>
           <p className="text-center text-xs text-[var(--color-muted)] sm:text-right">

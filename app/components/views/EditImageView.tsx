@@ -1,21 +1,14 @@
 import { useEffect, useRef } from "react";
-import { LabelPickerModal } from "../LabelPickerModal";
-import { resolveClassId, type ClassEntry } from "../../utils/classRegistry";
+import { resolveClassId } from "../../utils/classRegistry";
 import { ImageItem } from "../../utils/types";
 import { imagePixelsToCanvas } from "../../utils/toYoloBBox";
 interface EditImageViewProps {
   editingImage: ImageItem;
   currentRect: { x: number; y: number; w: number; h: number } | null;
-  labelPickerOpen: boolean;
-  editingBoxIndex: number | null;
-  classOptions: ClassEntry[];
   onPointerDown: (e: React.PointerEvent<HTMLCanvasElement>) => void;
   onPointerMove: (e: React.PointerEvent<HTMLCanvasElement>) => void;
   onPointerUp: (e: React.PointerEvent<HTMLCanvasElement>) => void;
   onDone: () => void;
-  onSelectLabel: (label: string) => void;
-  onCancelLabel: () => void;
-  onClassesChange: (classes: ClassEntry[]) => void;
   onEditBox: (index: number) => void;
   onRemoveBox: (index: number) => void;
   onImageMetrics: (width: number, height: number) => void;
@@ -24,16 +17,10 @@ interface EditImageViewProps {
 export function EditImageView({
   editingImage,
   currentRect,
-  labelPickerOpen,
-  editingBoxIndex,
-  classOptions,
   onPointerDown,
   onPointerMove,
   onPointerUp,
   onDone,
-  onSelectLabel,
-  onCancelLabel,
-  onClassesChange,
   onEditBox,
   onRemoveBox,
   onImageMetrics,
@@ -219,14 +206,6 @@ export function EditImageView({
         เสร็จสิ้น
       </button>
 
-      <LabelPickerModal
-        open={labelPickerOpen}
-        title={editingBoxIndex !== null ? "แก้ไขชื่อวัตถุดิบ" : "เลือกวัตถุดิบ"}
-        classOptions={classOptions}
-        onSelect={onSelectLabel}
-        onCancel={onCancelLabel}
-        onClassesChange={onClassesChange}
-      />
     </div>
   );
 }
