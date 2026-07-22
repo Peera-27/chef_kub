@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "chef-kub",
+  "main": ".open-next/worker.js",
+
+  // ต้องไม่เก่ากว่าที่ @opennextjs/cloudflare กำหนด ไม่งั้น Node API ที่ Next ใช้จะหาย
+  "compatibility_date": "2025-03-25",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+
+  "assets": {
+    // ไฟล์ใน public/ (รวมน้ำหนักโมเดล YOLO 11MB) เสิร์ฟผ่าน Workers Static Assets
+    // ซึ่งแยกจากขนาด worker script จึงไม่กินโควตา bundle
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+}

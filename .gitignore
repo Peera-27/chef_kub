@@ -37,6 +37,13 @@ yarn-error.log*
 # vercel
 .vercel
 
+# cloudflare workers (opennext)
+/.open-next/
+.wrangler/
+# secret ที่ wrangler ใช้ตอนรัน local — pattern .env* ข้างบนไม่ครอบคลุมชื่อนี้
+.dev.vars
+.dev.vars.*
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
