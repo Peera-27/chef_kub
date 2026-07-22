@@ -1,5 +1,7 @@
 import { useCallback, useRef } from "react";
-import * as tf from "@tensorflow/tfjs";
+/* import type เท่านั้น — ถูกลบทิ้งตอน compile จึงไม่ดึง tfjs (~1.2MB) เข้า bundle
+   ตัวไลบรารีจริงโหลดด้วย dynamic import ใน loadModel() ข้างล่าง */
+import type * as tf from "@tensorflow/tfjs";
 
 /**
  * โหลดโมเดล YOLO แบบ lazy — เริ่มโหลดตอนผู้ใช้จะสแกนจริงเท่านั้น
@@ -35,10 +37,19 @@ export function useYoloModel() {
 }
 
 async function loadModel(): Promise<tf.GraphModel | null> {
-  // ต้องรอ backend ลงทะเบียนเสร็จก่อน ไม่งั้น getBackend() ยังตอบไม่ตรง
-  await tf.ready();
+  /* โหลดไลบรารีตรงนี้ ไม่ใช่บนหัวไฟล์ — tfjs หนัก ~1.2MB (ก่อนบีบอัด) ถ้า import
+     แบบ static มันจะติดไปกับ bundle ก้อนแรกที่ทุกคนต้องโหลดตอนเปิดหน้า ทั้งที่
+     คนที่ไม่กดสแกนไม่ได้ใช้เลย
+     backend-webgl ต้อง import ให้ลงทะเบียนตัวเองก่อนเรียก tf.ready() */
+  const [tfjs] = await Promise.all([
+    import("@tensorflow/tfjs"),
+    import("@tensorflow/tfjs-backend-webgl"),
+  ]);
 
-  const backend = tf.getBackend();
+  // ต้องรอ backend ลงทะเบียนเสร็จก่อน ไม่งั้น getBackend() ยังตอบไม่ตรง
+  await tfjs.ready();
+
+  const backend = tfjs.getBackend();
   if (!USABLE_BACKENDS.has(backend)) {
     /* WebGL ใช้ไม่ได้ (มือถือเก่า / GPU โดน blacklist) tfjs จะตกไปใช้ CPU เงียบ ๆ
        ซึ่ง YOLO 640×640 บน CPU มือถือกินเวลาหลายสิบวินาทีต่อรูป — ผู้ใช้นึกว่าแอปค้าง
@@ -49,7 +60,7 @@ async function loadModel(): Promise<tf.GraphModel | null> {
     return null;
   }
 
-  const model = await tf.loadGraphModel("/model/model.json");
+  const model = await tfjs.loadGraphModel("/model/model.json");
 
   /* warmup: ยิงรูปเปล่าเข้าไปหนึ่งครั้งให้ shader คอมไพล์เสร็จก่อน
      ไม่งั้นผู้ใช้จะไปเจอค่าคอมไพล์นั้นตอนสแกนรูปจริง
@@ -57,12 +68,12 @@ async function loadModel(): Promise<tf.GraphModel | null> {
      ใช้ executeAsync ไม่ใช่ execute — ตัว sync บล็อก main thread จนหน้าค้าง
      บนเครื่องอ่อน ๆ และต้อง dispose ผลลัพธ์ด้วย ไม่ใช่แค่ input ไม่งั้น
      tensor ค้างใน GPU ตลอดอายุหน้าเว็บ */
-  const dummyInput = tf.zeros([1, 640, 640, 3]);
+  const dummyInput = tfjs.zeros([1, 640, 640, 3]);
   try {
     const warmup = await model.executeAsync(dummyInput);
-    tf.dispose(warmup);
+    tfjs.dispose(warmup);
   } finally {
-    tf.dispose(dummyInput);
+    tfjs.dispose(dummyInput);
   }
 
   return model;

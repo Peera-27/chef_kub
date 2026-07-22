@@ -5,8 +5,8 @@ import { createPortal } from "react-dom";
 /**
  * แขวน overlay ไว้ที่ <body> แทนที่จะฝังในตำแหน่งที่เรียกใช้
  *
- * จำเป็นเพราะคอนเทนเนอร์ของแต่ละหน้าใช้ `.view-enter` ที่ตั้ง animation-fill-mode: both
- * ทำให้ค้าง transform ไว้ถาวรหลังอนิเมชันจบ — และ transform ที่ไม่ใช่ none
+ * จำเป็นเพราะคอนเทนเนอร์ของแต่ละหน้าอยู่ใน ViewTransition ซึ่งมี transform
+ * ระหว่างสลับหน้า — และ transform ที่ไม่ใช่ none
  * จะกลายเป็น containing block ของ position: fixed ข้างใน
  * ผลคือ overlay ไปอิงความสูงของเนื้อหาแทน viewport แล้วโผล่ท้ายหน้าจนต้องเลื่อนหา
  */

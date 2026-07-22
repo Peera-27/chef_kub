@@ -7,7 +7,10 @@ import { detectIngredients } from "../actions/detectIngredients";
 import { listClasses } from "../actions/classes";
 import { findLabeledImage } from "../actions/getLabeledImage";
 import { saveLabeledImage } from "../actions/saveLabeledImage";
-import { runYoloDetection } from "../lib/yolo/runYoloDetection";
+/* import type เท่านั้น — โมดูลนี้ import tfjs ไว้บนหัวไฟล์ ถ้าดึงแบบ static
+   tfjs จะติดเข้า bundle ก้อนแรกทางนี้ ทั้งที่ useYoloModel เลี่ยงไปแล้ว
+   ตัวฟังก์ชันโหลดด้วย dynamic import ตอนจะสแกนจริง */
+import type { YoloDetectionResult } from "../lib/yolo/runYoloDetection";
 import type { Recipe } from "../types/recipe";
 import { mergeIngredients } from "../utils/mergeIngredients";
 import {
@@ -389,11 +392,13 @@ const isDrawingRef = useRef(false);
       });
       const model = await ensureYoloModel();
 
-      let yoloResult = { items: [], boxes: [], ms: 0 } as Awaited<
-        ReturnType<typeof runYoloDetection>
-      >;
+      let yoloResult: YoloDetectionResult = { items: [], boxes: [], ms: 0 };
       if (model) {
         setLoading({ state: true, message: "กำลังสแกนวัตถุดิบ..." });
+        // โมเดลโหลดได้แปลว่า tfjs อยู่ในแคชแล้ว — import นี้จึงไม่ต้องรอโหลดซ้ำ
+        const { runYoloDetection } = await import(
+          "../lib/yolo/runYoloDetection"
+        );
         yoloResult = await runYoloDetection(model, base64Url);
       }
 

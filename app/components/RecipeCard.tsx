@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { motion } from "motion/react";
+import { useHeartPop } from "../hooks/useHeartPop";
 import type { Recipe } from "../types/recipe";
 import { isFavorite, toggleFavorite } from "../utils/storage";
 import { IconClock, IconFlame, IconHeart } from "./Icons";
@@ -19,19 +20,22 @@ export function RecipeCard({
   onStartCook,
 }: RecipeCardProps) {
   const favorited = isFavorite(recipe.name);
-  const [pulse, setPulse] = useState(false);
+  const heart = useHeartPop();
 
   const onToggle = () => {
     toggleFavorite(recipe);
     onFavoriteChange();
-    setPulse(true);
-    window.setTimeout(() => setPulse(false), 450);
+    heart.pop();
   };
 
   return (
     // h-full + mt-auto ที่ปุ่ม = การ์ดในแถวเดียวกันสูงเท่ากัน ปุ่มเรียงตรงกันทุกใบ
     // ไม่ว่าชื่อเมนูจะยาวกี่บรรทัดหรือมี tag ไม่เท่ากัน
-    <div className="card overflow-hidden flex flex-col card-lift h-full">
+    <motion.div
+      className="card overflow-hidden flex flex-col h-full"
+      whileHover={{ y: -3, boxShadow: "var(--shadow-lg)" }}
+      transition={{ type: "spring", stiffness: 340, damping: 26 }}
+    >
       <div className="p-4 md:p-5 space-y-3 flex-1 flex flex-col">
         <div className="flex items-start gap-2">
           {/* ชื่อเมนูยาวแค่ไหนก็ต้องอ่านครบ — ตัดคำทิ้งแล้วเดาไม่ออกว่าเมนูอะไร */}
@@ -42,15 +46,19 @@ export function RecipeCard({
             <IconFlame size={13} />
             {recipe.calories}
           </span>
-          <button
+          <motion.button
             onClick={onToggle}
+            animate={heart.controls}
+            whileTap={{ scale: 0.85 }}
             className={`icon-btn w-9 h-9 shrink-0 -mt-1 -mr-1 tap ${
-              pulse ? "heart-pop" : ""
-            } ${favorited ? "text-[var(--color-favorite)]" : "text-[var(--color-muted)]"}`}
+              favorited
+                ? "text-[var(--color-favorite)]"
+                : "text-[var(--color-muted)]"
+            }`}
             aria-label={favorited ? "เอาออกจากโปรด" : "เพิ่มในโปรด"}
           >
             <IconHeart size={18} filled={favorited} />
-          </button>
+          </motion.button>
         </div>
 
         {(recipe.readyInMinutes != null || recipe.tags.length > 0) && (
@@ -81,6 +89,6 @@ export function RecipeCard({
           </button>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

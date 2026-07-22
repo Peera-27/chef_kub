@@ -1,5 +1,7 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import type { Recipe } from "../../types/recipe";
 import { useWakeLock } from "../../hooks/useWakeLock";
@@ -13,14 +15,14 @@ import {
   shareRecipe,
   type ShareResult,
 } from "../../utils/shareRecipe";
-import { IconCart, IconCheck, IconShare, IconStar } from "../Icons";
+import { IconCart, IconCheck, IconShare } from "../Icons";
+import { Confetti } from "../motion/Confetti";
+import { RatingStars } from "../RatingStars";
 import { recordCookRating } from "../../utils/storage";
 import type { CookRating } from "../../utils/types";
 
 // กันกดเพิ่มเพลินจนปริมาณเป็นเลขไร้สาระ
 const MAX_SERVINGS = 20;
-
-const STAR_VALUES: CookRating[] = [1, 2, 3, 4, 5];
 
 // สะท้อนคะแนนที่เพิ่งกดกลับไปให้เห็นว่าระบบรับแล้ว — เงียบไปเลยจะเหมือนกดไม่ติด
 const RATING_LABELS: Record<CookRating, string> = {
@@ -135,51 +137,67 @@ export function CookView({
 
   if (finished) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[75vh] text-center slide-up">
-        <span className="text-6xl mb-4 wiggle">🎉</span>
-        <h2 className="section-title md:text-2xl">ทำเสร็จแล้ว!</h2>
-        <p className="text-sm text-[var(--color-muted)] mt-1 mb-8 max-w-xs">
+      <div className="relative flex flex-col items-center justify-center min-h-[75vh] text-center overflow-hidden">
+        <Confetti />
+
+        {/* มาสคอตเด้งเข้ามาก่อน แล้วข้อความกับการ์ดค่อยไล่ขึ้นตาม —
+            ทุกอย่างโผล่พร้อมกันจะไม่รู้สึกว่ามีอะไรมาฉลองด้วย */}
+        <motion.div
+          initial={{ scale: 0, rotate: -25 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ type: "spring", stiffness: 260, damping: 14, delay: 0.1 }}
+          className="relative mb-4"
+        >
+          <Image
+            src="/mascot.png"
+            alt=""
+            width={384}
+            height={384}
+            className="h-28 w-28 md:h-32 md:w-32 select-none"
+            priority
+          />
+        </motion.div>
+
+        <motion.h2
+          className="section-title md:text-2xl"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45, duration: 0.4 }}
+        >
+          ทำเสร็จแล้ว!
+        </motion.h2>
+        <motion.p
+          className="text-sm text-[var(--color-muted)] mt-1 mb-8 max-w-xs"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55, duration: 0.4 }}
+        >
           {recipe.name} พร้อมเสิร์ฟ — จากของที่มีอยู่ในครัวคุณเอง
-        </p>
+        </motion.p>
 
         {/* ถามครั้งเดียว แตะดาวเดียวจบ ไม่ต้องพิมพ์อะไร */}
-        <div className="w-full max-w-xs rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-white p-5">
+        <motion.div
+          className="w-full max-w-xs rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-white p-5"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.65, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        >
           <p className="text-sm font-semibold text-[var(--color-ink)]">
             {rating ? RATING_LABELS[rating] : "ให้กี่ดาว?"}
           </p>
           <p className="text-xs text-[var(--color-muted)] mt-1 mb-4">
             ดาวที่ให้จะติดไปบนการ์ดตอนแชร์ด้วย
           </p>
-          <div
-            role="radiogroup"
-            aria-label="ให้คะแนนเมนูนี้"
-            className="flex justify-center gap-1"
-          >
-            {STAR_VALUES.map((value) => {
-              const active = rating !== null && value <= rating;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => handleRate(value)}
-                  role="radio"
-                  aria-checked={rating === value}
-                  aria-label={`${value} ดาว`}
-                  className={`p-1.5 rounded-lg transition-all duration-150 active:scale-90 tap ${
-                    active
-                      ? "text-[var(--color-star)]"
-                      : "text-[var(--color-line)] hover:text-[var(--color-star)]/50"
-                  }`}
-                >
-                  <IconStar size={32} filled={active} />
-                </button>
-              );
-            })}
-          </div>
-        </div>
+          <RatingStars rating={rating} onRate={handleRate} />
+        </motion.div>
 
         {/* อวดตอนนี้แหละ — อาหารเพิ่งเสร็จ อยู่ตรงหน้าพอดี */}
-        <div className="w-full max-w-xs mt-5 space-y-2">
+        <motion.div
+          className="w-full max-w-xs mt-5 space-y-2"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.75, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        >
           <button
             type="button"
             onClick={() => setShareOpen(true)}
@@ -211,7 +229,7 @@ export function CookView({
           >
             ดูเมนูอื่นต่อ
           </button>
-        </div>
+        </motion.div>
 
         <ShareSheet
           open={shareOpen}
@@ -281,7 +299,18 @@ export function CookView({
               วัตถุดิบ
             </h3>
             <span className="text-xs font-medium text-[var(--color-muted)]">
-              เตรียมแล้ว {checkedIngredients.size}/{recipe.ingredients.length}
+              เตรียมแล้ว{" "}
+              {/* key = ตัวเลข ทำให้เด้งใหม่ทุกครั้งที่ติ๊กเพิ่ม รู้สึกว่าคืบหน้า */}
+              <motion.span
+                key={checkedIngredients.size}
+                initial={{ scale: 1.5, color: "var(--color-brand)" }}
+                animate={{ scale: 1, color: "var(--color-muted)" }}
+                transition={{ duration: 0.35 }}
+                className="inline-block font-semibold tabular-nums"
+              >
+                {checkedIngredients.size}
+              </motion.span>
+              /{recipe.ingredients.length}
             </span>
           </div>
 
@@ -326,15 +355,35 @@ export function CookView({
                     onClick={() => toggleIngredient(idx)}
                     className="w-full flex items-start gap-2.5 text-left text-sm px-2 py-2 -mx-2 rounded-[var(--radius-sm)] hover:bg-[var(--color-brand-pale)] transition-colors cursor-pointer"
                   >
-                    <span
-                      className={`w-5 h-5 mt-0.5 shrink-0 rounded-full border-2 flex items-center justify-center transition-all duration-150 ${
+                    {/* เดิมเรนเดอร์เครื่องหมายถูกค้างไว้ตลอดแล้วซ่อนด้วย text-transparent
+                        ติ๊กแล้วเลยแค่สีเปลี่ยน ตอนนี้ให้มันเด้งเข้ามาจริง ๆ */}
+                    <motion.span
+                      animate={{ scale: done ? [1, 1.25, 1] : 1 }}
+                      transition={{ duration: 0.3 }}
+                      className={`w-5 h-5 mt-0.5 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors duration-150 ${
                         done
                           ? "bg-[var(--color-brand)] border-[var(--color-brand)] text-white"
-                          : "border-[var(--color-line)] text-transparent"
+                          : "border-[var(--color-line)]"
                       }`}
                     >
-                      <IconCheck size={12} />
-                    </span>
+                      <AnimatePresence>
+                        {done && (
+                          <motion.span
+                            key="tick"
+                            initial={{ scale: 0, rotate: -60 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 600,
+                              damping: 22,
+                            }}
+                          >
+                            <IconCheck size={12} />
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </motion.span>
                     <span
                       className={`leading-relaxed transition-colors ${
                         done

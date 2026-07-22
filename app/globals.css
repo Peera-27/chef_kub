@@ -2,14 +2,18 @@
 
 @theme {
   --color-surface: #ffffff;
-  --color-surface-2: #fcfdfb;
+  --color-surface-2: #fffdf9;
   --color-glass: rgba(255, 255, 255, 0.72);
-  /* นิวทรัลลดความอมส้มลง ให้เข้ากับแบรนด์เขียว และดัน contrast ของ muted ขึ้น */
-  --color-page: #f9f9f5;
-  --color-ink: #1a1a1a;
-  --color-muted: #767c74;
-  --color-line: #e8ebe5;
-  --color-line-soft: #f2f4ef;
+  /* นิวทรัลอมอุ่นเป็นครีม — เว็บอาหารที่พื้นเป็นขาวอมเทาจะรู้สึกเหมือนหน้า dashboard
+     ครีมทำให้รู้สึกเหมือนร้านมากกว่าเครื่องมือ โดยไม่ต้องแตะสีสถานะสักตัว
+
+     muted เดิม #767c74 ทับพื้นเดิมได้ contrast แค่ ~4.06 ตกเกณฑ์ AA (4.5)
+     ตัวนี้ได้ ~5.7 อ่านง่ายขึ้นจริงและยังดูเบาอยู่ */
+  --color-page: #fdfaf5;
+  --color-ink: #1f1b16;
+  --color-muted: #6b6259;
+  --color-line: #ece5da;
+  --color-line-soft: #f6f1e9;
 
   /* เขียวสน — ตัวขาวบนปุ่มได้ contrast 7.59 ผ่าน WCAG AA สบาย ๆ */
   --color-brand: #1f5f3f;
@@ -63,9 +67,11 @@
   }
 
   body {
+    /* แสงนวลสองก้อน — เขียวแบรนด์กับส้มอุ่น alpha ต่ำมากจนไม่อ่านเป็นสีสถานะ
+       แต่พอให้พื้นไม่แบนเป็นแผ่นเดียว */
     background:
       radial-gradient(1200px 600px at 100% -10%, rgba(47, 125, 79, 0.07), transparent 60%),
-      radial-gradient(900px 500px at -10% 10%, rgba(236, 72, 153, 0.04), transparent 55%),
+      radial-gradient(900px 500px at -10% 10%, rgba(214, 138, 61, 0.06), transparent 55%),
       var(--color-page);
     color: var(--color-ink);
     font-family: var(--font-sans);
@@ -112,7 +118,7 @@
 
   .btn-primary {
     @apply cursor-pointer bg-[var(--color-brand)] text-white font-medium rounded-[var(--radius-md)]
-      active:scale-[0.97] transition-all duration-150 shadow-[0_2px_8px_rgba(232,99,10,0.25)]
+      active:scale-[0.97] transition-all duration-150 shadow-[0_2px_10px_var(--color-brand-glow)]
       hover:bg-[var(--color-brand-dark)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none;
   }
 
@@ -132,7 +138,7 @@
   }
 
   .pill-active {
-    @apply bg-[var(--color-brand)] text-white shadow-[0_2px_6px_rgba(232,99,10,0.2)];
+    @apply bg-[var(--color-brand)] text-white shadow-[0_2px_8px_var(--color-brand-glow)];
   }
 
   .pill-inactive {
@@ -171,15 +177,6 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  .sheet-enter {
-    animation: sheetIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes sheetIn {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-  }
-
   .skeleton {
     @apply bg-[var(--color-line)] rounded-[var(--radius-sm)] relative overflow-hidden;
   }
@@ -216,7 +213,7 @@
     @apply flex items-center gap-3 px-4 py-3 rounded-[var(--radius-md)] font-medium text-sm transition-colors;
   }
   .nav-item-active {
-    @apply bg-[var(--color-brand)] text-white shadow-[0_2px_8px_rgba(232,99,10,0.25)];
+    @apply bg-[var(--color-brand)] text-white shadow-[0_2px_10px_var(--color-brand-glow)];
   }
   .nav-item-inactive {
     @apply text-[var(--color-muted)] hover:bg-[var(--color-brand-pale)] hover:text-[var(--color-brand)];
@@ -324,14 +321,15 @@
     @apply text-[var(--color-muted)] hover:text-[var(--color-brand)];
   }
 
-  /* Sliding active indicator pill for nav */
+  /* Sliding active indicator pill for nav
+     ไม่ใส่ transition ตรงนี้ — Motion เป็นคนขยับ (layoutId) ผ่าน transform
+     ถ้ามี transition: all ค้างไว้ CSS จะไปแย่งคุม transform เดียวกันจนกระตุก */
   .nav-pill {
     position: absolute;
     inset: 0;
     border-radius: var(--radius-md);
     background: var(--color-brand);
     box-shadow: var(--shadow-glow);
-    transition: all 0.3s var(--ease-spring);
   }
 
   /* Floating action chip */
@@ -363,43 +361,9 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* View enter: used when switching top-level views (keyed remount) */
-  .view-enter {
-    animation: viewEnter 0.4s var(--ease-spring) both;
-  }
-  @keyframes viewEnter {
-    from { opacity: 0; transform: translateY(10px) scale(0.995); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
-  /* Scale-in for hero/modal content */
-  .scale-in {
-    animation: scaleIn 0.4s var(--ease-spring) both;
-  }
-  @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.96); }
-    to { opacity: 1; transform: scale(1); }
-  }
-
-  /* Backdrop fade for overlays/modals */
-  .backdrop-in {
-    animation: backdropIn 0.25s ease-out both;
-  }
-  @keyframes backdropIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  /* Heart / favorite pop */
-  .heart-pop {
-    animation: heartPop 0.45s var(--ease-spring);
-  }
-  @keyframes heartPop {
-    0% { transform: scale(1); }
-    35% { transform: scale(1.35); }
-    60% { transform: scale(0.9); }
-    100% { transform: scale(1); }
-  }
+  /* สลับหน้า / เปิดปิด overlay / หัวใจเด้ง ย้ายไปอยู่ที่ Motion หมดแล้ว
+     (ViewTransition, SheetShell, useHeartPop) เพราะ CSS ทำ exit animation ไม่ได้ —
+     พอโหนดถูกถอดออกจาก DOM คลาสก็หายไปพร้อมกัน ไม่มีจังหวะให้เล่นตอนปิด */
 
   /* Gentle float (camera hints, empty-state icon) */
   .float-y {
@@ -423,24 +387,8 @@
     animation: shimmerSlide 1.4s infinite;
   }
 
-  /* Ripple on press (used by shutter) */
-  .ripple {
-    animation: ripple 0.6s ease-out;
-  }
-  @keyframes ripple {
-    from { box-shadow: 0 0 0 0 var(--color-brand-glow); }
-    to { box-shadow: 0 0 0 22px transparent; }
-  }
-
-  /* Tab press feedback for bottom nav */
-  .tab-press {
-    animation: tabPress 0.4s var(--ease-spring);
-  }
-  @keyframes tabPress {
-    0% { transform: scale(0.9); }
-    60% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-  }
+  /* ริปเปิลปุ่มชัตเตอร์ย้ายไปอยู่ใน CameraView แล้ว
+     เพราะผูกกับ :active ไม่ได้ — คลาสหลุดตอนปล่อยนิ้ว อนิเมชันเลยไม่เคยเล่นจบ */
 
   /* ===== Scan result: กรอบวาดตัวเอง แล้วป้ายชื่อค่อยเด้งตาม ===== */
 

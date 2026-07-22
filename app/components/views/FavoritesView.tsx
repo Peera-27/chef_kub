@@ -1,17 +1,16 @@
+import { AnimatePresence, motion } from "motion/react";
 import type { Recipe } from "../../types/recipe";
 import { RecipeCompactCard } from "../RecipeCompactCard";
 import { EmptyState } from "../EmptyState";
 
 interface FavoritesViewProps {
   favorites: Recipe[];
-  favVersion: number;
   onFavoriteChange: () => void;
   onStartCook: (recipe: Recipe) => void;
 }
 
 export function FavoritesView({
   favorites,
-  favVersion,
   onFavoriteChange,
   onStartCook,
 }: FavoritesViewProps) {
@@ -29,19 +28,32 @@ export function FavoritesView({
           description="กดไอคอนหัวใจที่สูตรอาหารเพื่อเพิ่มในรายการโปรด"
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 stagger">
-          {favorites.map((r, i) => (
-            <div
-              key={`${r.name}-${i}-${favVersion}`}
-              style={{ "--i": i } as Record<string, string | number>}
-            >
-              <RecipeCompactCard
-                recipe={r}
-                onFavoriteChange={onFavoriteChange}
-                onStartCook={onStartCook}
-              />
-            </div>
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
+          {/* key ไม่ผูกกับ favVersion แล้ว — ถ้าผูก ทุกใบจะถูกมองว่าเป็นใบใหม่
+              ทุกครั้งที่กดหัวใจ ใบที่เหลือเลยกระพริบทั้งกริดแทนที่จะไหลมาแทนที่ */}
+          <AnimatePresence initial={false} mode="popLayout">
+            {favorites.map((r, i) => (
+              <motion.div
+                key={r.name}
+                layout
+                initial={{ opacity: 0, y: 14, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.18 } }}
+                transition={{
+                  type: "spring",
+                  stiffness: 380,
+                  damping: 32,
+                  delay: i * 0.04,
+                }}
+              >
+                <RecipeCompactCard
+                  recipe={r}
+                  onFavoriteChange={onFavoriteChange}
+                  onStartCook={onStartCook}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>

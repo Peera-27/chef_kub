@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import {
   equipmentCategories,
@@ -283,22 +284,45 @@ export default function Settings({ onBack }: SettingProps) {
         ปรับวิธีทำอาหารให้เหมาะกับครัวของคุณ
       </p>
 
-      {/* ===== บันทึก ===== */}
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={!isDirty}
-        className="btn-primary w-full py-4 flex items-center justify-center gap-2 text-base tap"
-      >
-        {isDirty ? (
-          "บันทึกการตั้งค่า"
-        ) : (
-          <>
-            <IconCheck size={18} />
-            บันทึกแล้ว
-          </>
-        )}
-      </button>
+      {/* ===== บันทึก =====
+          เดิมปุ่มนี้อยู่ท้ายสุดของหน้า ผู้ใช้ต้องเลื่อนผ่านหมวดอุปกรณ์ทั้งหมดถึงจะเจอ
+          — เลือกเสร็จแล้วปิดไปเลยโดยไม่รู้ว่ายังไม่ได้บันทึกได้ง่ายมาก
+          ตอนนี้เลยติดขอบล่างไว้ และโผล่เฉพาะตอนมีของค้างจริงๆ
+
+          sticky ไม่ใช่ fixed — fixed จะไปอิงกับ ViewTransition ที่มี transform
+          ระหว่างสลับหน้า แล้วแถบจะหลุดตำแหน่ง ส่วน sticky อิง scroll container ตามปกติ
+          bottom-20 บนมือถือเว้นที่ให้ bottom nav, จอใหญ่ไม่มี nav เลยชิดขอบได้ */}
+      <div className="sticky bottom-20 md:bottom-4 z-20 pt-1">
+        <AnimatePresence>
+          {isDirty && (
+            <motion.div
+              key="save-bar"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 24 }}
+              transition={{ type: "spring", stiffness: 400, damping: 32 }}
+              className="card-glass flex items-center gap-3 p-2.5 shadow-[var(--shadow-lg)]"
+            >
+              <p className="flex-1 min-w-0 pl-2 text-xs leading-snug">
+                <span className="block font-semibold text-[var(--color-ink)]">
+                  เลือกไว้ {selected.length} รายการ
+                </span>
+                <span className="block text-[var(--color-muted)]">
+                  ยังไม่ได้บันทึก
+                </span>
+              </p>
+              <button
+                type="button"
+                onClick={handleSave}
+                className="btn-primary shrink-0 flex items-center gap-1.5 px-5 py-3 text-sm tap"
+              >
+                <IconCheck size={16} />
+                บันทึก
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

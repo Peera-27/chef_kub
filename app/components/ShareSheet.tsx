@@ -1,7 +1,8 @@
 "use client";
 
+import { motion } from "motion/react";
 import type { CardFormat } from "../utils/recipeCard";
-import { Portal } from "./Portal";
+import { SheetShell } from "./motion/SheetShell";
 import { IconShare } from "./Icons";
 
 export type ShareChoice = "text" | CardFormat;
@@ -46,70 +47,61 @@ export function ShareSheet({
   onChoose,
   onCancel,
 }: ShareSheetProps) {
-  if (!open) return null;
-
   return (
-    <Portal>
-      <div
-        className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:bg-black/40 md:backdrop-blur-sm p-0 md:p-4 backdrop-in"
-        onClick={onCancel}
-      >
-        <div
-          className="card w-full md:max-w-md rounded-t-[var(--radius-xl)] md:rounded-[var(--radius-xl)] sheet-enter"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="md:hidden flex justify-center pt-3 pb-1">
-            <div className="w-10 h-1 bg-[var(--color-line)] rounded-full" />
-          </div>
-
-          <div className="px-5 pt-4 pb-2 flex items-center gap-2">
-            <IconShare size={18} />
-            <h3 className="font-semibold text-[var(--color-ink)]">แชร์สูตรนี้</h3>
-          </div>
-
-          <div className="px-3 pb-3">
-          {OPTIONS.map((option) => {
-            const isBusy = busy === option.choice;
-            return (
-              <button
-                key={option.choice}
-                onClick={() => onChoose(option.choice)}
-                disabled={busy !== null}
-                className="w-full flex items-center gap-3.5 px-3 py-3 rounded-[var(--radius-md)] text-left transition-colors hover:bg-[var(--color-brand-pale)] disabled:opacity-50 tap"
-              >
-                <span
-                  className={`${option.preview} shrink-0 rounded-md border-2 border-[var(--color-brand)] bg-[var(--color-brand-soft)] grid place-items-center`}
-                >
-                  {option.choice === "text" && (
-                    <span className="text-[var(--color-brand)] text-xs font-bold">
-                      Aa
-                    </span>
-                  )}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-[var(--color-ink)]">
-                    {option.title}
-                  </span>
-                  <span className="block text-xs text-[var(--color-muted)] mt-0.5">
-                    {isBusy ? "กำลังสร้าง…" : option.hint}
-                  </span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-          <div className="px-5 pb-5 safe-bottom">
-            <button
-              onClick={onCancel}
-              disabled={busy !== null}
-              className="btn-secondary w-full py-2.5 text-sm disabled:opacity-50 tap"
-            >
-              ยกเลิก
-            </button>
-          </div>
-        </div>
+    <SheetShell open={open} onDismiss={onCancel} panelClassName="md:max-w-md">
+      <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+        <IconShare size={18} />
+        <h3 className="font-semibold text-[var(--color-ink)]">แชร์สูตรนี้</h3>
       </div>
-    </Portal>
+
+      <div className="px-3 pb-3">
+        {OPTIONS.map((option, index) => {
+          const isBusy = busy === option.choice;
+          return (
+            <motion.button
+              key={option.choice}
+              onClick={() => onChoose(option.choice)}
+              disabled={busy !== null}
+              // ตัวเลือกไล่โผล่ทีละอันหลังแผ่นเลื่อนขึ้นมาเสร็จ
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 + index * 0.06, duration: 0.3 }}
+              whileTap={busy === null ? { scale: 0.98 } : undefined}
+              className="w-full flex items-center gap-3.5 px-3 py-3 rounded-[var(--radius-md)] text-left transition-colors hover:bg-[var(--color-brand-pale)] disabled:opacity-50 tap"
+            >
+              <span
+                className={`${option.preview} shrink-0 rounded-md border-2 border-[var(--color-brand)] bg-[var(--color-brand-soft)] grid place-items-center ${
+                  isBusy ? "glow-pulse" : ""
+                }`}
+              >
+                {option.choice === "text" && (
+                  <span className="text-[var(--color-brand)] text-xs font-bold">
+                    Aa
+                  </span>
+                )}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-[var(--color-ink)]">
+                  {option.title}
+                </span>
+                <span className="block text-xs text-[var(--color-muted)] mt-0.5">
+                  {isBusy ? "กำลังสร้าง…" : option.hint}
+                </span>
+              </span>
+            </motion.button>
+          );
+        })}
+      </div>
+
+      <div className="px-5 pb-5 safe-bottom">
+        <button
+          onClick={onCancel}
+          disabled={busy !== null}
+          className="btn-secondary w-full py-2.5 text-sm disabled:opacity-50 tap"
+        >
+          ยกเลิก
+        </button>
+      </div>
+    </SheetShell>
   );
 }

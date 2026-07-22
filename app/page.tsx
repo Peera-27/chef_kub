@@ -10,6 +10,8 @@ import {
   IconSparkles,
   IconTag,
 } from "./components/Icons";
+import { Reveal } from "./components/motion/Reveal";
+import { ScrollProgress } from "./components/motion/ScrollProgress";
 
 // server component ตั้งใจ — ไม่ import TF.js/โมเดล
 // คนเปิดเว็บครั้งแรกจะได้ไม่ต้องโหลดโมเดล ~10MB ทั้งที่ยังไม่ได้เริ่มใช้
@@ -141,6 +143,8 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 export default function Landing() {
   return (
     <main className="min-h-dvh overflow-x-hidden">
+      <ScrollProgress />
+
       {/* ===== Top bar ===== */}
       <header className="sticky top-0 z-30 border-b border-black/[0.04] bg-[var(--color-page)]/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-3.5 md:px-8">
@@ -212,7 +216,11 @@ export default function Landing() {
             <div className="slide-up">
               <div className="card card-lift p-5 md:p-6">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--color-brand-soft)] via-[var(--color-brand-pale)] to-[var(--color-brand-soft)]">
-                  <div className="absolute left-[10%] top-[16%] grid h-[42%] w-[38%] place-items-center rounded-lg border-2 border-[var(--color-brand)] bg-[var(--color-brand)]/10">
+                  {/* กรอบตรวจจับโผล่ไล่กัน เลียนแบบจังหวะที่โมเดลทยอยเจอของจริงในแอป */}
+                  <div
+                    style={{ "--i": 1 } as React.CSSProperties}
+                    className="chip-in absolute left-[10%] top-[16%] grid h-[42%] w-[38%] place-items-center rounded-lg border-2 border-[var(--color-brand)] bg-[var(--color-brand)]/10"
+                  >
                     <span className="select-none text-[3rem] float-y md:text-[3.5rem]">
                       🥬
                     </span>
@@ -223,8 +231,15 @@ export default function Landing() {
 
                   {/* กรอบที่สองใช้คนละเฉดกับแบรนด์ ให้เห็นว่าตรวจจับได้หลายอย่าง
                       ไม่ใช้ success เพราะเป็น teal ซึ่งใกล้เขียวแบรนด์เกินจะแยกออก */}
-                  <div className="absolute bottom-[16%] right-[12%] grid h-[40%] w-[36%] place-items-center rounded-lg border-2 border-[var(--color-warn)] bg-[var(--color-warn)]/10">
-                    <span className="select-none text-[2.6rem] md:text-[3rem]">
+                  <div
+                    style={{ "--i": 4 } as React.CSSProperties}
+                    className="chip-in absolute bottom-[16%] right-[12%] grid h-[40%] w-[36%] place-items-center rounded-lg border-2 border-[var(--color-warn)] bg-[var(--color-warn)]/10"
+                  >
+                    {/* เหลื่อมเฟสจากผักกาด ไม่งั้นสองอันลอยขึ้นลงพร้อมกันเป๊ะจนดูเป็นเครื่องจักร */}
+                    <span
+                      className="select-none text-[2.6rem] float-y md:text-[3rem]"
+                      style={{ animationDelay: "-1.5s" }}
+                    >
                       🥚
                     </span>
                     <span className="pill absolute -top-3.5 left-1 whitespace-nowrap bg-[var(--color-warn)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-ink)]">
@@ -255,25 +270,32 @@ export default function Landing() {
       {/* ===== ภาพหน้าจอจริง ===== */}
       <section className="border-y border-[var(--color-line)] bg-white/50">
         <div className="mx-auto max-w-5xl px-5 py-16 md:px-8 md:py-24">
-          <Eyebrow>หน้าตาแอปจริง</Eyebrow>
-          <h2 className="section-title mt-3 text-center text-2xl md:text-3xl">
-            ไม่ได้สวยแค่ในโฆษณา
-          </h2>
-          <p className="section-subtitle text-center">
-            นี่คือหน้าจอจริงที่คุณจะเจอเมื่อกดเข้าไปใช้
-          </p>
+          <Reveal>
+            <Eyebrow>หน้าตาแอปจริง</Eyebrow>
+            <h2 className="section-title mt-3 text-center text-2xl md:text-3xl">
+              ไม่ได้สวยแค่ในโฆษณา
+            </h2>
+            <p className="section-subtitle text-center">
+              นี่คือหน้าจอจริงที่คุณจะเจอเมื่อกดเข้าไปใช้
+            </p>
+          </Reveal>
 
           <div className="mt-12 flex flex-wrap items-start justify-center gap-10 md:gap-16">
-            <PhoneFrame
-              src="/shots/menu.png"
-              alt="หน้าจอรายการเมนูที่ทำได้จากวัตถุดิบที่สแกน"
-              caption="เมนูที่ทำได้จากของที่มี"
-            />
-            <PhoneFrame
-              src="/shots/cook.png"
-              alt="หน้าจอโหมดทำอาหาร แสดงวัตถุดิบและขั้นตอน"
-              caption="โหมดทำอาหารทีละขั้นตอน"
-            />
+            {/* เข้ามาคนละทางซ้าย-ขวา ให้รู้สึกว่าเป็นสองจอวางคู่กัน ไม่ใช่ลิสต์ */}
+            <Reveal direction="right">
+              <PhoneFrame
+                src="/shots/menu.png"
+                alt="หน้าจอรายการเมนูที่ทำได้จากวัตถุดิบที่สแกน"
+                caption="เมนูที่ทำได้จากของที่มี"
+              />
+            </Reveal>
+            <Reveal direction="left" delay={0.12}>
+              <PhoneFrame
+                src="/shots/cook.png"
+                alt="หน้าจอโหมดทำอาหาร แสดงวัตถุดิบและขั้นตอน"
+                caption="โหมดทำอาหารทีละขั้นตอน"
+              />
+            </Reveal>
           </div>
         </div>
       </section>
@@ -281,61 +303,98 @@ export default function Landing() {
       {/* ===== How it works ===== */}
       <section id="how" className="scroll-mt-20">
         <div className="mx-auto max-w-5xl px-5 py-16 md:px-8 md:py-24">
-          <Eyebrow>วิธีใช้งาน</Eyebrow>
-          <h2 className="section-title mt-3 text-center text-2xl md:text-3xl">
-            สามขั้นตอน ไม่ถึงหนึ่งนาที
-          </h2>
-          <p className="section-subtitle text-center">
-            ไม่ต้องกรอกอะไร ไม่ต้องเรียนรู้อะไรใหม่
-          </p>
+          <Reveal>
+            <Eyebrow>วิธีใช้งาน</Eyebrow>
+            <h2 className="section-title mt-3 text-center text-2xl md:text-3xl">
+              สามขั้นตอน ไม่ถึงหนึ่งนาที
+            </h2>
+            <p className="section-subtitle text-center">
+              ไม่ต้องกรอกอะไร ไม่ต้องเรียนรู้อะไรใหม่
+            </p>
+          </Reveal>
 
-          <div className="stagger mt-12 grid gap-5 md:grid-cols-3">
+          <div className="mt-12 grid gap-5 md:grid-cols-3">
             {STEPS.map((step, index) => (
-              <div key={step.title} className="card card-lift p-6 text-center">
-                <div className="relative mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-brand-soft)] text-[var(--color-brand)]">
-                  {step.icon}
-                  <span className="absolute -right-2 -top-2 grid h-6 w-6 place-items-center rounded-full bg-[var(--color-brand)] text-xs font-bold text-white">
-                    {index + 1}
-                  </span>
+              <Reveal key={step.title} delay={index * 0.12}>
+                <div className="card card-lift h-full p-6 text-center">
+                  <div className="relative mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[var(--color-brand-soft)] text-[var(--color-brand)]">
+                    {step.icon}
+                    <span className="absolute -right-2 -top-2 grid h-6 w-6 place-items-center rounded-full bg-[var(--color-brand)] text-xs font-bold text-white">
+                      {index + 1}
+                    </span>
+                  </div>
+                  <h3 className="mt-4 font-semibold text-[var(--color-ink)]">
+                    {step.title}
+                  </h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-muted)]">
+                    {step.detail}
+                  </p>
                 </div>
-                <h3 className="mt-4 font-semibold text-[var(--color-ink)]">
-                  {step.title}
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-muted)]">
-                  {step.detail}
-                </p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
- 
+      {/* ===== ทำไมถึงน่าใช้ ===== */}
+      <section className="border-y border-[var(--color-line)] bg-white/50">
+        <div className="mx-auto max-w-5xl px-5 py-16 md:px-8 md:py-24">
+          <Reveal>
+            <Eyebrow>ทำไมต้อง Chef Kub</Eyebrow>
+            <h2 className="section-title mt-3 text-center text-2xl md:text-3xl">
+              ไม่ใช่แค่บอกสูตร แต่ทำได้จริงในครัวคุณ
+            </h2>
+            <p className="section-subtitle text-center">
+              ออกแบบมาจากปัญหาจริงตอนยืนหน้าตู้เย็นแล้วคิดไม่ออก
+            </p>
+          </Reveal>
+
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((feature, index) => (
+              <Reveal key={feature.title} delay={index * 0.08} amount={0.15}>
+                <div className="card card-lift group h-full p-5">
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--color-brand-soft)] text-[var(--color-brand)] transition-transform duration-300 group-hover:scale-110">
+                    {feature.icon}
+                  </span>
+                  <h3 className="mt-4 font-semibold text-[var(--color-ink)]">
+                    {feature.title}
+                  </h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-muted)]">
+                    {feature.detail}
+                  </p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ===== FAQ ===== */}
       <section>
         <div className="mx-auto max-w-3xl px-5 py-16 md:px-8 md:py-24">
-          <Eyebrow>คำถามที่พบบ่อย</Eyebrow>
-          <h2 className="section-title mt-3 text-center text-2xl md:text-3xl">
-            สงสัยอะไรอยู่?
-          </h2>
+          <Reveal>
+            <Eyebrow>คำถามที่พบบ่อย</Eyebrow>
+            <h2 className="section-title mt-3 text-center text-2xl md:text-3xl">
+              สงสัยอะไรอยู่?
+            </h2>
+          </Reveal>
 
           <div className="mt-10 space-y-3">
-            {FAQ.map((item) => (
-              <details
-                key={item.q}
-                className="card group p-5 [&_summary::-webkit-details-marker]:hidden"
-              >
-                <summary className="flex cursor-pointer items-center justify-between gap-4 font-semibold text-[var(--color-ink)]">
-                  {item.q}
-                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--color-brand-soft)] text-[var(--color-brand)] transition-transform duration-200 group-open:rotate-45">
-                    +
-                  </span>
-                </summary>
-                <p className="mt-3 text-sm leading-relaxed text-[var(--color-muted)]">
-                  {item.a}
-                </p>
-              </details>
+            {FAQ.map((item, index) => (
+              <Reveal key={item.q} delay={index * 0.07} amount={0.4}>
+                <details className="card group p-5 [&_summary::-webkit-details-marker]:hidden">
+                  <summary className="flex cursor-pointer items-center justify-between gap-4 font-semibold text-[var(--color-ink)]">
+                    {item.q}
+                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--color-brand-soft)] text-[var(--color-brand)] transition-transform duration-200 group-open:rotate-45">
+                      +
+                    </span>
+                  </summary>
+                  {/* คำตอบไหลลงมาแทนที่จะกระตุกโผล่ — details ปกติไม่มี transition ให้ */}
+                  <p className="mt-3 text-sm leading-relaxed text-[var(--color-muted)] motion-safe:group-open:animate-[fadeIn_0.3s_var(--ease-spring)]">
+                    {item.a}
+                  </p>
+                </details>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -345,21 +404,28 @@ export default function Landing() {
 
       {/* ===== Final CTA ===== */}
       <section className="mx-auto max-w-5xl px-5 pb-16 md:px-8 md:pb-24">
-        <div className="rounded-[var(--radius-2xl)] bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-dark)] px-7 py-14 text-center shadow-[var(--shadow-glow)] md:py-16">
-          <h2 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
-            ตอนนี้ในตู้เย็นมีอะไรอยู่บ้าง?
-          </h2>
-          <p className="mx-auto mt-3 max-w-md leading-relaxed text-white/85">
-            ถ่ายรูปเดียว แล้วให้ Chef Kub บอกว่าทำอะไรกินได้บ้าง
-          </p>
-          <Link
-            href="/app"
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 font-semibold text-[var(--color-brand)] shadow-lg transition-shadow hover:shadow-xl tap"
-          >
-            <IconCamera size={18} />
-            เริ่มใช้งานฟรี
-          </Link>
-        </div>
+        <Reveal>
+          <div className="relative overflow-hidden rounded-[var(--radius-2xl)] bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-dark)] px-7 py-14 text-center shadow-[var(--shadow-glow)] md:py-16">
+            {/* แสงกวาดผ่านช้าๆ ให้การ์ดปิดท้ายไม่นิ่งสนิท */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 -inset-x-1/4 shimmer-linear opacity-40"
+            />
+            <h2 className="relative text-2xl font-bold tracking-tight text-white md:text-3xl">
+              ตอนนี้ในตู้เย็นมีอะไรอยู่บ้าง?
+            </h2>
+            <p className="relative mx-auto mt-3 max-w-md leading-relaxed text-white/85">
+              ถ่ายรูปเดียว แล้วให้ Chef Kub บอกว่าทำอะไรกินได้บ้าง
+            </p>
+            <Link
+              href="/app"
+              className="relative mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 font-semibold text-[var(--color-brand)] shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:scale-95 tap"
+            >
+              <IconCamera size={18} />
+              เริ่มใช้งานฟรี
+            </Link>
+          </div>
+        </Reveal>
       </section>
 
       {/* ===== Footer ===== */}

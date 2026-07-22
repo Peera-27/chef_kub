@@ -1,8 +1,9 @@
 "use client";
 
-import "@tensorflow/tfjs-backend-webgl";
+import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { LoadingOverlay } from "../components/LoadingOverlay";
+import { ViewTransition } from "../components/motion/ViewTransition";
 import { CameraView } from "../components/views/CameraView";
 import { EditImageView } from "../components/views/EditImageView";
 import { FavoritesView } from "../components/views/FavoritesView";
@@ -32,7 +33,6 @@ export default function Home() {
     setViewMode,
     favorites,
     history,
-    favVersion,
     activeRecipe,
     cookingMode,
     setCookingMode,
@@ -126,19 +126,33 @@ export default function Home() {
             {navItems.map((item) => {
               const isActive = viewMode === item.key;
               return (
-                <button
+                <motion.button
                   key={item.key}
                   onClick={() => setViewMode(item.key)}
+                  whileTap={{ scale: 0.97 }}
                   className={`nav-item w-full relative overflow-hidden ${
                     isActive ? "nav-item-active" : "nav-item-inactive"
                   }`}
                 >
-                  {isActive && <span className="nav-pill scale-in" aria-hidden />}
+                  {/* layoutId เดียวกันทุกปุ่ม = Motion ย้ายก้อนเดิมไปตำแหน่งใหม่
+                      แทนที่จะ fade อันเก่าออกแล้วอันใหม่โผล่ */}
+                  {isActive && (
+                    <motion.span
+                      layoutId="sidebar-nav-pill"
+                      className="nav-pill"
+                      transition={{ type: "spring", stiffness: 380, damping: 34 }}
+                      aria-hidden
+                    />
+                  )}
                   <span className="relative z-10 flex items-center gap-3 w-full">
                     {item.icon(isActive)}
                     <span>{item.label}</span>
                     {item.badge ? (
-                      <span
+                      <motion.span
+                        key={item.badge}
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 22 }}
                         className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           isActive
                             ? "bg-white/25 text-white"
@@ -146,10 +160,10 @@ export default function Home() {
                         }`}
                       >
                         {item.badge}
-                      </span>
+                      </motion.span>
                     ) : null}
                   </span>
-                </button>
+                </motion.button>
               );
             })}
           </nav>
@@ -176,9 +190,9 @@ export default function Home() {
         {/* Main content area */}
         <div className="flex-1 flex flex-col min-h-dvh">
           {/* Page content */}
-          <div
-            key={viewMode}
-            className="flex-1 px-4 md:px-8 lg:px-12 py-5 md:py-8 pb-8 view-enter"
+          <ViewTransition
+            viewKey={viewMode}
+            className="flex-1 px-4 md:px-8 lg:px-12 py-5 md:py-8 pb-8"
           >
             <div className="max-w-2xl mx-auto lg:max-w-3xl">
               {viewMode === "home" && (
@@ -249,7 +263,6 @@ export default function Home() {
               {viewMode === "favorites" && (
                 <FavoritesView
                   favorites={favorites}
-                  favVersion={favVersion}
                   onFavoriteChange={refreshFavorites}
                   onStartCook={startCook}
                 />
@@ -260,7 +273,7 @@ export default function Home() {
                 />
                 )}
             </div>
-          </div>
+          </ViewTransition>
         </div>
       </div>
 
@@ -316,10 +329,7 @@ export default function Home() {
         )}
 
         {/* Mobile content */}
-        <div
-          key={viewMode}
-          className="flex-1 px-5 pb-24 view-enter"
-        >
+        <ViewTransition viewKey={viewMode} className="flex-1 px-5 pb-24">
           {viewMode === "home" && (
             <HomeView
               gallery={gallery}
@@ -388,7 +398,6 @@ export default function Home() {
           {viewMode === "favorites" && (
             <FavoritesView
               favorites={favorites}
-              favVersion={favVersion}
               onFavoriteChange={refreshFavorites}
               onStartCook={startCook}
             />
@@ -399,18 +408,26 @@ export default function Home() {
             />
             )}
 
-        </div>
+        </ViewTransition>
 
         {/* FAB สแกน — หน้าเมนู/โปรด ไม่ต้องกลับหน้าแรกก่อนถึงจะสแกนได้ */}
-        {["recipes", "favorites"].includes(viewMode) && (
-          <button
-            onClick={startCamera}
-            className="fab"
-            aria-label="สแกนวัตถุดิบ"
-          >
-            <IconCamera size={24} />
-          </button>
-        )}
+        <AnimatePresence>
+          {["recipes", "favorites"].includes(viewMode) && (
+            <motion.button
+              key="scan-fab"
+              onClick={startCamera}
+              className="fab"
+              aria-label="สแกนวัตถุดิบ"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              whileTap={{ scale: 0.88 }}
+              transition={{ type: "spring", stiffness: 460, damping: 26 }}
+            >
+              <IconCamera size={24} />
+            </motion.button>
+          )}
+        </AnimatePresence>
 
         {/* Mobile bottom nav */}
         {showBottomNav && (
@@ -434,29 +451,37 @@ export default function Home() {
               {navItems.map((item) => {
                 const isActive = viewMode === item.key;
                 return (
-                  <button
+                  <motion.button
                     key={item.key}
                     onClick={() => setViewMode(item.key)}
+                    whileTap={{ scale: 0.9 }}
                     className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 tap transition-colors relative ${
                       isActive
-                        ? "text-[var(--color-brand)] tab-press"
+                        ? "text-[var(--color-brand)]"
                         : "text-[var(--color-muted)]"
                     }`}
                   >
-                    <span
-                      className={`leading-none transition-transform duration-300 ${
-                        isActive ? "scale-110" : ""
-                      }`}
+                    <motion.span
+                      className="leading-none"
+                      animate={{ scale: isActive ? 1.12 : 1, y: isActive ? -1 : 0 }}
+                      transition={{ type: "spring", stiffness: 520, damping: 18 }}
                     >
                       {item.icon(isActive)}
-                    </span>
+                    </motion.span>
                     <span className="text-[10px] font-medium">{item.label}</span>
                     {item.badge ? (
-                      <span className="absolute top-1 right-1/2 translate-x-4 w-4 h-4 bg-[var(--color-brand)] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                      // key = ตัวเลข ทำให้ badge เด้งใหม่ทุกครั้งที่จำนวนเปลี่ยน
+                      <motion.span
+                        key={item.badge}
+                        initial={{ scale: 0.4, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", stiffness: 520, damping: 20 }}
+                        className="absolute top-1 right-1/2 translate-x-4 w-4 h-4 bg-[var(--color-brand)] text-white text-[9px] font-bold rounded-full flex items-center justify-center"
+                      >
                         {item.badge}
-                      </span>
+                      </motion.span>
                     ) : null}
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
@@ -464,7 +489,11 @@ export default function Home() {
         )}
       </div>
 
-      {loading.state && <LoadingOverlay message={loading.message} />}
+      <AnimatePresence>
+        {loading.state && (
+          <LoadingOverlay key="loading" message={loading.message} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

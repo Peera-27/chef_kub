@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Kanit } from "next/font/google";
+import { MotionProvider } from "./components/motion/MotionProvider";
 import "./globals.css";
 const kanit = Kanit({
   subsets: ["thai", "latin"],
@@ -27,7 +28,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th">
-      <body className={kanit.className}>{children}</body>
+      <body className={kanit.className}>
+        <MotionProvider>{children}</MotionProvider>
+      </body>
     </html>
   );
 }
