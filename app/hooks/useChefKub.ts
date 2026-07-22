@@ -100,7 +100,8 @@ export type ViewMode =
   | "settings";
 
 export function useChefKub() {
-  const model = useYoloModel();
+  const { ensureModel: ensureYoloModel, isFirstLoad: isYoloFirstLoad } =
+    useYoloModel();
 
   const [loading, setLoading] = useState({ state: false, message: "" });
   // true ระหว่างทยอย gen รูปอาหารหลังได้สูตรแล้ว — การ์ดจะโชว์ skeleton แทน overlay ทับจอ
@@ -377,10 +378,24 @@ const isDrawingRef = useRef(false);
         return;
       }
 
-      setLoading({ state: true, message: "กำลังสแกนวัตถุดิบ..." });
-      const yoloResult = model
-        ? await runYoloDetection(model, base64Url)
-        : { items: [], boxes: [], ms: 0 };
+      /* โมเดลเริ่มโหลดตรงนี้ ไม่ใช่ตอนเปิดหน้า — ครั้งแรกจะรอนาน (11MB) แต่ครั้งถัด ๆ ไป
+         ได้จากแคชเบราว์เซอร์ทันที ถ้าโหลดไม่ได้หรือเครื่องแรงไม่พอจะได้ null กลับมา
+         แล้วปล่อยให้ Gemini ตัดสินคนเดียว ซึ่งยังใช้งานได้ครบ */
+      setLoading({
+        state: true,
+        message: isYoloFirstLoad()
+          ? "กำลังเตรียมตัวสแกน (ครั้งแรกโหลดนานหน่อย)..."
+          : "กำลังสแกนวัตถุดิบ...",
+      });
+      const model = await ensureYoloModel();
+
+      let yoloResult = { items: [], boxes: [], ms: 0 } as Awaited<
+        ReturnType<typeof runYoloDetection>
+      >;
+      if (model) {
+        setLoading({ state: true, message: "กำลังสแกนวัตถุดิบ..." });
+        yoloResult = await runYoloDetection(model, base64Url);
+      }
 
       // Gemini เป็นตัวตัดสินสุดท้ายของทุกภาพ — YOLO "มั่นใจแต่มั่ว" ได้ จึงไม่เชื่อ
       // count/confidence ของมันตรง ๆ ส่ง label ที่ YOLO เดาไปให้ Gemini ยืนยัน/ปฏิเสธ
