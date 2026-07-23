@@ -31,7 +31,7 @@ export function buildRecipeText(recipe: Recipe): string {
   }
 
   if (recipe.extraIngredients && recipe.extraIngredients.length > 0) {
-    lines.push("", "🛒 ต้องซื้อเพิ่ม");
+    lines.push("", "🛒 ซื้อเพิ่มก็ได้ (ไม่มีก็ทำได้)");
     recipe.extraIngredients.forEach((item) => lines.push(`• ${item}`));
   }
 

@@ -10,7 +10,7 @@ export type Recipe = {
   imagePrompt?: string;
   // ฟิลด์ใหม่เป็น optional เพราะเมนูโปรดที่เก็บใน localStorage ก่อนหน้านี้ยังไม่มี
   servings?: number;
-  // ของที่ต้องซื้อเพิ่ม (ไม่นับเครื่องปรุงพื้นฐาน)
+  // ของเสริมที่ซื้อเพิ่มก็ได้ ไม่ซื้อก็ทำเมนูได้ (ไม่นับเครื่องปรุงพื้นฐาน)
   extraIngredients?: string[];
   // ที่มาของเมนู เช่น "ไทย × ญี่ปุ่น" หรือ "ราเมงอิจิรากุ — Naruto"
   inspiration?: string;

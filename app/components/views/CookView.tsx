@@ -67,6 +67,22 @@ export function CookView({
   const [servings, setServings] = useState(baseServings ?? 1);
   const factor = baseServings ? servings / baseServings : 1;
 
+  // สิ่งที่แชร์ออกไปต้องเป็นปริมาณเท่าที่เห็นบนจอ ไม่ใช่ฐานที่โมเดลให้มา
+  // ไม่งั้นคนปรับเป็น 4 ที่แล้วแชร์ จะได้สูตรสำหรับ 1 ที่ติดไป
+  const sharedRecipe = useMemo(
+    () =>
+      factor === 1
+        ? recipe
+        : {
+            ...recipe,
+            servings,
+            ingredients: recipe.ingredients.map((ing) =>
+              scaleIngredient(ing, factor),
+            ),
+          },
+    [recipe, servings, factor],
+  );
+
   // ขั้นตอนไหนมีเวลาระบุไว้บ้าง — คำนวณครั้งเดียว ไม่ต้อง parse ใหม่ทุก render
   const stepDurations = useMemo(
     () => recipe.instructions.map((text) => parseStepDuration(text)),
@@ -102,7 +118,7 @@ export function CookView({
   const handleShare = async (choice: ShareChoice) => {
     if (choice === "text") {
       setSharePending(choice);
-      const result = await shareRecipe(recipe);
+      const result = await shareRecipe(sharedRecipe);
       setSharePending(null);
       setShareOpen(false);
       showResult(result);
@@ -112,7 +128,7 @@ export function CookView({
     setSharePending(choice);
     let file: File;
     try {
-      file = await buildRecipeCardFile(recipe, choice, rating);
+      file = await buildRecipeCardFile(sharedRecipe, choice, rating);
     } catch {
       setSharePending(null);
       setShareOpen(false);
@@ -401,12 +417,15 @@ export function CookView({
         </div>
       )}
 
-      {/* ของที่ต้องซื้อเพิ่ม — ผู้ใช้จะได้รู้ก่อนลงมือว่าต้องออกไปซื้ออะไร */}
+      {/* ของเสริม — ไม่ซื้อก็ทำเมนูนี้ได้ บอกให้ชัดจะได้ไม่รู้สึกว่าถูกบังคับ */}
       {recipe.extraIngredients && recipe.extraIngredients.length > 0 && (
         <div className="card p-4 md:p-5 mb-5 slide-up">
-          <h3 className="text-sm font-bold text-[var(--color-brand)] uppercase tracking-wide mb-3">
-            ต้องซื้อเพิ่ม
+          <h3 className="text-sm font-bold text-[var(--color-brand)] uppercase tracking-wide mb-1">
+            ซื้อเพิ่มก็ได้
           </h3>
+          <p className="text-xs text-[var(--color-muted)] mb-3">
+            ไม่มีก็ทำได้ มีแล้วอร่อยขึ้น
+          </p>
           <div className="flex flex-wrap gap-2">
             {recipe.extraIngredients.map((item, idx) => (
               <span
