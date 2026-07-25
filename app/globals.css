@@ -2,25 +2,30 @@
 
 @theme {
   --color-surface: #ffffff;
-  --color-surface-2: #fffdf9;
-  --color-glass: rgba(255, 255, 255, 0.72);
+  --color-surface-2: #f7fbf4;
+  --color-glass: rgba(255, 255, 255, 0.88);
   /* นิวทรัลอมอุ่นเป็นครีม — เว็บอาหารที่พื้นเป็นขาวอมเทาจะรู้สึกเหมือนหน้า dashboard
      ครีมทำให้รู้สึกเหมือนร้านมากกว่าเครื่องมือ โดยไม่ต้องแตะสีสถานะสักตัว
 
      muted เดิม #767c74 ทับพื้นเดิมได้ contrast แค่ ~4.06 ตกเกณฑ์ AA (4.5)
      ตัวนี้ได้ ~5.7 อ่านง่ายขึ้นจริงและยังดูเบาอยู่ */
-  --color-page: #fdfaf5;
-  --color-ink: #1f1b16;
-  --color-muted: #6b6259;
-  --color-line: #ece5da;
-  --color-line-soft: #f6f1e9;
+  --color-page: #f2f7ef;
+  --color-ink: #173122;
+  --color-muted: #5d7063;
+  --color-line: #d7e5d4;
+  --color-line-soft: #eaf2e7;
 
   /* เขียวสน — ตัวขาวบนปุ่มได้ contrast 7.59 ผ่าน WCAG AA สบาย ๆ */
-  --color-brand: #1f5f3f;
-  --color-brand-dark: #17472f;
-  --color-brand-soft: #edf2f0;
-  --color-brand-pale: #f7f9f8;
-  --color-brand-glow: rgba(31, 95, 63, 0.28);
+  --color-brand: #08783d;
+  --color-brand-dark: #005b30;
+  --color-brand-lime: #73c92f;
+  --color-brand-soft: #e4f4df;
+  --color-brand-pale: #f3faef;
+  --color-brand-glow: rgba(8, 120, 61, 0.24);
+  --color-terracotta: #c75d3a;
+  --color-terracotta-dark: #9f4328;
+  --color-terracotta-soft: #f8e5dc;
+  --color-wood: #9a6743;
 
   --color-favorite: #ec4899;
   --color-favorite-soft: #fdf2f8;
@@ -53,10 +58,10 @@
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
 
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 34px rgba(0, 0, 0, 0.08);
-  --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 2px 8px rgba(20, 64, 36, 0.06);
+  --shadow-md: 0 8px 24px rgba(20, 64, 36, 0.09);
+  --shadow-lg: 0 16px 40px rgba(20, 64, 36, 0.12);
+  --shadow-xl: 0 24px 60px rgba(20, 64, 36, 0.16);
   --shadow-glow: 0 8px 30px var(--color-brand-glow);
 }
 
@@ -70,8 +75,8 @@
     /* แสงนวลสองก้อน — เขียวแบรนด์กับส้มอุ่น alpha ต่ำมากจนไม่อ่านเป็นสีสถานะ
        แต่พอให้พื้นไม่แบนเป็นแผ่นเดียว */
     background:
-      radial-gradient(1200px 600px at 100% -10%, rgba(47, 125, 79, 0.07), transparent 60%),
-      radial-gradient(900px 500px at -10% 10%, rgba(214, 138, 61, 0.06), transparent 55%),
+      radial-gradient(900px 520px at 100% -5%, rgba(115, 201, 47, 0.13), transparent 60%),
+      radial-gradient(800px 500px at -10% 10%, rgba(8, 120, 61, 0.1), transparent 58%),
       var(--color-page);
     color: var(--color-ink);
     font-family: var(--font-sans);
@@ -81,7 +86,7 @@
   }
 
   ::selection {
-    background: #ffe0c2;
+    background: #cceeb8;
   }
 
   /* Keyboard focus ring — visible only when navigating with keyboard */
@@ -109,7 +114,7 @@
 
 @layer components {
   .card {
-    @apply bg-white rounded-[var(--radius-lg)] border border-[var(--color-line)] shadow-[var(--shadow-sm)];
+    @apply bg-[var(--color-surface)] rounded-[var(--radius-lg)] border border-[var(--color-line)] shadow-[var(--shadow-sm)];
   }
 
   .card-flat {
@@ -308,7 +313,7 @@
 
   /* Brand gradient text + soft surface */
   .text-gradient-brand {
-    background: linear-gradient(120deg, var(--color-brand), var(--color-brand-dark));
+    background: linear-gradient(120deg, var(--color-brand-dark), var(--color-brand));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -339,7 +344,7 @@
     position: absolute;
     inset: 0;
     border-radius: var(--radius-md);
-    background: var(--color-brand);
+    background: var(--color-brand-dark);
     box-shadow: var(--shadow-glow);
   }
 
@@ -357,6 +362,94 @@
   /* Small icon tile */
   .tile {
     @apply w-9 h-9 rounded-xl grid place-items-center shrink-0;
+  }
+
+  .kitchen-shell {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .kitchen-shell::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.24;
+    background-image:
+      linear-gradient(rgba(8, 120, 61, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(8, 120, 61, 0.08) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: linear-gradient(to bottom, black, transparent 72%);
+  }
+
+  .kitchen-hero {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.65);
+    background:
+      radial-gradient(circle at 82% 18%, rgba(255,255,255,.18), transparent 24%),
+      linear-gradient(135deg, #004c29 0%, #08783d 58%, #45a536 100%);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .kitchen-hero::after {
+    content: "✦";
+    position: absolute;
+    right: -12px;
+    bottom: -52px;
+    font-size: 150px;
+    line-height: 1;
+    color: rgba(255,255,255,.06);
+    transform: rotate(18deg);
+  }
+
+  .wood-edge {
+    border-bottom: 3px solid rgba(115, 201, 47, .45);
+    box-shadow: 0 5px 16px rgba(20,64,36,.08);
+  }
+
+  .landing-hero {
+    background:
+      radial-gradient(circle at 88% 12%, rgba(115, 201, 47, .18), transparent 28%),
+      linear-gradient(180deg, rgba(255,255,255,.74), rgba(242,247,239,.3));
+  }
+
+  .kitchen-board {
+    position: relative;
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(110, 69, 39, .35);
+    background:
+      repeating-linear-gradient(
+        96deg,
+        rgba(255,255,255,.05) 0 3px,
+        transparent 3px 42px
+      ),
+      linear-gradient(145deg, #b78054, #8b5837);
+    box-shadow:
+      0 22px 45px rgba(70,49,31,.2),
+      inset 0 1px rgba(255,255,255,.25);
+    transform: rotate(1deg);
+  }
+
+  .kitchen-board::before {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    right: 16px;
+    top: 16px;
+    border: 3px solid rgba(75,45,27,.45);
+    border-radius: 999px;
+    z-index: 2;
+  }
+
+  .section-kitchen {
+    background:
+      linear-gradient(rgba(8,120,61,.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(8,120,61,.07) 1px, transparent 1px),
+      rgba(255,255,255,.72);
+    background-size: 38px 38px;
   }
 
   /* ===== Animations ===== */

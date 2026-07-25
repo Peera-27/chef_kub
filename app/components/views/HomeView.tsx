@@ -56,6 +56,25 @@ export function HomeView({
 
   return (
     <div className="space-y-6 fade-in">
+      <section className="kitchen-hero rounded-[var(--radius-xl)] px-5 py-6 md:px-7 md:py-8 text-white">
+        <div className="relative z-10 max-w-lg">
+          <p className="mb-2 text-xs font-semibold tracking-[0.16em] text-white/85 uppercase">
+            ครัวของคุณวันนี้
+          </p>
+          <h2 className="text-2xl md:text-3xl font-bold leading-tight tracking-tight">
+            มีอะไรในครัว<br />ให้เชฟคับช่วยคิดเมนู
+          </h2>
+          <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/85">
+            ถ่ายรูปวัตถุดิบที่มี แล้วรับเมนูพร้อมขั้นตอนทำแบบง่าย ๆ
+          </p>
+          <div className="mt-5 grid grid-cols-3 gap-1.5 text-center text-[10px] sm:text-xs text-white/90">
+            <span className="rounded-full bg-white/15 px-2 py-1.5">1 · ถ่ายรูป</span>
+            <span className="rounded-full bg-white/15 px-2 py-1.5">2 · เลือกเมนู</span>
+            <span className="rounded-full bg-white/15 px-2 py-1.5">3 · ลงมือทำ</span>
+          </div>
+        </div>
+      </section>
+
       {/* Quick-cook favorite */}
       {topFavorite && (
         <div className="card-glass p-4 flex items-center justify-between gap-3 slide-up">
@@ -81,14 +100,14 @@ export function HomeView({
       <div className="grid grid-cols-2 gap-3 md:gap-4">
         <button
           onClick={onStartCamera}
-          className="group relative flex flex-col items-center justify-center gap-3 py-8 md:py-10 rounded-[var(--radius-xl)] tap slide-up overflow-hidden bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-dark)] text-white shadow-[var(--shadow-glow)] active:scale-[0.97] transition-all duration-200"
+          className="group relative flex flex-col items-center justify-center gap-3 py-8 md:py-10 rounded-[var(--radius-xl)] tap slide-up overflow-hidden bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-dark)] text-white shadow-[var(--shadow-lg)] active:scale-[0.97] transition-all duration-200"
         >
           <span className="tile bg-white/20 group-hover:scale-110 transition-transform duration-300">
             <IconCamera size={22} />
           </span>
           <span className="font-semibold md:text-lg">ถ่ายรูป</span>
         </button>
-        <label className="group flex flex-col items-center justify-center gap-3 py-8 md:py-10 rounded-[var(--radius-xl)] cursor-pointer tap pop-in overflow-hidden bg-white border border-[var(--color-line)] shadow-[var(--shadow-sm)] hover:border-[var(--color-brand)] hover:shadow-[var(--shadow-md)] active:scale-[0.97] transition-all duration-200">
+        <label className="group flex flex-col items-center justify-center gap-3 py-8 md:py-10 rounded-[var(--radius-xl)] cursor-pointer tap pop-in overflow-hidden bg-[var(--color-surface)] border border-[var(--color-line)] shadow-[var(--shadow-sm)] hover:border-[var(--color-brand-lime)] hover:shadow-[var(--shadow-md)] active:scale-[0.97] transition-all duration-200">
           <span className="tile bg-[var(--color-brand-soft)] text-[var(--color-brand)] group-hover:scale-110 transition-transform duration-300">
             <IconImage size={22} />
           </span>

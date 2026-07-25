@@ -18,7 +18,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#1f5f3f",
+  themeColor: "#08783d",
 };
 
 export default function RootLayout({
@@ -30,6 +30,11 @@ export default function RootLayout({
     <html lang="th">
       <body className={kanit.className}>
         <MotionProvider>{children}</MotionProvider>
+        <script
+          type="module"
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token":"bbaaec2572894e98afd0260f2bc1da0a"}'
+        />
       </body>
     </html>
   );

@@ -142,13 +142,13 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 
 export default function Landing() {
   return (
-    <main className="min-h-dvh overflow-x-hidden">
+    <main className="kitchen-shell min-h-dvh overflow-x-hidden">
       <ScrollProgress />
 
       {/* ===== Top bar ===== */}
-      <header className="sticky top-0 z-30 border-b border-black/[0.04] bg-[var(--color-page)]/85 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-[var(--color-line)] bg-[var(--color-surface)]/90 backdrop-blur-xl wood-edge">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-3.5 md:px-8">
-          <div className="flex items-center gap-2.5">
+          <Link href="/" className="flex items-center gap-2.5">
             <Image
               src="/mascot.png"
               alt=""
@@ -160,12 +160,19 @@ export default function Landing() {
             <span className="text-xl font-bold tracking-tight text-gradient-brand">
               Chef Kub
             </span>
-          </div>
+          </Link>
+          <Link
+            href="/app"
+            className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm tap"
+          >
+            <IconCamera size={16} />
+            เปิดครัว
+          </Link>
         </div>
       </header>
 
       {/* ===== Hero ===== */}
-      <section className="relative">
+      <section className="relative landing-hero">
         {/* แสงนวลหลังฉาก — ทำให้พื้นหลังไม่แบนจนเกินไป */}
         <div
           aria-hidden
@@ -178,7 +185,7 @@ export default function Landing() {
         <div className="mx-auto max-w-5xl px-5 pb-16 pt-14 md:px-8 md:pb-24 md:pt-24">
           <div className="grid items-center gap-12 md:grid-cols-2">
             <div className="fade-in">
-              <span className="pill gap-1.5 bg-[var(--color-brand-soft)] font-medium text-[var(--color-brand)]">
+              <span className="pill gap-1.5 bg-[var(--color-brand-soft)] font-semibold text-[var(--color-brand)]">
                 <IconSparkles size={13} />
                 Computer Vision + Generative AI
               </span>
@@ -187,7 +194,7 @@ export default function Landing() {
                 เปิดตู้เย็นถ่ายรูป
                 <br />
                 แล้วให้ AI{" "}
-                <span className="text-gradient-brand">คิดเมนูให้</span>
+                <span className="text-[var(--color-brand)]">คิดเมนูให้</span>
               </h1>
 
               <p className="mt-5 max-w-lg text-base leading-relaxed text-[var(--color-muted)] md:text-lg">
@@ -219,8 +226,8 @@ export default function Landing() {
 
             {/* ภาพประกอบเชิงสัญลักษณ์ — วาดด้วย CSS ไม่ใช่ภาพหน้าจอ */}
             <div className="slide-up">
-              <div className="card card-lift p-5 md:p-6">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--color-brand-soft)] via-[var(--color-brand-pale)] to-[var(--color-brand-soft)]">
+              <div className="kitchen-board card-lift p-5 md:p-6">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface)]/88">
                   {/* กรอบตรวจจับโผล่ไล่กัน เลียนแบบจังหวะที่โมเดลทยอยเจอของจริงในแอป */}
                   <div
                     style={{ "--i": 1 } as React.CSSProperties}
@@ -273,7 +280,7 @@ export default function Landing() {
       </section>
 
       {/* ===== ภาพหน้าจอจริง ===== */}
-      <section className="border-y border-[var(--color-line)] bg-white/50">
+      <section className="section-kitchen border-y border-[var(--color-line)]">
         <div className="mx-auto max-w-5xl px-5 py-16 md:px-8 md:py-24">
           <Reveal>
             <Eyebrow>หน้าตาแอปจริง</Eyebrow>
@@ -342,7 +349,7 @@ export default function Landing() {
       </section>
 
       {/* ===== ทำไมถึงน่าใช้ ===== */}
-      <section className="border-y border-[var(--color-line)] bg-white/50">
+      <section className="section-kitchen border-y border-[var(--color-line)]">
         <div className="mx-auto max-w-5xl px-5 py-16 md:px-8 md:py-24">
           <Reveal>
             <Eyebrow>ทำไมต้อง Chef Kub</Eyebrow>
@@ -410,7 +417,7 @@ export default function Landing() {
       {/* ===== Final CTA ===== */}
       <section className="mx-auto max-w-5xl px-5 pb-16 md:px-8 md:pb-24">
         <Reveal>
-          <div className="relative overflow-hidden rounded-[var(--radius-2xl)] bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-dark)] px-7 py-14 text-center shadow-[var(--shadow-glow)] md:py-16">
+          <div className="relative overflow-hidden rounded-[var(--radius-2xl)] bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-dark)] px-7 py-14 text-center shadow-[var(--shadow-lg)] md:py-16">
             {/* แสงกวาดผ่านช้าๆ ให้การ์ดปิดท้ายไม่นิ่งสนิท */}
             <span
               aria-hidden

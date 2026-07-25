@@ -102,11 +102,11 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-dvh bg-[var(--color-page)] text-[var(--color-ink)]">
+    <div className="kitchen-shell min-h-dvh bg-[var(--color-page)] text-[var(--color-ink)]">
       {/* ===== Desktop / Tablet layout (≥768px): sidebar + content ===== */}
       <div className="hidden md:flex md:min-h-dvh">
         {/* Sidebar */}
-        <aside className="md:w-64 lg:w-72 md:flex-col md:border-r md:border-white/60 md:bg-white/70 md:backdrop-blur-xl md:sticky md:top-0 md:h-dvh shrink-0 flex flex-col">
+        <aside className="md:w-64 lg:w-72 md:flex-col md:border-r md:border-[var(--color-line)] md:bg-[var(--color-surface)]/90 md:backdrop-blur-xl md:sticky md:top-0 md:h-dvh shrink-0 flex flex-col">
           <div className="p-6 pb-4">
             {/* กดโลโก้เพื่อกลับหน้าแนะนำ */}
             <Link
@@ -285,7 +285,7 @@ export default function Home() {
       <div className="md:hidden min-h-dvh flex flex-col">
         {/* Mobile header */}
         {viewMode !== "camera" && (
-          <header className="sticky top-0 z-30 bg-[var(--color-page)]/80 backdrop-blur-md px-5 pt-5 pb-3 safe-top border-b border-black/[0.04]">
+          <header className="sticky top-0 z-30 bg-[var(--color-surface)]/90 backdrop-blur-md px-5 pt-5 pb-3 safe-top border-b border-[var(--color-line)] wood-edge">
             <div className="flex justify-between items-center">
               {/* กดโลโก้เพื่อกลับหน้าแนะนำ */}
               <Link
@@ -429,7 +429,7 @@ export default function Home() {
 
         {/* Mobile bottom nav */}
         {showBottomNav && (
-          <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white/80 backdrop-blur-xl border-t border-white/60 safe-bottom">
+          <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[var(--color-surface)]/95 backdrop-blur-xl border-t border-[var(--color-line)] shadow-[0_-8px_30px_rgba(20,64,36,0.08)] safe-bottom">
             <div className="relative flex">
               {/* Sliding active indicator */}
               <span
