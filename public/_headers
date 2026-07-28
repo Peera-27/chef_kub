@@ -1,0 +1,20 @@
+# เฮดเดอร์ของไฟล์ที่ Workers Static Assets เสิร์ฟเอง (ทุกอย่างใน public/)
+# response พวกนี้ไม่ผ่าน worker จึงไม่ได้เฮดเดอร์จาก headers() ใน next.config.ts
+# รูปแบบไฟล์: https://developers.cloudflare.com/workers/static-assets/headers/
+
+# น้ำหนักโมเดล YOLO ~11MB — ค่า default ของ Workers Static Assets คือ
+# "public, max-age=0, must-revalidate" ซึ่งแปลว่าเสีย round-trip ไปถาม origin
+# ทุกครั้งที่มีคนเปิดหน้า ทั้งที่ไฟล์ไม่เคยเปลี่ยน
+#
+# immutable ปลอดภัยได้เพราะ path มีเลขเวอร์ชันคั่นอยู่ (ดู app/hooks/useYoloModel.ts)
+# โมเดลรุ่นใหม่ต้องขึ้น /model/v2/ ห้ามทับของเดิมใน v1
+/model/v1/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# รูปประกอบที่นาน ๆ เปลี่ยนที ชื่อไฟล์ไม่มี hash จึง immutable ไม่ได้ —
+# ให้แคชหนึ่งวันแล้วยอมให้ใช้ของเก่าระหว่างโหลดตัวใหม่พื้นหลัง
+/mascot.png
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/shots/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

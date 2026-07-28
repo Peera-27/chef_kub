@@ -121,7 +121,7 @@
 ## 🧰 Tech Stack
 
 - ⚛️ **Frontend:** Next.js 16, React 19, Tailwind CSS 4, Motion (`motion/react`)
-- 🎯 **Object Detection:** YOLO11n → TensorFlow.js Graph Model (`public/model/`) โหลดแบบ dynamic import
+- 🎯 **Object Detection:** YOLO11n → TensorFlow.js Graph Model (`public/model/v1/`) โหลดแบบ dynamic import
 - 🔮 **AI ตัดสินภาพ + สร้างสูตร:** Google Gemini (`gemini-3.1-flash-lite`)
 - 🗄️ **Database:** Cloudflare D1 (SQLite) — label memory + แคชรูปเมนู + ตัวนับ rate limit
 - 🪣 **Object Storage:** Cloudflare R2 — รูป training + รูปเมนูที่ gen แล้ว
@@ -187,7 +187,9 @@ app/
     └── storage/                  # localStorage (โปรด + ประวัติ + cookLog + อุปกรณ์ครัว)
 
 tests/utils.test.ts             # unit test ของ utils ที่พังแล้วเจ็บ (bun test)
-public/model/                   # โมเดล YOLO (model.json + weights + metadata.yaml)
+public/model/v1/                # โมเดล YOLO (model.json + weights + metadata.yaml)
+                                # path มีเลขเวอร์ชันเพราะแคช immutable — รุ่นใหม่ต้องขึ้น v2
+public/_headers                 # Cache-Control ของไฟล์ที่ Workers Static Assets เสิร์ฟเอง
 public/shots/                   # ภาพหน้าจอที่ใช้ใน README
 wrangler.jsonc                  # ตั้งค่า Cloudflare Worker (OpenNext)
 open-next.config.ts             # adapter Next → Workers

@@ -60,7 +60,11 @@ async function loadModel(): Promise<tf.GraphModel | null> {
     return null;
   }
 
-  const model = await tfjs.loadGraphModel("/model/model.json");
+  /* path มีเลขเวอร์ชันเพราะไฟล์ชุดนี้ถูกแคชแบบ immutable หนึ่งปี (public/_headers)
+     เทรนโมเดลใหม่เมื่อไหร่ "ต้อง" วางไว้ที่ /model/v2/ แล้วแก้บรรทัดนี้ตาม —
+     ถ้าทับไฟล์เดิมที่ v1 เครื่องที่เคยเข้าเว็บแล้วจะใช้โมเดลเก่าต่อไปเงียบ ๆ
+     โดยไม่มี error ให้เห็น รู้ตัวอีกทีคือผลตรวจจับแย่ลงเฉพาะกับคนกลุ่มนั้น */
+  const model = await tfjs.loadGraphModel("/model/v1/model.json");
 
   /* warmup: ยิงรูปเปล่าเข้าไปหนึ่งครั้งให้ shader คอมไพล์เสร็จก่อน
      ไม่งั้นผู้ใช้จะไปเจอค่าคอมไพล์นั้นตอนสแกนรูปจริง
