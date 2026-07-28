@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Kanit } from "next/font/google";
+import Script from "next/script";
 import { MotionProvider } from "./components/motion/MotionProvider";
 import "./globals.css";
 const kanit = Kanit({
@@ -30,10 +31,11 @@ export default function RootLayout({
     <html lang="th">
       <body className={kanit.className}>
         <MotionProvider>{children}</MotionProvider>
-        <script
+        <Script
           type="module"
           src="https://static.cloudflareinsights.com/beacon.min.js"
           data-cf-beacon='{"token":"bbaaec2572894e98afd0260f2bc1da0a"}'
+          strategy="afterInteractive"
         />
       </body>
     </html>

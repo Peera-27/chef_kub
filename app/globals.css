@@ -100,6 +100,28 @@
     touch-action: manipulation;
   }
 
+  button {
+    font: inherit;
+  }
+
+  button:not(:disabled),
+  label[for],
+  label:has(input[type="file"]) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Fingers are less precise than a mouse: every tappable button gets a
+     44px target on touch devices even when the visual control is compact. */
+  @media (pointer: coarse) {
+    button {
+      min-height: 44px;
+    }
+  }
+
   /* Safe area padding helper for mobile */
   .safe-bottom {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
@@ -122,20 +144,44 @@
   }
 
   .btn-primary {
-    @apply cursor-pointer bg-[var(--color-brand)] text-white font-medium rounded-[var(--radius-md)]
-      active:scale-[0.97] transition-all duration-150 shadow-[0_2px_10px_var(--color-brand-glow)]
+    @apply cursor-pointer min-h-12 inline-flex items-center justify-center gap-2 px-5
+      bg-[var(--color-brand)] text-white font-semibold rounded-[var(--radius-md)]
+      active:scale-[0.98] transition-all duration-150 shadow-[0_3px_12px_var(--color-brand-glow)]
       hover:bg-[var(--color-brand-dark)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none;
   }
 
   .btn-secondary {
-    @apply cursor-pointer bg-white text-[var(--color-brand)] font-medium rounded-[var(--radius-md)]
-      border border-[var(--color-line)] active:scale-[0.97] transition-all duration-150
-      hover:border-[var(--color-brand)] disabled:opacity-40;
+    @apply cursor-pointer min-h-12 inline-flex items-center justify-center gap-2 px-5
+      bg-white text-[var(--color-brand)] font-semibold rounded-[var(--radius-md)]
+      border border-[var(--color-line)] shadow-[var(--shadow-xs)] active:scale-[0.98] transition-all duration-150
+      hover:border-[var(--color-brand)] hover:bg-[var(--color-brand-pale)] disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .btn-ghost {
-    @apply cursor-pointer text-[var(--color-muted)] font-medium rounded-[var(--radius-md)]
-      active:scale-[0.97] transition-all duration-150 hover:text-[var(--color-brand)];
+    @apply cursor-pointer min-h-11 inline-flex items-center justify-center gap-2 px-3
+      text-[var(--color-muted)] font-medium rounded-[var(--radius-md)]
+      active:scale-[0.98] transition-all duration-150 hover:text-[var(--color-brand)]
+      hover:bg-[var(--color-brand-pale)] disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply cursor-pointer min-h-11 inline-flex items-center justify-center gap-2 px-4
+      bg-[var(--color-danger-soft)] text-[var(--color-danger)] font-semibold rounded-[var(--radius-md)]
+      border border-[var(--color-danger)]/15 active:scale-[0.98] transition-all duration-150
+      hover:border-[var(--color-danger)]/35 disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-inverse {
+    @apply cursor-pointer min-h-12 inline-flex items-center justify-center gap-2 px-5
+      bg-white text-[var(--color-brand-dark)] font-bold rounded-[var(--radius-md)]
+      border border-white/70 shadow-[var(--shadow-md)] active:scale-[0.98] transition-all duration-150
+      hover:bg-[var(--color-brand-pale)] disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .choice-btn {
+    @apply min-h-12 rounded-[var(--radius-md)] border border-[var(--color-line)] bg-white
+      text-[var(--color-ink)] transition-all duration-150 hover:border-[var(--color-brand)]
+      hover:bg-[var(--color-brand-pale)] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .pill {
@@ -159,7 +205,8 @@
   }
 
   .icon-btn {
-    @apply flex items-center justify-center rounded-full transition-all duration-150 active:scale-90;
+    @apply flex min-h-11 min-w-11 items-center justify-center rounded-full transition-all duration-150
+      active:scale-90 hover:bg-[var(--color-brand-pale)] disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   /* text-base (16px) บนมือถือคือขั้นต่ำที่ iOS Safari ยอมไม่ซูมหน้าเข้าตอนโฟกัส
@@ -381,6 +428,16 @@
       linear-gradient(90deg, rgba(8, 120, 61, 0.08) 1px, transparent 1px);
     background-size: 32px 32px;
     mask-image: linear-gradient(to bottom, black, transparent 72%);
+  }
+
+  .mobile-header-safe {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+
+  @media (max-width: 767px) {
+    .kitchen-shell::before {
+      display: none;
+    }
   }
 
   .kitchen-hero {

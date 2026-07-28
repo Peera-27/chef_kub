@@ -7,12 +7,14 @@ interface FavoritesViewProps {
   favorites: Recipe[];
   onFavoriteChange: () => void;
   onStartCook: (recipe: Recipe) => void;
+  onStartScan: () => void;
 }
 
 export function FavoritesView({
   favorites,
   onFavoriteChange,
   onStartCook,
+  onStartScan,
 }: FavoritesViewProps) {
   return (
     <div className="space-y-6 pb-6 fade-in">
@@ -26,9 +28,14 @@ export function FavoritesView({
           icon="💝"
           title="ยังไม่มีสูตรโปรด"
           description="กดไอคอนหัวใจที่สูตรอาหารเพื่อเพิ่มในรายการโปรด"
+          action={
+            <button type="button" onClick={onStartScan} className="btn-primary">
+              หาเมนูจากวัตถุดิบ
+            </button>
+          }
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
+        <div className="grid grid-cols-1 items-stretch gap-3 md:grid-cols-2 md:gap-4">
           {/* key ไม่ผูกกับ favVersion แล้ว — ถ้าผูก ทุกใบจะถูกมองว่าเป็นใบใหม่
               ทุกครั้งที่กดหัวใจ ใบที่เหลือเลยกระพริบทั้งกริดแทนที่จะไหลมาแทนที่ */}
           <AnimatePresence initial={false} mode="popLayout">
@@ -36,6 +43,7 @@ export function FavoritesView({
               <motion.div
                 key={r.name}
                 layout
+                className="h-full min-w-0"
                 initial={{ opacity: 0, y: 14, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.18 } }}

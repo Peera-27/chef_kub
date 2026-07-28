@@ -67,7 +67,7 @@ export function ShareSheet({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.12 + index * 0.06, duration: 0.3 }}
               whileTap={busy === null ? { scale: 0.98 } : undefined}
-              className="w-full flex items-center gap-3.5 px-3 py-3 rounded-[var(--radius-md)] text-left transition-colors hover:bg-[var(--color-brand-pale)] disabled:opacity-50 tap"
+              className="choice-btn w-full flex items-center gap-3.5 px-3 py-3 text-left tap [&+&]:mt-2"
             >
               <span
                 className={`${option.preview} shrink-0 rounded-md border-2 border-[var(--color-brand)] bg-[var(--color-brand-soft)] grid place-items-center ${

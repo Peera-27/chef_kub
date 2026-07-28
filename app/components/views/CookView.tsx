@@ -278,9 +278,9 @@ export function CookView({
         </div>
         <button
           onClick={onDone}
-          className="btn-ghost text-sm px-3 py-2 shrink-0 tap"
+          className="btn-secondary min-h-11 px-4 text-sm shrink-0 tap"
         >
-          ออก
+          ออกจากโหมดทำ
         </button>
       </div>
 
@@ -341,7 +341,7 @@ export function CookView({
                   onClick={() => setServings((n) => Math.max(1, n - 1))}
                   disabled={servings <= 1}
                   aria-label="ลดจำนวนที่"
-                  className="w-8 h-8 rounded-full border border-[var(--color-line)] text-[var(--color-ink)] font-bold flex items-center justify-center transition-colors hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] disabled:opacity-35 disabled:hover:border-[var(--color-line)] disabled:hover:text-[var(--color-ink)] tap"
+                  className="icon-btn w-11 h-11 rounded-full border border-[var(--color-line)] bg-white text-[var(--color-ink)] font-bold hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] disabled:opacity-35 disabled:hover:border-[var(--color-line)] disabled:hover:text-[var(--color-ink)] tap"
                 >
                   −
                 </button>
@@ -354,7 +354,7 @@ export function CookView({
                   }
                   disabled={servings >= MAX_SERVINGS}
                   aria-label="เพิ่มจำนวนที่"
-                  className="w-8 h-8 rounded-full border border-[var(--color-line)] text-[var(--color-ink)] font-bold flex items-center justify-center transition-colors hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] disabled:opacity-35 disabled:hover:border-[var(--color-line)] disabled:hover:text-[var(--color-ink)] tap"
+                  className="icon-btn w-11 h-11 rounded-full border border-[var(--color-line)] bg-white text-[var(--color-ink)] font-bold hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] disabled:opacity-35 disabled:hover:border-[var(--color-line)] disabled:hover:text-[var(--color-ink)] tap"
                 >
                   +
                 </button>
@@ -369,7 +369,7 @@ export function CookView({
                 <li key={idx}>
                   <button
                     onClick={() => toggleIngredient(idx)}
-                    className="w-full flex items-start gap-2.5 text-left text-sm px-2 py-2 -mx-2 rounded-[var(--radius-sm)] hover:bg-[var(--color-brand-pale)] transition-colors cursor-pointer"
+                    className="w-full min-h-11 flex items-start gap-2.5 text-left text-sm px-2 py-2.5 -mx-2 rounded-[var(--radius-sm)] hover:bg-[var(--color-brand-pale)] transition-colors cursor-pointer"
                   >
                     {/* เดิมเรนเดอร์เครื่องหมายถูกค้างไว้ตลอดแล้วซ่อนด้วย text-transparent
                         ติ๊กแล้วเลยแค่สีเปลี่ยน ตอนนี้ให้มันเด้งเข้ามาจริง ๆ */}
@@ -474,7 +474,8 @@ export function CookView({
           onClick={() => setFinished(true)}
           className="btn-primary w-full py-3.5 md:py-4 font-semibold tap"
         >
-          ทำเสร็จแล้ว 🎉
+          <IconCheck size={19} />
+          ทำเสร็จแล้ว
         </button>
       </div>
 

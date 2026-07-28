@@ -92,15 +92,6 @@ const FAQ = [
   },
 ];
 
-const TECH = [
-  "Next.js 16",
-  "React 19",
-  "YOLO11n + TensorFlow.js",
-  "Google Gemini",
-  "Cloudflare D1 + R2",
-  "Workers AI",
-];
-
 /** กรอบมือถือครอบภาพหน้าจอจริง */
 function PhoneFrame({
   src,
@@ -265,10 +256,10 @@ export default function Landing() {
                     <IconChefHat size={18} />
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[var(--color-ink)]">
+                    <p className="truncate text-sm font-semibold text-[var(--color-white)]">
                       ผัดผักกาดใส่ไข่
                     </p>
-                    <p className="text-xs text-[var(--color-muted)]">
+                    <p className="text-xs text-[var(--color-white)]/70">
                       15 นาที · ทำง่าย
                     </p>
                   </div>

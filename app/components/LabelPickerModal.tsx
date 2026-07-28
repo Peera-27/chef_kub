@@ -246,7 +246,7 @@ export function LabelPickerModal({
         <button
           type="button"
           onClick={dismiss}
-          className="w-full py-3 md:py-3.5 text-sm text-[var(--color-muted)] rounded-[var(--radius-md)] hover:bg-gray-50 transition-colors tap"
+          className="btn-secondary w-full py-3 text-sm tap"
         >
           ยกเลิก
         </button>

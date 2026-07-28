@@ -8,6 +8,7 @@ import {
 import { formatDuration, parseStepDuration } from "../app/utils/parseStepDuration";
 import { scaleIngredient } from "../app/utils/scaleIngredient";
 import { mergeIngredients } from "../app/utils/mergeIngredients";
+import { getActiveIngredients } from "../app/utils/activeIngredients";
 import { findSimilarLabels, normalizeLabelName } from "../app/utils/normalizeLabel";
 import {
   normalizePixelRect,
@@ -160,6 +161,50 @@ describe("mergeIngredients", () => {
 
   test("รายการว่าง", () => {
     expect(mergeIngredients([])).toEqual([]);
+  });
+});
+
+describe("getActiveIngredients", () => {
+  const gallery = [
+    {
+      id: "scan-1",
+      url: "data:image/jpeg;base64,test",
+      items: [{ name: "chicken drumstick", source: "yolo" as const }],
+    },
+  ];
+
+  test("combines Gallery and selected history ingredients", () => {
+    expect(getActiveIngredients(gallery, ["egg", "onion"])).toEqual([
+      "chicken drumstick",
+      "egg",
+      "onion",
+    ]);
+  });
+
+  test("falls back to Gallery when all selected history items are removed", () => {
+    const historyItems = ["egg", "onion"];
+    const afterRemovingEgg = historyItems.filter((name) => name !== "egg");
+    const afterRemovingOnion = afterRemovingEgg.filter(
+      (name) => name !== "onion",
+    );
+
+    expect(getActiveIngredients(gallery, afterRemovingOnion)).toEqual([
+      "chicken drumstick",
+    ]);
+    expect(gallery[0].items.map((item) => item.name)).toEqual([
+      "chicken drumstick",
+    ]);
+  });
+
+  test("deduplicates names shared by Gallery and history", () => {
+    expect(
+      getActiveIngredients(gallery, ["chicken drumstick", "egg", "egg"]),
+    ).toEqual(["chicken drumstick", "egg"]);
+  });
+
+  test("is empty only when both sources are empty", () => {
+    expect(getActiveIngredients([], [])).toEqual([]);
+    expect(getActiveIngredients([], null)).toEqual([]);
   });
 });
 

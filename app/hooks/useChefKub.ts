@@ -1,5 +1,5 @@
 import { loadKitchenSettings } from "../utils/storage/kitchenEquipment";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { generateRecipes } from "../actions/generateRecipe";
 import { generateRecipeImage } from "../actions/generateRecipeImage";
 import { getCachedRecipeImages } from "../actions/getCachedRecipeImages";
@@ -14,6 +14,7 @@ import { saveLabeledImage } from "../actions/saveLabeledImage";
 import type { YoloDetectionResult } from "../lib/yolo/runYoloDetection";
 import type { Recipe } from "../types/recipe";
 import { mergeIngredients } from "../utils/mergeIngredients";
+import { getActiveIngredients } from "../utils/activeIngredients";
 import {
   BoundingBox,
   ImageItem,
@@ -125,7 +126,11 @@ export function useChefKub() {
   // true ระหว่างทยอย gen รูปอาหารหลังได้สูตรแล้ว — การ์ดจะโชว์ skeleton แทน overlay ทับจอ
   const [imageGenPending, setImageGenPending] = useState(false);
   const [gallery, setGallery] = useState<ImageItem[]>([]);
-  const [allItems, setAllItems] = useState<string[]>([]);
+  const [historySelection, setHistorySelection] = useState<string[] | null>(null);
+  const allItems = useMemo(
+    () => getActiveIngredients(gallery, historySelection),
+    [gallery, historySelection],
+  );
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("home");
   const [favorites, setFavorites] = useState<Recipe[]>([]);
@@ -152,7 +157,10 @@ const isDrawingRef = useRef(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const cameraRequestRef = useRef(0);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const imageCache = useRef<Map<string, CachedImageResult>>(new Map());
+  const ingredientsKeyRef = useRef("");
 
   useEffect(() => {
     setFavorites(loadFavorites());
@@ -164,19 +172,52 @@ const isDrawingRef = useRef(false);
   }, []);
 
   useEffect(() => {
-    const merged = new Set<string>();
-    gallery.forEach((img) => {
-      img.items.forEach((item) => merged.add(item.name));
+    const nextKey = [...allItems].sort().join("|");
+
+    // A menu generated from the previous ingredient set becomes misleading as
+    // soon as the user adds, removes, or corrects an ingredient.
+    if (ingredientsKeyRef.current !== nextKey && recipes.length > 0) {
+      setRecipes([]);
+    }
+
+    ingredientsKeyRef.current = nextKey;
+  }, [allItems, recipes.length]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (viewMode !== "camera" || !cameraStream || !video) return;
+
+    video.srcObject = cameraStream;
+    void video.play().catch(() => {
+      // `autoPlay` normally handles this. Some mobile browsers need the
+      // explicit play call, and will retry after the next user interaction.
     });
-    setAllItems(Array.from(merged));
-  }, [gallery]);
+
+    return () => {
+      if (video.srcObject === cameraStream) video.srcObject = null;
+    };
+  }, [cameraStream, viewMode]);
+
+  useEffect(
+    () => () => {
+      cameraRequestRef.current += 1;
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+    },
+    [],
+  );
 
   const stopCamera = () => {
+    cameraRequestRef.current += 1;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+    setCameraStream(null);
   };
 
   const startCamera = async () => {
+    stopCamera();
+    setHistorySelection(null);
+    const requestId = ++cameraRequestRef.current;
     setViewMode("camera");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -186,9 +227,16 @@ const isDrawingRef = useRef(false);
           height: { ideal: 1080 },
         },
       });
+
+      if (requestId !== cameraRequestRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      setCameraStream(stream);
     } catch {
+      if (requestId !== cameraRequestRef.current) return;
       setNotice({
         title: "เปิดกล้องไม่ได้",
         message: "เบราว์เซอร์ยังไม่ได้อนุญาตให้ใช้กล้อง",
@@ -349,6 +397,7 @@ const isDrawingRef = useRef(false);
   };
 
   const processImage = async (rawBase64Url: string) => {
+    setHistorySelection(null);
     /* ย่อตรงนี้จุดเดียว เพราะทั้งกล้องและอัปโหลดไฟล์ไหลผ่าน processImage หมด
        และต้องย่อ "ก่อน" คิด hash — ไม่งั้น hash จะไม่ตรงกับไฟล์ที่เก็บจริงใน R2 */
     const base64Url = await downscaleImage(rawBase64Url);
@@ -557,8 +606,22 @@ const isDrawingRef = useRef(false);
     await generateRecipesFlow(allItems);
   };
 
-  const quickStartFromHistory = async (items: string[]) => {
-    await generateRecipesFlow(items);
+  const quickStartFromHistory = (items: string[]) => {
+    const selectedItems = Array.from(
+      new Set(items.map((item) => item.trim()).filter(Boolean)),
+    );
+    if (selectedItems.length === 0) return;
+
+    setHistorySelection(selectedItems);
+    setRecipes([]);
+    setViewMode("home");
+  };
+
+  const removeHistoryIngredient = (itemName: string) => {
+    setHistorySelection((current) =>
+      current?.filter((item) => item !== itemName) ?? null,
+    );
+    setRecipes([]);
   };
 
   const applyImageUpdate = (updated: ImageItem) => {
@@ -835,6 +898,8 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     removeImage,
     handleInventRecipe,
     quickStartFromHistory,
+    selectedHistoryItems: historySelection,
+    removeHistoryIngredient,
     quickCookFavorite,
     handlePointerDown,
     handlePointerMove,

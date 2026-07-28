@@ -9,8 +9,8 @@
     "lint": "eslint",
     "test": "bun test",
     "cf:build": "opennextjs-cloudflare build",
-    "cf:preview": "opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare deploy",
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "export-dataset": "bun run training/export-dataset.ts"
   },
   "dependencies": {
@@ -33,7 +33,7 @@
     "eslint-config-next": "16.2.11",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "wrangler": "^4.113.0"
+    "wrangler": "4.114.0"
   },
   "ignoreScripts": [
     "sharp",

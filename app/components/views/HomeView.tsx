@@ -1,8 +1,8 @@
 import { AnimatePresence, motion } from "motion/react";
+import { useRef } from "react";
 import type { Recipe } from "../../types/recipe";
 import { COOKING_MODES, type CookingMode } from "../../utils/cookingModes";
 import { ImageItem, ScanHistoryEntry } from "../../utils/types";
-import { EmptyState } from "../EmptyState";
 import {
   IconCamera,
   IconChefHat,
@@ -30,8 +30,9 @@ interface HomeViewProps {
   onEditImage: (image: ImageItem) => void;
   onInventRecipe: () => void;
   onQuickStartHistory: (items: string[]) => void;
+  selectedHistoryItems: string[] | null;
+  onRemoveHistoryItem: (itemName: string) => void;
   onQuickCookFavorite: (recipe: Recipe) => void;
-  onViewRecipes: () => void;
 }
 
 export function HomeView({
@@ -49,70 +50,124 @@ export function HomeView({
   onEditImage,
   onInventRecipe,
   onQuickStartHistory,
+  selectedHistoryItems,
+  onRemoveHistoryItem,
   onQuickCookFavorite,
-  onViewRecipes,
 }: HomeViewProps) {
   const topFavorite = favorites[0];
+  const currentStep = hasRecipes ? 3 : allItemsCount > 0 ? 2 : 1;
+  const selectionReviewRef = useRef<HTMLDivElement>(null);
+  const cookingModeRef = useRef<HTMLDivElement>(null);
+
+  const selectHistoryIngredients = (items: string[]) => {
+    onQuickStartHistory(items);
+    window.setTimeout(() => {
+      (selectionReviewRef.current ?? cookingModeRef.current)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 0);
+  };
 
   return (
-    <div className="space-y-6 fade-in">
-      <section className="kitchen-hero rounded-[var(--radius-xl)] px-5 py-6 md:px-7 md:py-8 text-white">
-        <div className="relative z-10 max-w-lg">
-          <p className="mb-2 text-xs font-semibold tracking-[0.16em] text-white/85 uppercase">
-            ครัวของคุณวันนี้
-          </p>
-          <h2 className="text-2xl md:text-3xl font-bold leading-tight tracking-tight">
-            มีอะไรในครัว<br />ให้เชฟคับช่วยคิดเมนู
-          </h2>
-          <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/85">
-            ถ่ายรูปวัตถุดิบที่มี แล้วรับเมนูพร้อมขั้นตอนทำแบบง่าย ๆ
-          </p>
-          <div className="mt-5 grid grid-cols-3 gap-1.5 text-center text-[10px] sm:text-xs text-white/90">
-            <span className="rounded-full bg-white/15 px-2 py-1.5">1 · ถ่ายรูป</span>
-            <span className="rounded-full bg-white/15 px-2 py-1.5">2 · เลือกเมนู</span>
-            <span className="rounded-full bg-white/15 px-2 py-1.5">3 · ลงมือทำ</span>
+    <div className="space-y-4 fade-in md:space-y-6">
+      <section className="pt-1 md:pt-2">
+        <p className="text-xs font-semibold text-[var(--color-brand)]">
+          {currentStep === 1
+            ? "เริ่มจากของที่มี"
+            : currentStep === 2
+              ? `พบแล้ว ${allItemsCount} วัตถุดิบ`
+              : "เมนูของคุณพร้อมแล้ว"}
+        </p>
+        <h2 className="mt-1 text-2xl font-bold leading-tight tracking-tight text-[var(--color-ink)] md:text-3xl">
+          {currentStep === 1
+            ? "วันนี้มีอะไรในครัว?"
+            : currentStep === 2
+              ? "เลือกแนวอาหารที่อยากกิน"
+              : "เลือกเมนูแล้วเริ่มทำได้เลย"}
+        </h2>
+        <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-muted)] sm:mt-2">
+          {currentStep === 1
+            ? "ถ่ายรูปหรือเลือกรูปวัตถุดิบ แล้วเชฟคับจะช่วยคิดเมนูให้"
+            : currentStep === 2
+              ? "ตรวจรายการด้านล่างให้ถูกต้อง แล้วขอสูตรอาหารได้ทันที"
+              : "ดูเมนูที่แนะนำ หรือสแกนวัตถุดิบชุดใหม่"}
+        </p>
+
+        <div className="mt-3 flex items-center gap-3 sm:hidden" aria-label={`ขั้นตอนที่ ${currentStep} จาก 3`}>
+          <span className="shrink-0 text-[11px] font-semibold text-[var(--color-muted)]">
+            ขั้นตอน {currentStep} จาก 3
+          </span>
+          <div className="flex flex-1 gap-1.5" aria-hidden="true">
+            {[1, 2, 3].map((step) => (
+              <span
+                key={step}
+                className={`h-1.5 flex-1 rounded-full ${
+                  step <= currentStep
+                    ? "bg-[var(--color-brand)]"
+                    : "bg-[var(--color-line)]"
+                }`}
+              />
+            ))}
           </div>
+        </div>
+
+        <div className="mt-4 hidden grid-cols-3 gap-2 sm:grid" aria-label={`ขั้นตอนที่ ${currentStep} จาก 3`}>
+          {["สแกนวัตถุดิบ", "เลือกแนวอาหาร", "รับเมนู"].map((label, index) => {
+            const step = index + 1;
+            const active = step === currentStep;
+            const complete = step < currentStep;
+            return (
+              <div key={label} className="min-w-0">
+                <div
+                  className={`h-1.5 rounded-full ${
+                    active || complete
+                      ? "bg-[var(--color-brand)]"
+                      : "bg-[var(--color-line)]"
+                  }`}
+                />
+                <p
+                  className={`mt-1.5 truncate text-[10px] md:text-xs ${
+                    active
+                      ? "font-semibold text-[var(--color-brand)]"
+                      : "text-[var(--color-muted)]"
+                  }`}
+                >
+                  {step}. {label}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </section>
 
-      {/* Quick-cook favorite */}
-      {topFavorite && (
-        <div className="card-glass p-4 flex items-center justify-between gap-3 slide-up">
-          <div className="min-w-0">
-            <p className="text-xs text-[var(--color-favorite)] font-medium mb-1 flex items-center gap-1">
-              <IconHeart size={12} filled />
-              ทำเมนูโปรดอีกครั้ง
-            </p>
-            <p className="font-semibold text-[var(--color-ink)] truncate">
-              {topFavorite.name}
-            </p>
-          </div>
-          <button
-            onClick={() => onQuickCookFavorite(topFavorite)}
-            className="btn-primary shrink-0 text-sm px-4 py-2.5 tap micro-bounce"
-          >
-            เริ่มทำเลย
-          </button>
-        </div>
-      )}
-
-      {/* Action buttons: 2 cols */}
-      <div className="grid grid-cols-2 gap-3 md:gap-4">
+      {/* Primary path first; upload remains available without competing with it. */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1.35fr_1fr] md:gap-4">
         <button
           onClick={onStartCamera}
-          className="group relative flex flex-col items-center justify-center gap-3 py-8 md:py-10 rounded-[var(--radius-xl)] tap slide-up overflow-hidden bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-dark)] text-white shadow-[var(--shadow-lg)] active:scale-[0.97] transition-all duration-200"
+          className="group relative flex items-center gap-3 overflow-hidden rounded-[var(--radius-xl)] bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-dark)] p-4 text-left text-white shadow-[var(--shadow-lg)] transition-all duration-200 active:scale-[0.98] sm:gap-4 sm:p-5 md:p-6 tap slide-up"
         >
-          <span className="tile bg-white/20 group-hover:scale-110 transition-transform duration-300">
-            <IconCamera size={22} />
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/18 transition-transform duration-300 group-hover:scale-105 sm:h-12 sm:w-12">
+            <IconCamera size={24} />
           </span>
-          <span className="font-semibold md:text-lg">ถ่ายรูป</span>
+          <span className="min-w-0">
+            <span className="block font-bold md:text-lg">ถ่ายวัตถุดิบ</span>
+            <span className="mt-0.5 hidden text-xs text-white/80 sm:block">
+              เร็วที่สุด · ใช้กล้องถ่ายได้เลย
+            </span>
+          </span>
         </button>
-        <label className="group flex flex-col items-center justify-center gap-3 py-8 md:py-10 rounded-[var(--radius-xl)] cursor-pointer tap pop-in overflow-hidden bg-[var(--color-surface)] border border-[var(--color-line)] shadow-[var(--shadow-sm)] hover:border-[var(--color-brand-lime)] hover:shadow-[var(--shadow-md)] active:scale-[0.97] transition-all duration-200">
-          <span className="tile bg-[var(--color-brand-soft)] text-[var(--color-brand)] group-hover:scale-110 transition-transform duration-300">
+        <label className="group flex min-h-12 items-center gap-3 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-sm)] transition-all duration-200 hover:border-[var(--color-brand)] hover:bg-[var(--color-brand-pale)] hover:shadow-[var(--shadow-md)] active:scale-[0.98] sm:min-h-[88px] sm:p-4 tap pop-in">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--color-brand-soft)] text-[var(--color-brand)] transition-transform duration-300 group-hover:scale-105 sm:h-11 sm:w-11">
             <IconImage size={22} />
           </span>
-          <span className="font-semibold md:text-lg text-[var(--color-ink)]">
-            อัปโหลด
+          <span className="min-w-0 text-left">
+            <span className="block font-semibold text-[var(--color-ink)]">
+              เลือกรูปจากเครื่อง
+            </span>
+            <span className="mt-0.5 hidden text-xs text-[var(--color-muted)] sm:block">
+              ใช้รูปที่ถ่ายไว้แล้ว
+            </span>
           </span>
           <input
             type="file"
@@ -131,6 +186,27 @@ export function HomeView({
           />
         </label>
       </div>
+
+      {/* Quick-cook favorite */}
+      {topFavorite && (
+        <div className="card-glass hidden p-4 md:flex md:items-center md:justify-between md:gap-3 slide-up">
+          <div className="min-w-0">
+            <p className="text-xs text-[var(--color-favorite)] font-medium mb-1 flex items-center gap-1">
+              <IconHeart size={12} filled />
+              ทำเมนูโปรดอีกครั้ง
+            </p>
+            <p className="font-semibold text-[var(--color-ink)] truncate">
+              {topFavorite.name}
+            </p>
+          </div>
+          <button
+            onClick={() => onQuickCookFavorite(topFavorite)}
+            className="btn-primary shrink-0 text-sm px-4 py-2.5 tap micro-bounce"
+          >
+            เริ่มทำเลย
+          </button>
+        </div>
+      )}
 
       {/* Gallery */}
       {gallery.length > 0 && (
@@ -309,9 +385,51 @@ export function HomeView({
         </div>
       )}
 
+      {selectedHistoryItems !== null && (
+        <div
+          ref={selectionReviewRef}
+          className="scroll-mt-24 rounded-[var(--radius-lg)] border border-[var(--color-brand)]/25 bg-[var(--color-brand-pale)] p-4"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-[var(--color-ink)]">
+                วัตถุดิบที่เลือกจากประวัติ
+              </p>
+              <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+                กดรายการที่ไม่ต้องการเพื่อลบออก
+              </p>
+            </div>
+            <span className="pill shrink-0 bg-white text-[var(--color-brand)]">
+              {selectedHistoryItems.length} อย่าง
+            </span>
+          </div>
+
+          {selectedHistoryItems.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {selectedHistoryItems.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => onRemoveHistoryItem(item)}
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-white px-3 text-sm font-medium text-[var(--color-ink)] shadow-[var(--shadow-xs)] transition-colors hover:border-[var(--color-danger)]/35 hover:bg-[var(--color-danger-soft)]"
+                  aria-label={`ลบ ${item}`}
+                >
+                  <span>{item}</span>
+                  <IconX size={14} className="text-[var(--color-danger)]" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 rounded-[var(--radius-md)] bg-white px-3 py-3 text-sm text-[var(--color-muted)]">
+              ลบวัตถุดิบออกหมดแล้ว เลือกชุดอื่นจากประวัติหรือสแกนใหม่ได้เลย
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Cooking mode + CTA: generate recipes */}
       {allItemsCount > 0 && (
-        <div className="space-y-3">
+        <div ref={cookingModeRef} className="scroll-mt-24 space-y-3">
           <div className="card-glass p-4 md:p-5 space-y-3">
             <p className="text-xs font-medium text-[var(--color-muted)]">
               อยากได้เมนูแนวไหน
@@ -363,43 +481,32 @@ export function HomeView({
 
       {/* History quick-start */}
       {history.length > 0 && (
-        <div className="card-glass p-4 md:p-5">
-          <p className="text-xs font-medium text-[var(--color-muted)] mb-3">
-            ทำเมนูจากวัตถุดิบเดิม
-          </p>
-          <div className="space-y-1">
+        <details className="group rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-white/70 p-2">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-[var(--radius-md)] px-3 text-sm font-medium text-[var(--color-muted)] hover:bg-[var(--color-brand-pale)] [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center gap-2">
+              <IconClock size={16} />
+              ใช้วัตถุดิบที่เคยสแกน
+            </span>
+            <span className="text-lg transition-transform group-open:rotate-45">+</span>
+          </summary>
+          <div className="mt-1 space-y-1 border-t border-[var(--color-line)] pt-2">
             {history.slice(0, 5).map((h) => (
               <button
                 key={h.id}
-                onClick={() => onQuickStartHistory(h.items)}
-                className="btn-ghost w-full flex items-center gap-2 text-left text-sm px-3 py-3 rounded-[var(--radius-md)] hover:bg-[var(--color-brand-pale)] tap"
+                onClick={() => selectHistoryIngredients(h.items)}
+                className="btn-ghost w-full justify-start gap-2 rounded-[var(--radius-md)] px-3 py-3 text-left text-sm hover:bg-[var(--color-brand-pale)] tap"
               >
                 <IconClock size={14} className="shrink-0 opacity-60" />
                 <span className="truncate">{h.items.join(", ")}</span>
+                <span className="ml-auto shrink-0 text-[11px] font-semibold text-[var(--color-brand)]">
+                  เลือกชุดนี้
+                </span>
               </button>
             ))}
           </div>
-        </div>
+        </details>
       )}
 
-      {/* View saved recipes */}
-      {hasRecipes && (
-        <button
-          onClick={onViewRecipes}
-          className="btn-secondary w-full py-3.5 md:py-4 tap"
-        >
-          ดูเมนูที่แนะนำแล้ว
-        </button>
-      )}
-
-      {/* Empty state */}
-      {gallery.length === 0 && allItemsCount === 0 && (
-        <EmptyState
-          icon="🥬"
-          title="เริ่มสแกนวัตถุดิบ"
-          description="ถ่ายรูปหรืออัปโหลดรูปวัตถุดิบ ระบบจะวิเคราะห์และแนะนำสูตรอาหารให้"
-        />
-      )}
     </div>
   );
 }

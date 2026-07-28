@@ -179,14 +179,14 @@ export function EditImageView({
                     <button
                       type="button"
                       onClick={() => onEditBox(index)}
-                      className="px-3 py-2 text-xs font-medium rounded-lg bg-white shadow-sm hover:shadow-md text-[var(--color-ink)] active:scale-95 transition-all tap"
+                      className="btn-secondary min-h-10 px-3 py-1.5 text-xs tap"
                     >
                       แก้ไข
                     </button>
                     <button
                       type="button"
                       onClick={() => onRemoveBox(index)}
-                      className="px-3 py-2 text-xs font-medium rounded-lg bg-white shadow-sm hover:shadow-md text-[var(--color-danger)] active:scale-95 transition-all tap"
+                      className="btn-danger min-h-10 px-3 py-1.5 text-xs tap"
                     >
                       ลบ
                     </button>
@@ -203,7 +203,7 @@ export function EditImageView({
         disabled={invalidCount > 0}
         className="btn-primary mt-6 w-full md:max-w-xl py-4 md:py-5 font-bold tap bg-gradient-to-r from-[var(--color-brand)] to-[var(--color-brand-dark)]"
       >
-        เสร็จสิ้น
+        ยืนยันรายการวัตถุดิบ
       </button>
 
     </div>

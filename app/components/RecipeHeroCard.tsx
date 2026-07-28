@@ -117,7 +117,7 @@ export function RecipeHeroCard({
 
         <button
           onClick={() => onStartCook(recipe)}
-          className="cursor-pointer w-full py-3.5 md:py-4 bg-white text-[var(--color-brand)] rounded-[var(--radius-md)] font-bold active:scale-[0.97] transition-transform tap"
+          className="btn-inverse w-full py-3.5 md:py-4 tap"
         >
           เริ่มทำเลย
         </button>

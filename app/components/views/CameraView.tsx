@@ -6,9 +6,10 @@ import { RefObject, useState } from "react";
 interface CameraViewProps {
   videoRef: RefObject<HTMLVideoElement | null>;
   onCapture: () => void;
+  onCancel: () => void;
 }
 
-export function CameraView({ videoRef, onCapture }: CameraViewProps) {
+export function CameraView({ videoRef, onCapture, onCancel }: CameraViewProps) {
   const ring = useAnimationControls();
   const [flash, setFlash] = useState(false);
 
@@ -32,6 +33,22 @@ export function CameraView({ videoRef, onCapture }: CameraViewProps) {
 
   return (
     <div className="flex flex-col items-center gap-6 slide-up py-5 md:py-8">
+      <div className="flex w-full max-w-[540px] items-center justify-between gap-3">
+        <div>
+          <h2 className="font-bold text-[var(--color-ink)]">ถ่ายวัตถุดิบ</h2>
+          <p className="text-xs text-[var(--color-muted)]">
+            ให้เห็นวัตถุดิบชัดและไม่ซ้อนกัน
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="btn-secondary min-h-11 px-4 text-sm"
+        >
+          ยกเลิก
+        </button>
+      </div>
+
       <p className="text-sm md:text-base text-[var(--color-muted)] text-center px-4">
         จัดวัตถุดิบให้อยู่ในกรอบ แล้วกดปุ่มถ่ายรูป
       </p>
@@ -93,6 +110,9 @@ export function CameraView({ videoRef, onCapture }: CameraViewProps) {
         />
         <div className="w-12 h-12 md:w-14 md:h-14 bg-[var(--color-brand)] rounded-full transition-transform" />
       </button>
+      <p className="-mt-3 text-xs font-medium text-[var(--color-muted)]">
+        แตะปุ่มเพื่อถ่าย
+      </p>
     </div>
   );
 }

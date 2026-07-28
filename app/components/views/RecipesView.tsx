@@ -9,6 +9,7 @@ interface RecipesViewProps {
   imageGenPending?: boolean;
   onFavoriteChange: () => void;
   onStartCook: (recipe: Recipe) => void;
+  onStartScan: () => void;
 }
 
 export function RecipesView({
@@ -16,6 +17,7 @@ export function RecipesView({
   imageGenPending = false,
   onFavoriteChange,
   onStartCook,
+  onStartScan,
 }: RecipesViewProps) {
   if (recipes.length === 0) {
     return (
@@ -23,6 +25,11 @@ export function RecipesView({
         icon="🍜"
         title="ยังไม่มีเมนู"
         description="กลับไปสแกนวัตถุดิบเพื่อให้ AI แนะนำสูตรอาหาร"
+        action={
+          <button type="button" onClick={onStartScan} className="btn-primary">
+            สแกนวัตถุดิบ
+          </button>
+        }
       />
     );
   }

@@ -292,7 +292,7 @@ export default function Settings({ onBack }: SettingProps) {
           sticky ไม่ใช่ fixed — fixed จะไปอิงกับ ViewTransition ที่มี transform
           ระหว่างสลับหน้า แล้วแถบจะหลุดตำแหน่ง ส่วน sticky อิง scroll container ตามปกติ
           bottom-20 บนมือถือเว้นที่ให้ bottom nav, จอใหญ่ไม่มี nav เลยชิดขอบได้ */}
-      <div className="sticky bottom-20 md:bottom-4 z-20 pt-1">
+      <div className="sticky bottom-4 z-20 pt-1">
         <AnimatePresence>
           {isDirty && (
             <motion.div

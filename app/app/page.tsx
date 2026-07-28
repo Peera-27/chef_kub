@@ -51,6 +51,8 @@ export default function Home() {
     removeImage,
     handleInventRecipe,
     quickStartFromHistory,
+    selectedHistoryItems,
+    removeHistoryIngredient,
     quickCookFavorite,
     handlePointerDown,
     handlePointerMove,
@@ -71,10 +73,6 @@ export default function Home() {
     handleEditImageMetrics,
   } = useChefKub();
 
-  const showBottomNav = ["home", "recipes", "favorites", "settings"].includes(
-    viewMode,
-  );
-
   const navItems: {
     key: "home" | "recipes" | "favorites"| "settings";
     icon: (active: boolean) => React.ReactNode;
@@ -91,7 +89,7 @@ export default function Home() {
     {
       key: "favorites",
       icon: (active) => <IconHeart size={20} filled={active} />,
-      label: "โปรด",
+      label: "รายการโปรด",
       badge: favorites.length,
     },
     {
@@ -100,6 +98,8 @@ export default function Home() {
       label: "ตั้งค่าครัว",
     },
   ];
+  const bottomNavItems = navItems.filter((item) => item.key !== "settings");
+  const showBottomNav = ["home", "recipes", "favorites"].includes(viewMode);
 
   return (
     <div className="kitchen-shell min-h-dvh bg-[var(--color-page)] text-[var(--color-ink)]">
@@ -224,13 +224,18 @@ export default function Home() {
                   }}
                   onInventRecipe={handleInventRecipe}
                   onQuickStartHistory={quickStartFromHistory}
+                  selectedHistoryItems={selectedHistoryItems}
+                  onRemoveHistoryItem={removeHistoryIngredient}
                   onQuickCookFavorite={quickCookFavorite}
-                  onViewRecipes={() => setViewMode("recipes")}
                 />
               )}
 
               {viewMode === "camera" && (
-                <CameraView videoRef={videoRef} onCapture={capturePhoto} />
+                <CameraView
+                  videoRef={videoRef}
+                  onCapture={capturePhoto}
+                  onCancel={goHome}
+                />
               )}
 
               {viewMode === "edit" && editingImage && (
@@ -253,6 +258,7 @@ export default function Home() {
                   imageGenPending={imageGenPending}
                   onFavoriteChange={refreshFavorites}
                   onStartCook={startCook}
+                  onStartScan={startCamera}
                 />
               )}
 
@@ -269,6 +275,7 @@ export default function Home() {
                   favorites={favorites}
                   onFavoriteChange={refreshFavorites}
                   onStartCook={startCook}
+                  onStartScan={startCamera}
                 />
               )}
               {viewMode === "settings" && (
@@ -284,42 +291,39 @@ export default function Home() {
       {/* ===== Mobile layout (<768px): top bar + bottom nav ===== */}
       <div className="md:hidden min-h-dvh flex flex-col">
         {/* Mobile header */}
-        {viewMode !== "camera" && (
-          <header className="sticky top-0 z-30 bg-[var(--color-surface)]/90 backdrop-blur-md px-5 pt-5 pb-3 safe-top border-b border-[var(--color-line)] wood-edge">
+        {!["camera", "cook"].includes(viewMode) && (
+          <header className="mobile-header-safe sticky top-0 z-30 border-b border-[var(--color-line)] bg-[var(--color-surface)]/92 px-4 pb-2 backdrop-blur-md">
             <div className="flex justify-between items-center">
               {/* กดโลโก้เพื่อกลับหน้าแนะนำ */}
               <Link
                 href="/"
-                className="rounded-[var(--radius-sm)] transition-opacity hover:opacity-80 tap"
+                className="tap flex min-h-11 items-center gap-2 rounded-[var(--radius-sm)] transition-opacity hover:opacity-80"
+                aria-label="กลับหน้าหลักของเว็บไซต์"
               >
-                <h1 className="text-xl font-bold text-gradient-brand tracking-tight leading-none">
+                <Image
+                  src="/mascot.png"
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 object-contain"
+                  priority
+                />
+                <h1 className="text-lg font-bold text-gradient-brand tracking-tight leading-none">
                   Chef Kub
                 </h1>
-                <p className="text-[11px] text-[var(--color-muted)] mt-0.5">
-                  สแกนแล้วเริ่มทำได้เลย
-                </p>
               </Link>
               <div className="flex items-center gap-2">
-                {favorites.length > 0 && viewMode === "home" && (
-                  <button
-                    onClick={() => setViewMode("favorites")}
-                    className="pill bg-[var(--color-favorite-soft)] text-[var(--color-favorite)] flex items-center gap-1 tap"
-                  >
-                    <IconHeart size={12} filled />
-                    {favorites.length}
-                  </button>
-                )}
-
                 {viewMode === "home" &&(
                   <button
-                  onClick={()=> setViewMode("settings")}
-                  className ="btn-secondary text-xs px-3 py-1.5 tap"
+                    onClick={() => setViewMode("settings")}
+                    className="icon-btn h-11 w-11 border border-[var(--color-line)] bg-white text-[var(--color-brand)] shadow-[var(--shadow-xs)]"
+                    aria-label="ตั้งค่าครัว"
                   >
-                    ตั้งค่า
+                    <IconSettings size={19} />
                   </button>
                 )}
 
-                {viewMode !== "home" && (
+                {["edit", "settings"].includes(viewMode) && (
                   <button
                     onClick={goHome}
                     className="btn-secondary text-xs px-3 py-1.5 tap"
@@ -333,7 +337,10 @@ export default function Home() {
         )}
 
         {/* Mobile content */}
-        <ViewTransition viewKey={viewMode} className="flex-1 px-5 pb-24">
+        <ViewTransition
+          viewKey={viewMode}
+          className={`flex-1 px-4 pt-4 ${showBottomNav ? "pb-24" : "pb-8"}`}
+        >
           {viewMode === "home" && (
             <HomeView
               gallery={gallery}
@@ -353,13 +360,18 @@ export default function Home() {
               }}
               onInventRecipe={handleInventRecipe}
               onQuickStartHistory={quickStartFromHistory}
+              selectedHistoryItems={selectedHistoryItems}
+              onRemoveHistoryItem={removeHistoryIngredient}
               onQuickCookFavorite={quickCookFavorite}
-              onViewRecipes={() => setViewMode("recipes")}
             />
           )}
 
           {viewMode === "camera" && (
-            <CameraView videoRef={videoRef} onCapture={capturePhoto} />
+            <CameraView
+              videoRef={videoRef}
+              onCapture={capturePhoto}
+              onCancel={goHome}
+            />
           )}
 
           {viewMode === "edit" && editingImage && (
@@ -382,6 +394,7 @@ export default function Home() {
               imageGenPending={imageGenPending}
               onFavoriteChange={refreshFavorites}
               onStartCook={startCook}
+              onStartScan={startCamera}
             />
           )}
 
@@ -398,6 +411,7 @@ export default function Home() {
               favorites={favorites}
               onFavoriteChange={refreshFavorites}
               onStartCook={startCook}
+              onStartScan={startCamera}
             />
           )}
           {viewMode === "settings" && (
@@ -436,24 +450,24 @@ export default function Home() {
                 className="absolute top-0 left-0 h-1 rounded-b-full bg-[var(--color-brand)] transition-transform duration-300 ease-out"
                 style={{
                   // อิงจำนวนแท็บจริง ไม่ fix เป็น 1/3 ไว้ เพิ่มแท็บทีหลังจะได้ไม่เพี้ยน
-                  width: `${100 / navItems.length}%`,
+                  width: `${100 / bottomNavItems.length}%`,
                   transform: `translateX(${
                     Math.max(
                       0,
-                      navItems.findIndex((i) => i.key === viewMode),
+                      bottomNavItems.findIndex((i) => i.key === viewMode),
                     ) * 100
                   }%)`,
                 }}
                 aria-hidden
               />
-              {navItems.map((item) => {
+              {bottomNavItems.map((item) => {
                 const isActive = viewMode === item.key;
                 return (
                   <motion.button
                     key={item.key}
                     onClick={() => setViewMode(item.key)}
                     whileTap={{ scale: 0.9 }}
-                    className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 tap transition-colors relative ${
+                    className={`flex-1 flex flex-col items-center gap-0.5 py-2 tap transition-colors relative ${
                       isActive
                         ? "text-[var(--color-brand)]"
                         : "text-[var(--color-muted)]"
