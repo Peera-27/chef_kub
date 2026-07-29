@@ -25,6 +25,8 @@ interface HomeViewProps {
   onCookingModeChange: (mode: CookingMode) => void;
   onStartCamera: () => void;
   onUploadImage: (base64: string) => void;
+  /** ยิงตอนผู้ใช้ส่อแววว่าจะอัปโหลด เพื่อให้โมเดลเริ่มโหลดคู่ขนานกับที่เขาหารูป */
+  onPrepareScan: () => void;
   onRemoveImage: (imageId: string) => void;
   onRemoveItem: (imageId: string, itemName: string) => void;
   onEditImage: (image: ImageItem) => void;
@@ -45,6 +47,7 @@ export function HomeView({
   onCookingModeChange,
   onStartCamera,
   onUploadImage,
+  onPrepareScan,
   onRemoveImage,
   onRemoveItem,
   onEditImage,
@@ -157,7 +160,12 @@ export function HomeView({
             </span>
           </span>
         </button>
-        <label className="group flex min-h-12 items-center gap-3 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-sm)] transition-all duration-200 hover:border-[var(--color-brand)] hover:bg-[var(--color-brand-pale)] hover:shadow-[var(--shadow-md)] active:scale-[0.98] sm:min-h-[88px] sm:p-4 tap pop-in">
+        {/* onClick มาก่อนที่ไดอะล็อกเลือกไฟล์จะเปิด — โมเดลจึงโหลดคู่ขนานไปกับที่ผู้ใช้ไล่หารูป
+            (ใช้ onClick ไม่ใช่ onPointerDown เพราะแค่เอานิ้วแตะเพื่อเลื่อนหน้าจอไม่ควรดึง 11MB) */}
+        <label
+          onClick={onPrepareScan}
+          className="group flex min-h-12 items-center gap-3 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-sm)] transition-all duration-200 hover:border-[var(--color-brand)] hover:bg-[var(--color-brand-pale)] hover:shadow-[var(--shadow-md)] active:scale-[0.98] sm:min-h-[88px] sm:p-4 tap pop-in"
+        >
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--color-brand-soft)] text-[var(--color-brand)] transition-transform duration-300 group-hover:scale-105 sm:h-11 sm:w-11">
             <IconImage size={22} />
           </span>

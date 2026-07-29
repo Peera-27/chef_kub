@@ -1,19 +1,44 @@
 "use client";
 
 import { AnimatePresence, motion, useAnimationControls } from "motion/react";
-import { RefObject, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface CameraViewProps {
-  videoRef: RefObject<HTMLVideoElement | null>;
-  onCapture: () => void;
+  stream: MediaStream | null;
+  onCapture: (video: HTMLVideoElement) => void;
   onCancel: () => void;
 }
 
-export function CameraView({ videoRef, onCapture, onCancel }: CameraViewProps) {
+export function CameraView({ stream, onCapture, onCancel }: CameraViewProps) {
   const ring = useAnimationControls();
   const [flash, setFlash] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  /* ต่อ stream จากในคอมโพเนนต์นี้เอง ไม่ใช่จาก hook ข้างนอก
+     เพราะ ViewTransition ใช้ mode="wait" — หน้านี้ mount ช้ากว่าที่กด "สแกน" ราว 150ms
+     ถ้ารอบสองที่ permission ผ่านแล้ว getUserMedia resolve เร็วกว่านั้น
+     effect ข้างนอกจะวิ่งตอน <video> ยังไม่เกิด แล้วไม่มีใครวิ่งซ้ำ = จอดำ
+     ส่วน effect ในนี้การันตีว่าได้ element แน่นอน ไม่ว่า stream จะมาก่อนหรือหลัง mount */
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !stream) return;
+
+    video.srcObject = stream;
+    void video.play().catch(() => {
+      // `autoPlay` ปกติจัดการให้อยู่แล้ว บางเบราว์เซอร์บนมือถือต้องสั่ง play เอง
+      // และจะไปเริ่มเล่นเองหลังผู้ใช้แตะหน้าจอครั้งถัดไป
+    });
+
+    return () => {
+      if (video.srcObject === stream) video.srcObject = null;
+    };
+  }, [stream]);
 
   const handleCapture = () => {
+    const video = videoRef.current;
+    // เฟรมแรกยังไม่มา = ยังไม่มีอะไรให้ถ่าย กันภาพ 0x0 หลุดไปเข้าโมเดล
+    if (!video || !video.videoWidth) return;
+
     /* สั่งริปเปิลด้วย JS ไม่ใช่ `active:` ของ Tailwind
        เพราะคลาสจาก :active จะหลุดทันทีที่ปล่อยนิ้ว อนิเมชัน 0.6s เลยโดนตัดกลางคัน
        แตะเร็ว ๆ จะเห็นแค่เสี้ยวเดียว เท่ากับแทบไม่มีผลตอบรับให้เห็นเลย */
@@ -28,7 +53,7 @@ export function CameraView({ videoRef, onCapture, onCancel }: CameraViewProps) {
     setFlash(true);
     window.setTimeout(() => setFlash(false), 160);
 
-    onCapture();
+    onCapture(video);
   };
 
   return (

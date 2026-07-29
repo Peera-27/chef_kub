@@ -43,10 +43,11 @@ export default function Home() {
     setCookingMode,
     editingImage,
     setEditingImage,
-    videoRef,
+    cameraStream,
     startCamera,
     capturePhoto,
     processImage,
+    prefetchScanner,
     removeItem,
     removeImage,
     handleInventRecipe,
@@ -216,6 +217,7 @@ export default function Home() {
                   onCookingModeChange={setCookingMode}
                   onStartCamera={startCamera}
                   onUploadImage={processImage}
+                  onPrepareScan={prefetchScanner}
                   onRemoveImage={removeImage}
                   onRemoveItem={removeItem}
                   onEditImage={(img) => {
@@ -232,7 +234,7 @@ export default function Home() {
 
               {viewMode === "camera" && (
                 <CameraView
-                  videoRef={videoRef}
+                  stream={cameraStream}
                   onCapture={capturePhoto}
                   onCancel={goHome}
                 />
@@ -352,6 +354,7 @@ export default function Home() {
               onCookingModeChange={setCookingMode}
               onStartCamera={startCamera}
               onUploadImage={processImage}
+              onPrepareScan={prefetchScanner}
               onRemoveImage={removeImage}
               onRemoveItem={removeItem}
               onEditImage={(img) => {
@@ -368,7 +371,7 @@ export default function Home() {
 
           {viewMode === "camera" && (
             <CameraView
-              videoRef={videoRef}
+              stream={cameraStream}
               onCapture={capturePhoto}
               onCancel={goHome}
             />

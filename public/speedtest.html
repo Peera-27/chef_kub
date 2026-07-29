@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Chef Kub — วัดเวลาโหลดโมเดล</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #fff;
+        --fg: #1a1a1a;
+        --muted: #6b7280;
+        --line: #e5e7eb;
+        --accent: #ea580c;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #111;
+          --fg: #f3f4f6;
+          --muted: #9ca3af;
+          --line: #2f2f2f;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 20px 16px 60px;
+        background: var(--bg);
+        color: var(--fg);
+        font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      h1 { font-size: 19px; margin: 0 0 4px; }
+      p.sub { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
+      button {
+        width: 100%;
+        padding: 14px;
+        font: 600 16px system-ui, sans-serif;
+        color: #fff;
+        background: var(--accent);
+        border: 0;
+        border-radius: 12px;
+      }
+      button:disabled { opacity: 0.5; }
+      #env {
+        margin: 16px 0;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+      th, td { padding: 8px 6px; text-align: right; border-bottom: 1px solid var(--line); }
+      th:first-child, td:first-child { text-align: left; }
+      th { color: var(--muted); font-weight: 600; font-size: 12px; }
+      td.win { color: var(--accent); font-weight: 700; }
+      #log { margin-top: 14px; font-size: 13px; color: var(--muted); min-height: 20px; }
+      .note { margin-top: 24px; font-size: 12px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <h1>วัดเวลาโหลดโมเดล YOLO</h1>
+    <p class="sub">
+      โหลด v1 (float32 · 10.8MB) กับ v2 (float16 · 5.4MB) จากเซิร์ฟเวอร์จริง
+      แล้วจับเวลาเทียบกัน — เลียนแบบลำดับที่ tfjs โหลดจริง คือดึง model.json ก่อน
+      แล้วค่อยดึง shard ทั้งหมดพร้อมกัน
+    </p>
+
+    <button id="run">เริ่มวัด (1 รอบ)</button>
+    <div id="env"></div>
+    <div id="log"></div>
+    <table id="results" hidden>
+      <thead>
+        <tr>
+          <th>รอบ</th>
+          <th>v1 (10.8MB)</th>
+          <th>v2 (5.4MB)</th>
+          <th>เร็วขึ้น</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <p class="note">
+      หน้านี้ใช้ <code>cache: "reload"</code> บังคับโหลดใหม่ทุกครั้ง ไม่กินของในแคช
+      ตัวเลขจึงเป็นเวลา "ครั้งแรก" ที่ผู้ใช้ใหม่เจอจริง ๆ<br /><br />
+      แต่ละรอบสลับลำดับ v1/v2 เพื่อหักล้างข้อได้เปรียบของตัวที่โหลดทีหลัง
+      (TCP/TLS อุ่นแล้ว) — กดหลาย ๆ รอบแล้วดูค่ากลาง อย่าเชื่อรอบเดียว เน็ตมือถือแกว่งเยอะ<br /><br />
+      <b>ข้อควรระวัง:</b> <code>reload</code> เขียนผลลงแคชด้วย ฉะนั้นหลังวัดเสร็จ
+      ถ้าเข้าแอปต่อทันทีจะได้โมเดลจากแคชไปเลย ไม่ใช่ประสบการณ์ของผู้ใช้ใหม่ —
+      จะเทสแอปแบบเปิดครั้งแรกต้องล้าง site data หรือเปิดแท็บส่วนตัวก่อน
+    </p>
+
+    <script>
+      const env = document.getElementById("env");
+      const log = document.getElementById("log");
+      const table = document.getElementById("results");
+      const tbody = table.querySelector("tbody");
+      const runButton = document.getElementById("run");
+      let round = 0;
+
+      const conn = navigator.connection;
+      env.textContent = conn
+        ? `เน็ต: ${conn.effectiveType ?? "?"} · downlink ~${conn.downlink ?? "?"} Mbps · RTT ${conn.rtt ?? "?"}ms${conn.saveData ? " · โหมดประหยัดดาต้า" : ""}`
+        : "เบราว์เซอร์นี้ไม่บอกข้อมูลการเชื่อมต่อ (Safari ไม่รองรับ navigator.connection)";
+
+      /** โหลดทั้งชุดแบบเดียวกับที่ tfjs ทำ แล้วคืนเวลารวมกับจำนวนไบต์ที่ได้จริง */
+      async function loadModel(version) {
+        const base = `/model/${version}`;
+        const started = performance.now();
+
+        const manifestResponse = await fetch(`${base}/model.json`, { cache: "reload" });
+        if (!manifestResponse.ok) {
+          throw new Error(`${version}/model.json → HTTP ${manifestResponse.status}`);
+        }
+        const manifestText = await manifestResponse.text();
+        const manifest = JSON.parse(manifestText);
+
+        // tfjs ยิง shard พร้อมกันทั้งหมด ไม่ได้ไล่ทีละไฟล์ — ต้องวัดแบบเดียวกัน
+        const paths = manifest.weightsManifest.flatMap((group) => group.paths);
+        const shards = await Promise.all(
+          paths.map(async (path) => {
+            const response = await fetch(`${base}/${path}`, { cache: "reload" });
+            if (!response.ok) throw new Error(`${path} → HTTP ${response.status}`);
+            return response.arrayBuffer();
+          }),
+        );
+
+        const ms = performance.now() - started;
+        const bytes =
+          manifestText.length + shards.reduce((acc, buf) => acc + buf.byteLength, 0);
+        return { ms: Math.round(ms), bytes, files: paths.length + 1 };
+      }
+
+      function format(result) {
+        const seconds = (result.ms / 1000).toFixed(2);
+        const mbps = ((result.bytes * 8) / result.ms / 1000).toFixed(1);
+        return `${seconds}s<br /><span style="font-size:11px;opacity:.7">${mbps} Mbps</span>`;
+      }
+
+      runButton.addEventListener("click", async () => {
+        runButton.disabled = true;
+        round++;
+        log.textContent = `รอบ ${round}: กำลังโหลด...`;
+
+        try {
+          /* สลับลำดับตามรอบคู่/คี่ — ตัวที่โหลดทีหลังได้เปรียบเพราะ connection อุ่นแล้ว
+             ถ้าไม่สลับ ผลจะเอียงเข้าข้างตัวใดตัวหนึ่งตลอด */
+          const v1First = round % 2 === 1;
+          let v1, v2;
+          if (v1First) {
+            v1 = await loadModel("v1");
+            v2 = await loadModel("v2");
+          } else {
+            v2 = await loadModel("v2");
+            v1 = await loadModel("v1");
+          }
+
+          const faster = (v1.ms / v2.ms).toFixed(2);
+          const row = document.createElement("tr");
+          row.innerHTML =
+            `<td>${round}<br /><span style="font-size:11px;opacity:.7">${v1First ? "v1→v2" : "v2→v1"}</span></td>` +
+            `<td>${format(v1)}</td>` +
+            `<td>${format(v2)}</td>` +
+            `<td class="win">${faster}×</td>`;
+          tbody.appendChild(row);
+          table.hidden = false;
+          log.textContent = `รอบ ${round}: v1 ${v1.files} ไฟล์ / v2 ${v2.files} ไฟล์ — เสร็จแล้ว`;
+        } catch (error) {
+          log.textContent = `พัง: ${error.message}`;
+        } finally {
+          runButton.disabled = false;
+          runButton.textContent = `วัดอีกรอบ (รอบที่ ${round + 1})`;
+        }
+      });
+    </script>
+  </body>
+</html>

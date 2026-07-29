@@ -10,9 +10,19 @@
 
 ---
 
-โปรเจกต์จบที่ใช้ **🧠 Computer Vision + ✨ Generative AI** ช่วยผู้ใช้สแกนวัตถุดิบจากรูปภาพ แนะนำสูตรอาหาร และจำ label ที่ผู้ใช้เคยแก้ไว้ใน Cloudflare D1 — เจอรูปเดิมหรือรูปที่**คล้ายกัน**ก็โหลด label เดิมได้ทันทีโดยไม่ต้องสแกนซ้ำ
+โปรเจกต์จบที่ใช้ **🧠 Computer Vision + ✨ Generative AI** ช่วยผู้ใช้สแกนวัตถุดิบจากรูปภาพ แนะนำสูตรอาหาร แล้วพาทำทีละขั้นตอน — พร้อมจำ label ที่ผู้ใช้เคยแก้ไว้ เจอรูปเดิมหรือรูปที่**คล้ายกัน**ก็โหลด label เดิมได้ทันทีโดยไม่ต้องสแกนซ้ำ
 
-การตรวจจับใช้ **⚡ YOLO เดาในเบราว์เซอร์ แล้วให้ 🔮 Gemini เป็นคนตัดสินสุดท้าย** — YOLO เร็วแต่ "มั่นใจแต่มั่ว" ได้ Gemini จึงยืนยันของที่เดาถูก เติมของที่ YOLO พลาด และปัดรูปที่ไม่ใช่วัตถุดิบทิ้งตั้งแต่ต้นทาง
+## 🧩 แนวคิดหลัก: YOLO เดา Gemini ตัดสิน
+
+| | YOLO11n (ในเบราว์เซอร์) | Gemini (บนเซิร์ฟเวอร์) |
+|---|---|---|
+| ข้อดี | เร็ว ฟรี ได้ **กรอบพิกัด** | เข้าใจภาพจริง รู้จักของนอก class |
+| ข้อเสีย | รู้จักแค่ ~122 class "มั่นใจแต่มั่ว" ได้ | ช้ากว่า มีโควตา ไม่คืนพิกัด |
+
+เอาสองอย่างมาต่อกัน: **YOLO เดาก่อนเพื่อให้ได้กรอบ → Gemini ดูรูปจริงแล้วตัดสิน** ว่ากรอบไหนถูก
+กรอบที่ Gemini ไม่ยืนยัน = ของมั่ว ตัดทิ้ง / ของที่ YOLO พลาด Gemini เติมให้ / รูปที่ไม่ใช่วัตถุดิบถูกปัดตั้งแต่ต้นทาง
+
+ผลลัพธ์ที่ผู้ใช้แก้ไว้ถูกเก็บเป็น dataset ใน D1 + R2 เพื่อเอาไป train YOLO รอบต่อไป — ยิ่งใช้ YOLO ยิ่งแม่น เรียก Gemini น้อยลง
 
 ## 📸 หน้าตาแอป
 
@@ -33,13 +43,14 @@
 </table>
 </div>
 
-## ✨ ฟีเจอร์หลัก
+## ✨ ฟีเจอร์
 
 ### 🔍 สแกน & ตรวจจับ
 
 | ฟีเจอร์ | รายละเอียด |
 |---------|------------|
-| 📷 ตรวจจับวัตถุดิบ (YOLO) | YOLO11n (~122 class) รันในเบราว์เซอร์ด้วย TensorFlow.js — โหลดโมเดลแบบ lazy ตอนกดสแกนจริงเท่านั้น |
+| 📷 ตรวจจับวัตถุดิบ (YOLO) | YOLO11n (~122 class) รันในเบราว์เซอร์ด้วย TensorFlow.js — น้ำหนัก float16 5.4MB โหลดแบบ lazy |
+| ⚡ Prefetch โมเดล | เริ่มดึงน้ำหนักตั้งแต่ผู้ใช้ "ส่อแวว" ว่าจะสแกน (กดเปิดกล้อง / กดเลือกไฟล์) ไม่ใช่ตอนกดชัตเตอร์ |
 | 🔮 ตัดสินด้วย Gemini | Gemini ดูรูปจริง ยืนยันของที่ YOLO เดาถูก + เติมของที่ YOLO พลาด (source: `yolo` / `gemini` / `manual`) |
 | 🚧 ด่านกันรูปที่ใช้ไม่ได้ | Gemini ตอบ `foodImage` / `preparedDish` มาด้วย — รูปที่ไม่มีของกิน (`not_food`) หรือเป็นจานที่ทำเสร็จแล้ว (`prepared_dish`) จะถูกปฏิเสธพร้อมบอกเหตุผลใน `NoticeModal` |
 | 🗜️ ย่อรูปก่อนส่ง | รูปจากกล้องมือถือย่อเหลือด้านยาว 1024px / JPEG 0.85 ก่อนเข้า server action (`downscaleImage`) |
@@ -56,7 +67,7 @@
 | 🍜 สร้างสูตรอาหาร | Gemini สร้าง 3 เมนู (สำหรับ 1 ที่) จากวัตถุดิบที่มี เรียงจากเมนูที่เสร็จเร็วที่สุด |
 | 🔧 คิดตามอุปกรณ์ที่มีจริง | ส่งรายการอุปกรณ์ครัวที่ผู้ใช้ตั้งไว้เข้า prompt — ไม่สั่งให้อบถ้าไม่มีเตาอบ |
 | 🎭 โหมดทำอาหาร | ปกติ / ฟิวชั่น / จากอนิเมะ — แต่ละโหมดปรับสไตล์เมนู + สไตล์รูป |
-| 🖼️ รูปประกอบเมนู | Cloudflare Workers AI (`flux-1-schnell`) สร้างรูปเมนูใบเด่นกับตอนลงมือทำ แล้วแคชไว้ใน R2 ใช้ซ้ำได้ตลอด |
+| 🖼️ รูปประกอบเมนู | Cloudflare Workers AI (`flux-1-schnell`) สร้างรูปเมนู แล้วแคชไว้ใน R2 ใช้ซ้ำได้ตลอด |
 | ⭐ รายการโปรด / ประวัติ | เก็บใน localStorage |
 
 ### 👨‍🍳 โหมดทำครัว
@@ -102,12 +113,13 @@
 ## 🔄 Flow สแกนรูป
 
 ```
+กดเปิดกล้อง / กดเลือกไฟล์ → เริ่มโหลดโมเดลคู่ขนาน (prefetch, ไม่มีใครรอ)
 อัปรูป → ย่อเหลือด้านยาว 1024px
   → แคชใน memory? → แสดงทันที
   → hash รูป (SHA-256 + dHash)
       → เจอเป๊ะใน DB? → โหลด label (ข้ามการตรวจจับ)
       → เจอรูปคล้ายกัน (Hamming ≤ 8)? → โหลด label เดิม (ข้ามการตรวจจับ)
-  → ไม่เจอ → โหลดโมเดล YOLO (ครั้งแรกเท่านั้น) → เดาในเบราว์เซอร์
+  → ไม่เจอ → ใช้โมเดลที่ prefetch ไว้ (หรือรอโหลดถ้ายังไม่เสร็จ) → เดาในเบราว์เซอร์
       → ส่ง label ที่เดา + รูป ให้ Gemini ตัดสิน
       → ไม่ใช่รูปของกิน / เป็นจานที่ทำเสร็จแล้ว → ปฏิเสธรูป บอกเหตุผลผู้ใช้
       → Gemini คืน confirmed (ของที่ YOLO เดาถูก) + added (ของที่ YOLO พลาด)
@@ -121,7 +133,7 @@
 ## 🧰 Tech Stack
 
 - ⚛️ **Frontend:** Next.js 16, React 19, Tailwind CSS 4, Motion (`motion/react`)
-- 🎯 **Object Detection:** YOLO11n → TensorFlow.js Graph Model (`public/model/v1/`) โหลดแบบ dynamic import
+- 🎯 **Object Detection:** YOLO11n → TensorFlow.js Graph Model (`public/model/v2/`, float16) โหลดแบบ dynamic import
 - 🔮 **AI ตัดสินภาพ + สร้างสูตร:** Google Gemini (`gemini-3.1-flash-lite`)
 - 🗄️ **Database:** Cloudflare D1 (SQLite) — label memory + แคชรูปเมนู + ตัวนับ rate limit
 - 🪣 **Object Storage:** Cloudflare R2 — รูป training + รูปเมนูที่ gen แล้ว
@@ -130,72 +142,7 @@
 - 🚀 **Runtime/Deploy:** Bun + `@opennextjs/cloudflare` → Cloudflare Workers (`wrangler.jsonc`)
 - 🧪 **Test:** `bun test` (`tests/utils.test.ts`)
 
-## 📁 โครงสร้างโปรเจกต์
-
-```
-app/
-├── actions/                    # Server Actions (ทุกตัวผ่าน rate limit ก่อนแตะโมเดล)
-│   ├── detectIngredients.ts    # Gemini ตัดสินภาพ + ด่านกันรูปที่ไม่ใช่วัตถุดิบ
-│   ├── generateRecipe.ts       # Gemini สร้างสูตร (ตามโหมด + อุปกรณ์ครัวที่มี)
-│   ├── generateRecipeImage.ts  # Workers AI สร้างรูปเมนู — เอาจากแคชก่อนเสมอ
-│   ├── getCachedRecipeImages.ts # ถามทีเดียวว่าเมนูไหนมีรูปในแคชแล้วบ้าง
-│   ├── saveLabeledImage.ts     # บันทึก hash + annotations ลง D1, อัพรูปขึ้น R2
-│   ├── getLabeledImage.ts      # หา label จากรูปเดิม (SHA-256) หรือรูปคล้าย (dHash)
-│   └── classes.ts              # รายการ class + เพิ่มชื่อใหม่ (seed จาก labelsTh.ts)
-├── hooks/
-│   ├── useChefKub.ts           # state หลักของแอป
-│   ├── useYoloModel.ts         # โหลดโมเดล YOLO แบบ lazy (เก็บ promise กันโหลดซ้ำ)
-│   ├── useWakeLock.ts          # กันจอดับระหว่างทำอาหาร
-│   └── useHeartPop.ts          # animation ตอนกดหัวใจ
-├── components/
-│   ├── LabelPickerModal.tsx    # เลือก/เพิ่มชื่อวัตถุดิบ (+ ยืนยันเมื่อชื่อคล้ายของเดิม)
-│   ├── NoticeModal.tsx         # แจ้งเตือนในแอปแทน alert()
-│   ├── StepTimer.tsx           # จับเวลาขั้นตอนทำอาหาร
-│   ├── RatingStars.tsx         # ให้ดาวเมนูที่ทำเสร็จ
-│   ├── ShareSheet.tsx          # แชร์สูตร (ข้อความ / การ์ดรูป)
-│   ├── Portal.tsx              # render modal นอก DOM tree หลัก
-│   ├── EmptyState.tsx / Icons.tsx / LoadingOverlay.tsx
-│   ├── motion/                 # Confetti, Reveal, ScrollProgress, SheetShell,
-│   │                           # ViewTransition, MotionProvider
-│   ├── RecipeCard / RecipeHeroCard / RecipeCompactCard
-│   └── views/                  # Home, Camera, Edit, Recipes, Cook, Favorites, Setting
-├── api/recipe-image/[...path]/ # เสิร์ฟรูปเมนูจาก R2 (แคช 1 ปี)
-├── lib/
-│   ├── rateLimit.ts            # fixed window ต่อ IP ต่อชั่วโมง เก็บตัวนับใน D1
-│   ├── recipeImageCache.ts     # key ของรูปเมนู + index ใน D1
-│   ├── yolo/runYoloDetection.ts
-│   └── cloudflare/
-│       ├── d1.ts               # query D1 ผ่าน REST API
-│       └── r2.ts               # อัพ/ดึงรูปจาก R2 ผ่าน REST API
-├── types/                      # recipe.ts, imageResult.ts, kitchen.ts
-└── utils/
-    ├── labels.ts / labelsTh.ts   # class ของ YOLO + คำแปลไทย (~122)
-    ├── thaiLabelOptions.ts       # รายชื่อไทยที่ใช้ seed ตาราง classes
-    ├── classRegistry.ts          # class list ฝั่ง client
-    ├── cookingModes.ts           # โหมดทำอาหาร + tag เมนู + สไตล์รูป
-    ├── downscaleImage.ts         # ย่อรูปก่อนส่งเข้า server action
-    ├── imageHash.ts              # SHA-256 (รูปเดิมเป๊ะ ๆ)
-    ├── perceptualHash.ts         # dHash 64 bit (รูปคล้ายกัน)
-    ├── normalizeLabel.ts         # normalize ชื่อ + หาชื่อที่คล้ายกัน
-    ├── mergeIngredients.ts       # รวมวัตถุดิบชื่อซ้ำจากหลายรูป
-    ├── toYoloBBox.ts             # แปลงพิกัดกรอบ (pixel ↔ YOLO normalized)
-    ├── scaleIngredient.ts        # สเกลปริมาณวัตถุดิบตามจำนวนที่
-    ├── parseStepDuration.ts      # อ่านเวลาจากข้อความขั้นตอน → ตั้ง timer
-    ├── shareRecipe.ts            # แชร์สูตรผ่าน Web Share API
-    ├── recipeCard.ts             # วาดการ์ดสูตรเป็นรูป (feed 1:1 / story 9:16)
-    ├── sessionId.ts              # id ของ session ใช้เป็น prefix key ใน R2
-    └── storage/                  # localStorage (โปรด + ประวัติ + cookLog + อุปกรณ์ครัว)
-
-tests/utils.test.ts             # unit test ของ utils ที่พังแล้วเจ็บ (bun test)
-public/model/v1/                # โมเดล YOLO (model.json + weights + metadata.yaml)
-                                # path มีเลขเวอร์ชันเพราะแคช immutable — รุ่นใหม่ต้องขึ้น v2
-public/_headers                 # Cache-Control ของไฟล์ที่ Workers Static Assets เสิร์ฟเอง
-public/shots/                   # ภาพหน้าจอที่ใช้ใน README
-wrangler.jsonc                  # ตั้งค่า Cloudflare Worker (OpenNext)
-open-next.config.ts             # adapter Next → Workers
-```
-
-## 🚀 การติดตั้ง
+## 🚀 เริ่มใช้งาน
 
 ### 1️⃣ Dependencies
 
@@ -292,13 +239,139 @@ CREATE TABLE rate_limits (
 
 > เปิดแอปครั้งแรก → ระบบ seed class จาก `labelsTh.ts` เข้าตาราง `classes` อัตโนมัติ และจะเติม label ใหม่ที่เพิ่มใน `labelsTh.ts` ให้ทุกครั้งที่โหลดรายการ class
 
-### 4️⃣ รัน Dev Server ▶️
+### 4️⃣ คำสั่งที่ใช้บ่อย ▶️
 
 ```bash
-bun dev        # http://localhost:3000
-bun test       # unit test ของ utils
+bun dev                  # http://localhost:3000
+bun test                 # unit test ของ utils
 bun run lint
+
+bun run cf:build         # build เป็น worker (OpenNext)
+bun run cf:preview       # รัน worker ในเครื่อง (อ่าน secret จาก .dev.vars)
+bun run cf:deploy        # deploy ขึ้น Cloudflare Workers
+
+bun run quantize-model public/model/v1 public/model/v2   # float32 → float16
+bun run compare-models  public/model/v1 public/model/v2  # เทียบ output ดิบสองโมเดล
+bun run export-dataset   # ดึง annotations จาก D1 ออกมาเป็น YOLO dataset
 ```
+
+> ⚠️ `export-dataset` ชี้ไปที่ `training/export-dataset.ts` ซึ่ง**ยังไม่ได้ commit เข้า repo** — ต้องเพิ่มไฟล์ก่อนถึงจะรันได้
+
+## 📁 โครงสร้างโปรเจกต์
+
+```
+app/
+├── actions/                    # Server Actions (ทุกตัวผ่าน rate limit ก่อนแตะโมเดล)
+│   ├── detectIngredients.ts    # Gemini ตัดสินภาพ + ด่านกันรูปที่ไม่ใช่วัตถุดิบ
+│   ├── generateRecipe.ts       # Gemini สร้างสูตร (ตามโหมด + อุปกรณ์ครัวที่มี)
+│   ├── generateRecipeImage.ts  # Workers AI สร้างรูปเมนู — เอาจากแคชก่อนเสมอ
+│   ├── getCachedRecipeImages.ts # ถามทีเดียวว่าเมนูไหนมีรูปในแคชแล้วบ้าง
+│   ├── saveLabeledImage.ts     # บันทึก hash + annotations ลง D1, อัพรูปขึ้น R2
+│   ├── getLabeledImage.ts      # หา label จากรูปเดิม (SHA-256) หรือรูปคล้าย (dHash)
+│   └── classes.ts              # รายการ class + เพิ่มชื่อใหม่ (seed จาก labelsTh.ts)
+├── hooks/
+│   ├── useChefKub.ts           # state หลักของแอป
+│   ├── useYoloModel.ts         # โหลด/prefetch โมเดล + เลือกเวอร์ชันน้ำหนัก
+│   ├── useWakeLock.ts          # กันจอดับระหว่างทำอาหาร
+│   └── useHeartPop.ts          # animation ตอนกดหัวใจ
+├── components/
+│   ├── LabelPickerModal.tsx    # เลือก/เพิ่มชื่อวัตถุดิบ (+ ยืนยันเมื่อชื่อคล้ายของเดิม)
+│   ├── NoticeModal.tsx         # แจ้งเตือนในแอปแทน alert()
+│   ├── StepTimer.tsx           # จับเวลาขั้นตอนทำอาหาร
+│   ├── RatingStars.tsx         # ให้ดาวเมนูที่ทำเสร็จ
+│   ├── ShareSheet.tsx          # แชร์สูตร (ข้อความ / การ์ดรูป)
+│   ├── Portal.tsx              # render modal นอก DOM tree หลัก
+│   ├── EmptyState.tsx / Icons.tsx / LoadingOverlay.tsx
+│   ├── motion/                 # Confetti, Reveal, ScrollProgress, SheetShell,
+│   │                           # ViewTransition, MotionProvider
+│   ├── RecipeCard / RecipeHeroCard / RecipeCompactCard
+│   └── views/                  # Home, Camera, Edit, Recipes, Cook, Favorites, Setting
+├── api/recipe-image/[...path]/ # เสิร์ฟรูปเมนูจาก R2 (แคช 1 ปี)
+├── lib/
+│   ├── rateLimit.ts            # fixed window ต่อ IP ต่อชั่วโมง เก็บตัวนับใน D1
+│   ├── recipeImageCache.ts     # key ของรูปเมนู + index ใน D1
+│   ├── yolo/runYoloDetection.ts
+│   └── cloudflare/
+│       ├── d1.ts               # query D1 ผ่าน REST API
+│       └── r2.ts               # อัพ/ดึงรูปจาก R2 ผ่าน REST API
+├── types/                      # recipe.ts, imageResult.ts, kitchen.ts
+└── utils/
+    ├── labels.ts / labelsTh.ts   # class ของ YOLO + คำแปลไทย (~122)
+    ├── thaiLabelOptions.ts       # รายชื่อไทยที่ใช้ seed ตาราง classes
+    ├── classRegistry.ts          # class list ฝั่ง client
+    ├── cookingModes.ts           # โหมดทำอาหาร + tag เมนู + สไตล์รูป
+    ├── downscaleImage.ts         # ย่อรูปก่อนส่งเข้า server action
+    ├── imageHash.ts              # SHA-256 (รูปเดิมเป๊ะ ๆ)
+    ├── perceptualHash.ts         # dHash 64 bit (รูปคล้ายกัน)
+    ├── normalizeLabel.ts         # normalize ชื่อ + หาชื่อที่คล้ายกัน
+    ├── mergeIngredients.ts       # รวมวัตถุดิบชื่อซ้ำจากหลายรูป
+    ├── toYoloBBox.ts             # แปลงพิกัดกรอบ (pixel ↔ YOLO normalized)
+    ├── scaleIngredient.ts        # สเกลปริมาณวัตถุดิบตามจำนวนที่
+    ├── parseStepDuration.ts      # อ่านเวลาจากข้อความขั้นตอน → ตั้ง timer
+    ├── shareRecipe.ts            # แชร์สูตรผ่าน Web Share API
+    ├── recipeCard.ts             # วาดการ์ดสูตรเป็นรูป (feed 1:1 / story 9:16)
+    ├── sessionId.ts              # id ของ session ใช้เป็น prefix key ใน R2
+    └── storage/                  # localStorage (โปรด + ประวัติ + cookLog + อุปกรณ์ครัว)
+
+scripts/
+├── quantize-model.ts           # แปลงน้ำหนัก tfjs float32 → float16
+└── compare-models.ts           # รันสองโมเดลด้วย input เดียวกันแล้วเทียบ output ดิบ
+
+tests/utils.test.ts             # unit test ของ utils ที่พังแล้วเจ็บ (bun test)
+public/model/v1/                # โมเดล YOLO float32 (10.8MB) — ตัวสำรอง
+public/model/v2/                # โมเดล YOLO float16 (5.4MB) — ตัวที่ใช้อยู่
+public/speedtest.html           # หน้าวัดเวลาโหลด v1 vs v2 บนเน็ตจริง (noindex)
+public/_headers                 # Cache-Control ของไฟล์ที่ Workers Static Assets เสิร์ฟเอง
+public/shots/                   # ภาพหน้าจอที่ใช้ใน README
+wrangler.jsonc                  # ตั้งค่า Cloudflare Worker (OpenNext)
+open-next.config.ts             # adapter Next → Workers
+```
+
+---
+
+# 🔧 เบื้องหลังการตัดสินใจ
+
+ส่วนนี้คือ "ทำไมถึงทำแบบนี้" ของจุดที่ตัดสินใจยาก — ไม่ใช่แค่มีอะไรบ้าง
+
+## 🏋️ น้ำหนักโมเดล: ทำให้ครั้งแรกไม่ทรมาน
+
+โมเดลรันในเบราว์เซอร์ แปลว่าผู้ใช้ต้องดาวน์โหลดน้ำหนักเองครั้งแรก — ต้นทุนก้อนนี้ตกอยู่กับ
+คนที่เน็ตช้าที่สุดเสมอ จึงบีบจากสองทางพร้อมกัน: **ทำให้ไฟล์เล็กลง** และ **ย้ายเวลาโหลดไปอยู่ในช่วงที่ผู้ใช้ไม่ได้รอ**
+
+### 1. ควอนไทซ์ float32 → float16 (10.8MB → 5.4MB)
+
+`scripts/quantize-model.ts` แปลงน้ำหนักของโมเดลเดิมเป็น float16 — **น้ำหนักชุดเดียวกันเป๊ะ ๆ
+แค่เก็บด้วย bit น้อยลง** ไม่ได้เทรนใหม่ ตอนโหลด `tf.io.decodeWeights` คลายกลับเป็น float32 ให้เอง
+กราฟจึงไม่รู้ตัวด้วยซ้ำว่าไฟล์ที่โหลดมาถูกบีบไว้
+
+- ไม่ใช้ `tensorflowjs_converter` เพราะมันควอนไทซ์ได้ตอน "แปลงจากโมเดลต้นทาง" (.pt / SavedModel) ซึ่งเครื่องนี้ไม่มีแล้ว — แต่ฟอร์แมตปลายทางของ tfjs ออกแบบมาให้เขียน `quantization` ลง `weightsManifest` ทีหลังได้อยู่แล้ว
+- ข้าม tensor ที่ไม่ใช่ float32 (พวก shape constant ที่เป็น int32) เพราะ tfjs รับ float16 เฉพาะกับ float32
+- สคริปต์เช็คให้ทุกครั้งว่ามีค่าไหน**ล้นเกิน 65504 จนกลายเป็น Infinity** ไหม — ถ้ามีคือพังทั้งโมเดล จะ exit 1 ไม่ยอมเขียนไฟล์ให้ใช้
+- `scripts/compare-models.ts` รันทั้งสองโมเดลด้วย input เดียวกันบน CPU backend แล้วเทียบ output ดิบ เพื่อยืนยันว่าผลตรวจจับไม่เพี้ยน ไม่ใช่ดูแค่ค่า error ของน้ำหนัก
+- `public/speedtest.html` วัดเวลาโหลดจริงของ v1 vs v2 บนเน็ตเครื่องนั้น (ยิง shard พร้อมกันแบบเดียวกับที่ tfjs ทำ) — สลับลำดับทุกรอบเพื่อไม่ให้ตัวที่โหลดก่อนได้เปรียบ
+
+### 2. Prefetch ตั้งแต่ผู้ใช้ "ส่อแวว"
+
+เดิมโมเดลเริ่มโหลดตอนกดชัตเตอร์เสร็จ — ผู้ใช้ยืนรอเปล่า ๆ ทั้งก้อน
+ตอนนี้ `prefetchModel()` ถูกยิงตอน **กดเปิดกล้อง** และ **กดปุ่มเลือกไฟล์** ซึ่งเป็นจังหวะที่
+ผู้ใช้ยังต้องกด permission / เล็งภาพ / ไล่หารูปอีกหลายวินาที — เวลาว่างตรงนั้นเอามาโหลดฟรี ๆ
+
+- ไม่มีใครรอผลของ prefetch — โหลดไม่ทันก็แค่ไปรอต่อที่ `ensureModel()` เหมือนเดิม
+- ใช้ `onClick` ไม่ใช่ `onPointerDown` บนปุ่มอัปโหลด เพราะแค่เอานิ้วแตะเพื่อเลื่อนหน้าจอไม่ควรดึงไฟล์หลายเมกฯ
+- เก็บเป็น **promise** ไม่ใช่ผลลัพธ์ — กดสแกนรูปที่สองระหว่างรูปแรกยังโหลดไม่เสร็จต้องเกาะ promise เดิม ไม่ใช่สั่งโหลดซ้ำ
+- แยก `settled` ออกจาก `pending` เพราะพอมี prefetch แล้ว "สั่งโหลดไปแล้ว" ไม่ได้แปลว่า "โหลดเสร็จแล้ว" อีกต่อไป — ข้อความ "ครั้งแรกโหลดนานหน่อย" ต้องดูตัวที่เสร็จจริง
+
+### 3. Path มีเลขเวอร์ชัน + สลับได้จาก URL
+
+ไฟล์โมเดลถูกแคชแบบ `immutable` หนึ่งปี (`public/_headers`) ซึ่งปลอดภัยได้เพราะ path มีเลขเวอร์ชันคั่น
+
+> ⚠️ เปลี่ยนน้ำหนักเมื่อไหร่ **ต้องขึ้นเลขใหม่** แล้วเพิ่มใน `MODEL_VERSIONS` — ถ้าทับไฟล์เดิม
+> เครื่องที่เคยเข้าเว็บแล้วจะใช้ของเก่าต่อไปเงียบ ๆ โดยไม่มี error ให้เห็น รู้ตัวอีกทีคือผลตรวจจับแย่ลงเฉพาะกับคนกลุ่มนั้น
+
+- `?model=v1` บังคับใช้เวอร์ชันเก่าได้โดยไม่ต้อง deploy ใหม่ — จำเป็นเพราะบน iPhone เปิด devtools ไม่ได้ถ้าไม่มี Mac ต้องเทียบด้วยการถ่ายรูปเดิมสองรอบเอา (ตอนถูกบังคับ ข้อความรอจะต่อท้าย `[v1]` ให้เห็นบนจอว่าสลับติดจริง)
+- ค่าจาก URL ถูกเช็คกับรายชื่อที่อนุญาตก่อนเสมอ ไม่เอาไปต่อ path ตรง ๆ — ไม่งั้นใครก็ส่ง `?model=../..` มาชี้ให้โหลดไฟล์อะไรก็ได้เข้ามารันเป็นโมเดล
+- ถ้าพบว่า v2 แย่ลง เปลี่ยน `DEFAULT_MODEL_VERSION` กลับเป็น `"v1"` ได้ทันที ไฟล์ยังอยู่ครบ — **ห้ามลบ v1** จนกว่าจะแน่ใจ (และเผื่อเครื่องที่ยังแคช bundle เก่าซึ่งขอ v1 อยู่)
+- โหลดโมเดลไม่ได้ / เครื่องแรงไม่พอ (ไม่มี webgl หรือ webgpu) → คืน `null` แล้วปล่อยให้ Gemini ตัดสินคนเดียว ซึ่งยังใช้งานได้ครบ
 
 ## 🛡️ ตัวจำกัดการใช้งาน (Rate limit)
 
@@ -327,7 +400,13 @@ Server action ของ Next เป็น endpoint ที่ยิงจาก�
 | `rate_limits` (D1) | ตัวนับคำขอต่อ IP ต่อ window |
 | R2 bucket | ไฟล์รูปจริง — รูป training (key = `<sessionId>/<imageId>.<ext>`) และรูปเมนู (key = `recipes/<style>/<sha256>.jpg`) |
 
-### 🖼️ แคชรูปเมนู
+### 🧬 การจับรูปคล้ายกัน
+
+- Client คำนวณ **dHash 64 bit**: ย่อรูปเหลือ 9×8 grayscale แล้วเทียบความสว่างพิกเซลข้างเคียง
+- Server เทียบกับ hash ในตาราง `images` ด้วย **Hamming distance** — ต่างกัน ≤ 8 bit ถือว่าเป็นรูปเดียวกัน (สแกนรูปล่าสุดสูงสุด 1000 รูป)
+- ทนต่อการ resize / บีบอัด / ปรับแสงเล็กน้อย แต่ถ้าครอปหรือหมุนรูปจะถือเป็นรูปใหม่
+
+## 🖼️ แคชรูปเมนู
 
 รูปเมนูจาก Workers AI กิน neurons ซึ่ง free tier มีโควตารายวัน จึง gen ซ้ำไม่ได้:
 
@@ -373,11 +452,13 @@ retry เคสนี้จึงหยุดที่ 2 ครั้ง (คร
 > ⚠️ เช็คว่ามีไฟล์แล้วหรือยังต้องถาม D1 เท่านั้น ถาม R2 ตรง ๆ ไม่ได้ — REST API ของ R2
 > เสิร์ฟผ่าน edge cache ที่แคช 404 ไว้หลายนาที รูปที่เพิ่งอัพจะกลายเป็น "ไม่มี" แล้ว gen ซ้ำ
 
-### 🧬 การจับรูปคล้ายกัน
+## 📹 กล้อง: ทำไม stream ถึงต่อในคอมโพเนนต์ ไม่ใช่ใน hook
 
-- Client คำนวณ **dHash 64 bit**: ย่อรูปเหลือ 9×8 grayscale แล้วเทียบความสว่างพิกเซลข้างเคียง
-- Server เทียบกับ hash ในตาราง `images` ด้วย **Hamming distance** — ต่างกัน ≤ 8 bit ถือว่าเป็นรูปเดียวกัน (สแกนรูปล่าสุดสูงสุด 1000 รูป)
-- ทนต่อการ resize / บีบอัด / ปรับแสงเล็กน้อย แต่ถ้าครอปหรือหมุนรูปจะถือเป็นรูปใหม่
+`CameraView` รับ `MediaStream` เป็น prop แล้วต่อเข้า `<video>` ด้วย effect ของตัวเอง
+
+- **ViewTransition ใช้ `mode="wait"`** — หน้ากล้อง mount ช้ากว่าที่กด "สแกน" ราว 150ms ถ้ารอบสองที่ permission ผ่านแล้ว `getUserMedia` resolve เร็วกว่านั้น effect ที่อยู่ใน hook จะวิ่งตอน `<video>` ยังไม่เกิด แล้วไม่มีใครวิ่งซ้ำ = **จอดำ** ส่วน effect ในคอมโพเนนต์การันตีว่าได้ element แน่นอน ไม่ว่า stream จะมาก่อนหรือหลัง mount
+- `capturePhoto(video)` รับ element มาจากตัวที่ถูกกดจริง ๆ ไม่ใช้ ref ก้อนกลาง เพราะ layout จอเล็ก/จอใหญ่ mount `CameraView` ไว้พร้อมกันทั้งคู่ ref เดียวจะโดนทับกัน
+- กันถ่ายตอนเฟรมแรกยังไม่มา (`!video.videoWidth`) ไม่ให้ภาพ 0×0 หลุดเข้าโมเดล
 
 ## 🎭 โหมดทำอาหาร
 
@@ -395,23 +476,11 @@ Gemini ยืนยันกรอบ → user แก้/เพิ่มใน �
         → เรียก Gemini น้อยลง → ประหยัดโควตา
 ```
 
-```bash
-bun run export-dataset   # ดึง annotations จาก D1 ออกมาเป็น YOLO dataset
-```
-
-> ⚠️ สคริปต์นี้ชี้ไปที่ `training/export-dataset.ts` ซึ่ง**ยังไม่ได้ commit เข้า repo** — ต้องเพิ่มไฟล์ก่อนถึงจะรันได้
+---
 
 ## 🚢 Deploy
 
-Deploy ขึ้น **Cloudflare Workers** ผ่าน OpenNext:
-
-```bash
-bun run cf:build     # opennextjs-cloudflare build
-bun run cf:preview   # รัน worker ในเครื่อง (อ่าน secret จาก .dev.vars)
-bun run cf:deploy    # opennextjs-cloudflare deploy
-```
-
-ตั้งค่าลับทั้งหมดเป็น secret ของ worker:
+Deploy ขึ้น **Cloudflare Workers** ผ่าน OpenNext (`bun run cf:deploy`) แล้วตั้งค่าลับทั้งหมดเป็น secret ของ worker:
 
 ```bash
 npx wrangler secret put GEMINI_API_KEY
@@ -422,7 +491,7 @@ npx wrangler secret put CLOUDFLARE_D1_DATABASE_ID
 npx wrangler secret put CLOUDFLARE_R2_BUCKET
 ```
 
-- ไฟล์ใน `public/` (รวมน้ำหนักโมเดล YOLO ~11MB) เสิร์ฟผ่าน **Workers Static Assets** ซึ่งแยกจากขนาด worker script จึงไม่กินโควตา bundle
+- ไฟล์ใน `public/` (รวมน้ำหนักโมเดล YOLO) เสิร์ฟผ่าน **Workers Static Assets** ซึ่งแยกจากขนาด worker script จึงไม่กินโควตา bundle
 - ยังไม่เปิด incremental cache / tag cache ใน `open-next.config.ts` เพราะแอปนี้ไม่ได้ใช้ ISR หรือ `revalidateTag` — หน้าเป็น static ล้วนกับ server action ที่คิดสดทุกครั้ง
 
 > 🔀 deploy ขึ้น Vercel ก็ยังได้ (`bun run build` + `vercel deploy`) แค่ตั้ง Environment Variables ชุดเดียวกันใน dashboard — ตัวอ่าน IP ของ rate limit รองรับทั้ง `cf-connecting-ip` และ `x-forwarded-for`
@@ -431,6 +500,8 @@ npx wrangler secret put CLOUDFLARE_R2_BUCKET
 
 - YOLO รู้จักแค่ class ในโมเดลปัจจุบัน (~122) — class ใหม่ (เช่น ใบโหระพา) ต้อง train โมเดลใหม่ (รูปที่ label แล้วถูกเก็บใน R2 ไว้เพื่อการนี้)
 - Label YOLO เดิมเป็นภาษาอังกฤษ — แปลเป็นไทยด้วย mapping ใน `labelsTh.ts`
+- ครั้งแรกยังต้องดาวน์โหลดน้ำหนัก 5.4MB — prefetch แค่ย้ายเวลาไปอยู่ในช่วงที่ผู้ใช้ไม่ได้รอ ไม่ได้ทำให้ฟรี
+- ต้องมี WebGL/WebGPU ถึงจะรัน YOLO ได้ — เครื่องที่ไม่มีจะข้ามไปให้ Gemini ตัดสินคนเดียว (ยังใช้ได้ครบ แค่ไม่มีกรอบจาก YOLO)
 - การจับรูปคล้ายใช้ dHash — รูปที่ครอป/หมุน/องค์ประกอบเปลี่ยนมากจะถือเป็นรูปใหม่ (ตั้งใจ เพื่อไม่ให้ label ผิดรูป)
 - รับเฉพาะรูป **วัตถุดิบ** — รูปอาหารที่ทำเสร็จแล้วหรือรูปที่ไม่มีของกินจะถูกปฏิเสธ (Gemini เป็นคนตัดสิน จึงพลาดได้บ้างกับรูปก้ำกึ่ง)
 - โมเดลสร้างรูปอ่านภาษาไทยไม่ออก — Gemini จึงคืน `imagePrompt` ภาษาอังกฤษมาบรรยายหน้าตาจานแทนชื่อเมนู

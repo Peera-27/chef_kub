@@ -42,7 +42,7 @@ import {
   getCookingMode,
   type CookingMode,
 } from "../utils/cookingModes";
-import { useYoloModel } from "./useYoloModel";
+import { getModelVersionOverride, useYoloModel } from "./useYoloModel";
 
 function syncItemsFromBoxes(
   boxes: BoundingBox[],
@@ -119,8 +119,11 @@ export type ViewMode =
   | "settings";
 
 export function useChefKub() {
-  const { ensureModel: ensureYoloModel, isFirstLoad: isYoloFirstLoad } =
-    useYoloModel();
+  const {
+    ensureModel: ensureYoloModel,
+    prefetchModel: prefetchYoloModel,
+    isModelReady: isYoloModelReady,
+  } = useYoloModel();
 
   const [loading, setLoading] = useState({ state: false, message: "" });
   // true ระหว่างทยอย gen รูปอาหารหลังได้สูตรแล้ว — การ์ดจะโชว์ skeleton แทน overlay ทับจอ
@@ -155,7 +158,6 @@ const isDrawingRef = useRef(false);
   const [editingBoxIndex, setEditingBoxIndex] = useState<number | null>(null);
   const [classOptions, setClassOptions] = useState<ClassEntry[]>([]);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const cameraRequestRef = useRef(0);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
@@ -183,21 +185,6 @@ const isDrawingRef = useRef(false);
     ingredientsKeyRef.current = nextKey;
   }, [allItems, recipes.length]);
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (viewMode !== "camera" || !cameraStream || !video) return;
-
-    video.srcObject = cameraStream;
-    void video.play().catch(() => {
-      // `autoPlay` normally handles this. Some mobile browsers need the
-      // explicit play call, and will retry after the next user interaction.
-    });
-
-    return () => {
-      if (video.srcObject === cameraStream) video.srcObject = null;
-    };
-  }, [cameraStream, viewMode]);
-
   useEffect(
     () => () => {
       cameraRequestRef.current += 1;
@@ -210,11 +197,13 @@ const isDrawingRef = useRef(false);
     cameraRequestRef.current += 1;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
-    if (videoRef.current) videoRef.current.srcObject = null;
     setCameraStream(null);
   };
 
   const startCamera = async () => {
+    /* กดเปิดกล้อง = ตั้งใจจะสแกนแน่แล้ว เริ่มดึงน้ำหนักโมเดลคู่ขนานไปเลย
+       ระหว่างที่ผู้ใช้รอ permission prompt + เล็งภาพ ไม่ใช่ไปเริ่มตอนกดชัตเตอร์เสร็จ */
+    prefetchYoloModel();
     stopCamera();
     setHistorySelection(null);
     const requestId = ++cameraRequestRef.current;
@@ -463,20 +452,30 @@ const isDrawingRef = useRef(false);
         return;
       }
 
-      /* โมเดลเริ่มโหลดตรงนี้ ไม่ใช่ตอนเปิดหน้า — ครั้งแรกจะรอนาน (11MB) แต่ครั้งถัด ๆ ไป
-         ได้จากแคชเบราว์เซอร์ทันที ถ้าโหลดไม่ได้หรือเครื่องแรงไม่พอจะได้ null กลับมา
-         แล้วปล่อยให้ Gemini ตัดสินคนเดียว ซึ่งยังใช้งานได้ครบ */
+      /* ปกติโมเดลถูกสั่งโหลดไปตั้งแต่ตอนเปิดกล้อง/เปิดตัวเลือกไฟล์แล้ว (prefetchYoloModel)
+         บรรทัดนี้จึงมักได้ของที่โหลดเสร็จ/โหลดค้างอยู่แล้ว ไม่ใช่เริ่มนับหนึ่งใหม่ —
+         แต่ยังต้องเรียกอยู่ดี เพราะมีทางเข้าที่ข้าม prefetch ได้ (เช่นวางรูปทับหน้า)
+         ถ้าโหลดไม่ได้หรือเครื่องแรงไม่พอจะได้ null กลับมา แล้วปล่อยให้ Gemini ตัดสินคนเดียว */
+      /* ต่อท้ายข้อความว่าใช้น้ำหนักเวอร์ชันไหน เฉพาะตอนถูกบังคับด้วย ?model= —
+         บน iPhone เปิด console ไม่ได้ถ้าไม่มี Mac ต้องมีอะไรบนจอให้ยืนยันว่าสลับติดจริง
+         ไม่งั้นถ่ายรูปเทียบ v1/v2 ไปก็ไม่รู้ว่าได้เทียบจริงหรือดูของตัวเดิมสองรอบ */
+      const modelTag = getModelVersionOverride();
+      const withTag = (message: string) =>
+        modelTag ? `${message} [${modelTag}]` : message;
+
       setLoading({
         state: true,
-        message: isYoloFirstLoad()
-          ? "กำลังเตรียมตัวสแกน (ครั้งแรกโหลดนานหน่อย)..."
-          : "กำลังสแกนวัตถุดิบ...",
+        message: withTag(
+          isYoloModelReady()
+            ? "กำลังสแกนวัตถุดิบ..."
+            : "กำลังเตรียมตัวสแกน (ครั้งแรกโหลดนานหน่อย)...",
+        ),
       });
       const model = await ensureYoloModel();
 
       let yoloResult: YoloDetectionResult = { items: [], boxes: [], ms: 0 };
       if (model) {
-        setLoading({ state: true, message: "กำลังสแกนวัตถุดิบ..." });
+        setLoading({ state: true, message: withTag("กำลังสแกนวัตถุดิบ...") });
         // โมเดลโหลดได้แปลว่า tfjs อยู่ในแคชแล้ว — import นี้จึงไม่ต้องรอโหลดซ้ำ
         const { runYoloDetection } = await import(
           "../lib/yolo/runYoloDetection"
@@ -577,12 +576,13 @@ const isDrawingRef = useRef(false);
     }
   };
 
-  const capturePhoto = () => {
-    if (!videoRef.current) return;
+  /* รับ element มาจาก CameraView ที่ถูกกดจริง ๆ ไม่ใช้ ref ก้อนกลาง
+     เพราะ layout จอเล็ก/จอใหญ่ mount CameraView ไว้พร้อมกันทั้งคู่ ref เดียวจะโดนทับกัน */
+  const capturePhoto = (video: HTMLVideoElement) => {
     const canvas = document.createElement("canvas");
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    canvas.getContext("2d")?.drawImage(videoRef.current, 0, 0);
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d")?.drawImage(video, 0, 0);
     const base64 = canvas.toDataURL("image/jpeg");
     stopCamera();
     setViewMode("home");
@@ -890,10 +890,11 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     setCookingMode,
     editingImage,
     setEditingImage,
-    videoRef,
+    cameraStream,
     startCamera,
     capturePhoto,
     processImage,
+    prefetchScanner: prefetchYoloModel,
     removeItem,
     removeImage,
     handleInventRecipe,

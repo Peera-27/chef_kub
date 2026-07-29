@@ -1,0 +1,140 @@
+description: Ultralytics YOLO11n model trained on /content/FOOD-INGREDIENTS-dataset-4/data.yaml
+author: Ultralytics
+date: '2026-02-08T16:05:51.324305'
+version: 8.4.12
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+batch: 1
+imgsz:
+- 640
+- 640
+names:
+  0: Akabare Khursani
+  1: Apple
+  2: Artichoke
+  3: Ash Gourd -Kubhindo-
+  4: Asparagus -Kurilo-
+  5: Avocado
+  6: Bacon
+  7: Bamboo Shoots -Tama-
+  8: Banana
+  9: Beans
+  10: Beaten Rice -Chiura-
+  11: Beef
+  12: Beetroot
+  13: Bethu ko Saag
+  14: Bitter Gourd
+  15: Black Lentils
+  16: Black beans
+  17: Bottle Gourd -Lauka-
+  18: Bread
+  19: Brinjal
+  20: Broad Beans -Bakullo-
+  21: Broccoli
+  22: Buff Meat
+  23: Butter
+  24: Cabbage
+  25: Capsicum
+  26: Carrot
+  27: Cassava -Ghar Tarul-
+  28: Cauliflower
+  29: Chayote-iskus-
+  30: Cheese
+  31: Chicken
+  32: Chicken Gizzards
+  33: Chickpeas
+  34: Chili Pepper -Khursani-
+  35: Chili Powder
+  36: Chowmein Noodles
+  37: Cinnamon
+  38: Coriander -Dhaniya-
+  39: Corn
+  40: Cornflakec
+  41: Crab Meat
+  42: Cucumber
+  43: Egg
+  44: Farsi ko Munta
+  45: Fiddlehead Ferns -Niguro-
+  46: Fish
+  47: Garden Peas
+  48: Garden cress-Chamsur ko saag-
+  49: Garlic
+  50: Ginger
+  51: Green Brinjal
+  52: Green Lentils
+  53: Green Mint -Pudina-
+  54: Green Peas
+  55: Green Soyabean -Hariyo Bhatmas-
+  56: Gundruk
+  57: Ham
+  58: Ice
+  59: Jack Fruit
+  60: Ketchup
+  61: Lapsi -Nepali Hog Plum-
+  62: Lemon -Nimbu-
+  63: Lime -Kagati-
+  64: Long Beans -Bodi-
+  65: Masyaura
+  66: Milk
+  67: Minced Meat
+  68: Moringa Leaves -Sajyun ko Munta-
+  69: Mushroom
+  70: Mutton
+  71: Nutrela -Soya Chunks-
+  72: Okra -Bhindi-
+  73: Olive Oil
+  74: Onion
+  75: Onion Leaves
+  76: Orange
+  77: Palak -Indian Spinach-
+  78: Palungo -Nepali Spinach-
+  79: Paneer
+  80: Papaya
+  81: Pea
+  82: Pear
+  83: Pointed Gourd -Chuche Karela-
+  84: Pork
+  85: Potato
+  86: Pumpkin -Farsi-
+  87: Radish
+  88: Rahar ko Daal
+  89: Rayo ko Saag
+  90: Red Beans
+  91: Red Lentils
+  92: Rice -Chamal-
+  93: Sajjyun -Moringa Drumsticks-
+  94: Salt
+  95: Sausage
+  96: Snake Gourd -Chichindo-
+  97: Soy Sauce
+  98: Soyabean -Bhatmas-
+  99: Sponge Gourd -Ghiraula-
+  100: Stinging Nettle -Sisnu-
+  101: Strawberry
+  102: Sugar
+  103: Sweet Potato -Suthuni-
+  104: Taro Leaves -Karkalo-
+  105: Taro Root-Pidalu-
+  106: Thukpa Noodles
+  107: Tofu
+  108: Tomato
+  109: Tori ko Saag
+  110: Tree Tomato -Rukh Tamatar-
+  111: Turnip
+  112: Wallnut
+  113: Water Melon
+  114: Wheat
+  115: Yellow Lentils
+  116: kimchi
+  117: mayonnaise
+  118: noodle
+  119: seaweed
+args:
+  batch: 1
+  half: false
+  int8: false
+  nms: false
+channels: 3
+end2end: false

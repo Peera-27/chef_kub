@@ -11,7 +11,9 @@
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "export-dataset": "bun run training/export-dataset.ts"
+    "export-dataset": "bun run training/export-dataset.ts",
+    "quantize-model": "bun run scripts/quantize-model.ts",
+    "compare-models": "bun run scripts/compare-models.ts"
   },
   "dependencies": {
     "@google/genai": "^2.10.0",
