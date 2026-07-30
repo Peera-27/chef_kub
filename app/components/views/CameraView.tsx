@@ -155,8 +155,10 @@ export function CameraView({
   };
 
   return (
-    <div className="flex flex-col items-center gap-6 slide-up py-5 md:py-8">
-      <div className="flex w-full max-w-[540px] items-center justify-between gap-3">
+    /* จอมือถือ: สูงเท่าที่พื้นที่มีให้ แล้วให้ช่องพรีวิวเป็นตัวยืด/ยุบเอง
+       ปุ่มถ่ายจึงอยู่ในจอตลอด ไม่ต้องเลื่อนลงไปหา — md ขึ้นไปกลับไปวางตามความสูงเนื้อหาเหมือนเดิม */
+    <div className="flex min-h-0 flex-1 flex-col items-center gap-3 slide-up md:flex-none md:gap-6 md:py-8">
+      <div className="flex w-full max-w-[540px] shrink-0 items-center justify-between gap-3">
         <div>
           <h2 className="font-bold text-[var(--color-ink)]">ถ่ายวัตถุดิบ</h2>
           <p className="text-xs text-[var(--color-muted)]">
@@ -172,12 +174,15 @@ export function CameraView({
         </button>
       </div>
 
-      <p className="text-sm md:text-base text-[var(--color-muted)] text-center px-4">
+      {/* จอมือถือซ่อนไว้ — บรรทัดใต้หัวข้อบอกไปแล้ว และพื้นที่ทุก px เอาไปให้ช่องพรีวิวดีกว่า */}
+      <p className="hidden md:block text-base text-[var(--color-muted)] text-center px-4">
         จัดวัตถุดิบให้อยู่ในกรอบ แล้วกดปุ่มถ่ายรูป
       </p>
 
-      <div className="relative">
-        <div className="w-full md:w-[480px] lg:w-[540px] aspect-[3/4] md:aspect-[4/3] bg-black rounded-[var(--radius-xl)] overflow-hidden shadow-lg md:shadow-xl">
+      {/* จอมือถือ: กล่องนี้กินความสูงที่เหลือทั้งหมด (flex-1) — md ขึ้นไปกลับไปล็อกสัดส่วน 4:3
+          <video> วางแบบ absolute ไม่ใช่ h-full เพราะ % ความสูงไม่ resolve เมื่อความสูงพ่อมาจาก flex */}
+      <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-[var(--radius-xl)] bg-black shadow-lg md:aspect-[4/3] md:w-[480px] md:flex-none md:shadow-xl lg:w-[540px]">
+        <div className="absolute inset-0">
           <video
             ref={videoRef}
             autoPlay
@@ -249,7 +254,7 @@ export function CameraView({
       <button
         onClick={handleCapture}
         disabled={status !== "live"}
-        className="icon-btn relative w-[76px] h-[76px] md:w-[90px] md:h-[90px] bg-white border-[5px] md:border-[6px] border-[var(--color-brand)] rounded-full shadow-lg md:shadow-xl active:scale-90 transition-transform tap disabled:opacity-45"
+        className="icon-btn relative shrink-0 w-[68px] h-[68px] md:w-[90px] md:h-[90px] bg-white border-[5px] md:border-[6px] border-[var(--color-brand)] rounded-full shadow-lg md:shadow-xl active:scale-90 transition-transform tap disabled:opacity-45"
         aria-label="ถ่ายรูป"
       >
         <span
@@ -263,9 +268,10 @@ export function CameraView({
           animate={ring}
           aria-hidden
         />
-        <div className="w-12 h-12 md:w-14 md:h-14 bg-[var(--color-brand)] rounded-full transition-transform" />
+        <div className="w-11 h-11 md:w-14 md:h-14 bg-[var(--color-brand)] rounded-full transition-transform" />
       </button>
-      <p className="-mt-3 text-xs font-medium text-[var(--color-muted)]">
+      {/* จอมือถือซ่อนไว้ — ปุ่มกลมใหญ่กลางจอสื่อชัดพออยู่แล้ว */}
+      <p className="hidden md:block -mt-3 text-xs font-medium text-[var(--color-muted)]">
         แตะปุ่มเพื่อถ่าย
       </p>
     </div>

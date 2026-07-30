@@ -342,7 +342,13 @@ export default function Home() {
         {/* Mobile content */}
         <ViewTransition
           viewKey={viewMode}
-          className={`flex-1 px-4 pt-4 ${showBottomNav ? "pb-24" : "pb-8"}`}
+          /* หน้ากล้องกินความสูงเท่าที่จอมีพอดี ไม่ให้ล้นจนต้องเลื่อนหาปุ่มถ่าย —
+             ไม่มี header กับ bottom nav ในโหมดนี้ จึงต้องกันขอบ notch/home indicator เอง */
+          className={
+            viewMode === "camera"
+              ? "flex min-h-0 flex-1 flex-col safe-top safe-bottom px-3"
+              : `flex-1 px-4 pt-4 ${showBottomNav ? "pb-24" : "pb-8"}`
+          }
         >
           {viewMode === "home" && (
             <HomeView
