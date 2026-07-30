@@ -109,6 +109,39 @@ function saveErrorNotice(error?: string): Notice {
   }
 }
 
+const CAMERA_CONSTRAINTS: MediaStreamConstraints = {
+  video: {
+    facingMode: "environment",
+    width: { ideal: 1920 },
+    height: { ideal: 1080 },
+  },
+};
+
+/* กล้องที่เพิ่งถูก stop() ยังไม่ถูกปล่อยคืนทันที ขอใหม่ติด ๆ กันจะได้ track ที่ muted
+   กลับมาแบบไม่มี error = พรีวิวดำค้าง เว้นจังหวะให้อุปกรณ์ปล่อยก่อนค่อยขอใหม่ */
+const CAMERA_RELEASE_GAP_MS = 350;
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** รอให้ track เริ่มส่งเฟรมจริง — คืน false ถ้ายัง muted ค้างเกินเวลา */
+function waitForLiveTrack(
+  track: MediaStreamTrack,
+  timeoutMs = 1200,
+): Promise<boolean> {
+  if (!track.muted) return Promise.resolve(true);
+
+  return new Promise((resolve) => {
+    const finish = (live: boolean) => {
+      window.clearTimeout(timer);
+      track.removeEventListener("unmute", onUnmute);
+      resolve(live);
+    };
+    const onUnmute = () => finish(true);
+    const timer = window.setTimeout(() => finish(false), timeoutMs);
+    track.addEventListener("unmute", onUnmute);
+  });
+}
+
 export type ViewMode =
   | "home"
   | "camera"
@@ -160,6 +193,8 @@ const isDrawingRef = useRef(false);
 
   const streamRef = useRef<MediaStream | null>(null);
   const cameraRequestRef = useRef(0);
+  // เวลาที่คืนกล้องคืนระบบครั้งล่าสุด ใช้กันไม่ให้ขอกล้องใหม่เร็วกว่าที่อุปกรณ์ปล่อยเสร็จ
+  const cameraReleasedAtRef = useRef(0);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const imageCache = useRef<Map<string, CachedImageResult>>(new Map());
   const ingredientsKeyRef = useRef("");
@@ -195,7 +230,10 @@ const isDrawingRef = useRef(false);
 
   const stopCamera = () => {
     cameraRequestRef.current += 1;
-    streamRef.current?.getTracks().forEach((t) => t.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      cameraReleasedAtRef.current = Date.now();
+    }
     streamRef.current = null;
     setCameraStream(null);
   };
@@ -209,17 +247,35 @@ const isDrawingRef = useRef(false);
     const requestId = ++cameraRequestRef.current;
     setViewMode("camera");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "environment",
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
-      });
+      const sinceRelease = Date.now() - cameraReleasedAtRef.current;
+      if (sinceRelease < CAMERA_RELEASE_GAP_MS) {
+        await delay(CAMERA_RELEASE_GAP_MS - sinceRelease);
+        if (requestId !== cameraRequestRef.current) return;
+      }
+
+      let stream = await navigator.mediaDevices.getUserMedia(
+        CAMERA_CONSTRAINTS,
+      );
 
       if (requestId !== cameraRequestRef.current) {
         stream.getTracks().forEach((track) => track.stop());
         return;
+      }
+
+      /* track ที่ยัง muted อยู่แปลว่าอุปกรณ์ยังค้างจากรอบก่อน — ผูกเข้า <video> ไปก็ดำเปล่า ๆ
+         คืนของแล้วขอใหม่รอบเดียว คราวนี้ไม่ล็อกความละเอียดเพื่อให้ไดรเวอร์เลือกโหมดที่ว่างจริง */
+      const track = stream.getVideoTracks()[0];
+      if (track && !(await waitForLiveTrack(track))) {
+        stream.getTracks().forEach((t) => t.stop());
+        await delay(CAMERA_RELEASE_GAP_MS);
+        if (requestId !== cameraRequestRef.current) return;
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
+        if (requestId !== cameraRequestRef.current) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
       }
 
       streamRef.current = stream;

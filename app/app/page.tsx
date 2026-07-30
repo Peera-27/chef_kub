@@ -237,6 +237,7 @@ export default function Home() {
                   stream={cameraStream}
                   onCapture={capturePhoto}
                   onCancel={goHome}
+                  onRetry={startCamera}
                 />
               )}
 
@@ -374,6 +375,7 @@ export default function Home() {
               stream={cameraStream}
               onCapture={capturePhoto}
               onCancel={goHome}
+              onRetry={startCamera}
             />
           )}
 
