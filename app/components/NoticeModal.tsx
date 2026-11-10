@@ -39,7 +39,7 @@ export function NoticeModal({ notice, onClose }: NoticeModalProps) {
     >
       <div className="px-6 pt-2 pb-6 md:pt-7 text-center">
         <motion.div
-          className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[var(--color-brand-pale)]"
+          className="mx-auto grid h-20 w-20 place-items-center"
           initial={{ scale: 0.5, rotate: -10 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{

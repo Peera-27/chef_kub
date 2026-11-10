@@ -24,3 +24,7 @@
 
 /shots/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+# รูปและวิดีโอบนหน้าแนะนำ — ชื่อไฟล์ไม่มี hash จึงแคชวันเดียวแบบเดียวกับ /shots
+/photos/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

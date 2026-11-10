@@ -15,7 +15,7 @@ import {
   shareRecipe,
   type ShareResult,
 } from "../../utils/shareRecipe";
-import { IconCart, IconCheck, IconShare } from "../Icons";
+import { IconCart, IconCheck, IconShare, IconX } from "../Icons";
 import { Confetti } from "../motion/Confetti";
 import { RatingStars } from "../RatingStars";
 import { recordCookRating } from "../../utils/storage";
@@ -29,8 +29,8 @@ const RATING_LABELS: Record<CookRating, string> = {
   1: "โอเค ขอบคุณที่บอกตรง ๆ",
   2: "ยังไม่เข้าที เดี๋ยวปรับให้",
   3: "พอไหวอยู่",
-  4: "ดีเลย! 🙌",
-  5: "สุดยอด! 🔥",
+  4: "ดีเลย!",
+  5: "สุดยอด!",
 };
 
 interface CookViewProps {
@@ -262,12 +262,12 @@ export function CookView({
       {/* Header */}
       <div className="flex justify-between items-start mb-5">
         <div className="min-w-0 flex-1 mr-3">
-          <h2 className="section-title md:text-xl">
+          <h1 className="section-title text-2xl md:text-[28px]">
             {recipe.name}
-          </h2>
+          </h1>
           {recipe.inspiration && (
-            <p className="text-xs text-[var(--color-brand)] font-medium mt-0.5">
-              ✨ {recipe.inspiration}
+            <p className="text-sm text-[var(--color-muted)] mt-1">
+              {recipe.inspiration}
             </p>
           )}
           <p className="section-subtitle">
@@ -278,15 +278,17 @@ export function CookView({
         </div>
         <button
           onClick={onDone}
-          className="btn-secondary min-h-11 px-4 text-sm shrink-0 tap"
+          aria-label="ออกจากโหมดทำ"
+          className="btn-secondary min-h-11 w-11 px-0 text-sm shrink-0 tap sm:w-auto sm:px-4"
         >
-          ออกจากโหมดทำ
+          <IconX size={18} className="sm:hidden" />
+          <span className="hidden sm:inline">ออกจากโหมดทำ</span>
         </button>
       </div>
 
       {/* Recipe image — เมนูที่ยังไม่เคย gen รูปจะทยอยมาระหว่างอ่านสูตร */}
       {recipe.imageUrl ? (
-        <div className="relative rounded-[var(--radius-lg)] overflow-hidden mb-6 ring-1 ring-black/5 shadow-md">
+        <div className="relative rounded-[var(--radius-lg)] overflow-hidden mb-6">
           <img
             src={recipe.imageUrl}
             alt={recipe.name}
@@ -299,9 +301,8 @@ export function CookView({
 
       {/* หมายเหตุของเชฟ — เหตุผลที่รสเข้ากัน หรือดัดแปลงตรงไหน ไม่ใช่ขั้นตอนทำ */}
       {recipe.note && (
-        <div className="rounded-[var(--radius-lg)] bg-[var(--color-brand-soft)] p-4 mb-5 slide-up">
-          <p className="text-sm text-[var(--color-ink)] leading-relaxed">
-            <span className="mr-1">💡</span>
+        <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface-2)] p-4 mb-5 slide-up">
+          <p className="text-[15px] text-[var(--color-ink)] leading-relaxed">
             {recipe.note}
           </p>
         </div>
@@ -311,7 +312,7 @@ export function CookView({
       {recipe.ingredients.length > 0 && (
         <div className="card p-4 md:p-5 mb-5 slide-up">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-[var(--color-brand)] uppercase tracking-wide">
+            <h3 className="text-base font-semibold text-[var(--color-ink)]">
               วัตถุดิบ
             </h3>
             <span className="text-xs font-medium text-[var(--color-muted)]">
@@ -319,7 +320,7 @@ export function CookView({
               {/* key = ตัวเลข ทำให้เด้งใหม่ทุกครั้งที่ติ๊กเพิ่ม รู้สึกว่าคืบหน้า */}
               <motion.span
                 key={checkedIngredients.size}
-                initial={{ scale: 1.5, color: "var(--color-brand)" }}
+                initial={{ scale: 1.5, color: "var(--color-ink)" }}
                 animate={{ scale: 1, color: "var(--color-muted)" }}
                 transition={{ duration: 0.35 }}
                 className="inline-block font-semibold tabular-nums"
@@ -341,7 +342,7 @@ export function CookView({
                   onClick={() => setServings((n) => Math.max(1, n - 1))}
                   disabled={servings <= 1}
                   aria-label="ลดจำนวนที่"
-                  className="icon-btn w-11 h-11 rounded-full border border-[var(--color-line)] bg-white text-[var(--color-ink)] font-bold hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] disabled:opacity-35 disabled:hover:border-[var(--color-line)] disabled:hover:text-[var(--color-ink)] tap"
+                  className="icon-btn w-11 h-11 border border-[var(--color-control)] bg-white text-[var(--color-ink)] font-bold hover:border-[var(--color-ink)] disabled:opacity-35 disabled:hover:border-[var(--color-control)] tap"
                 >
                   −
                 </button>
@@ -354,7 +355,7 @@ export function CookView({
                   }
                   disabled={servings >= MAX_SERVINGS}
                   aria-label="เพิ่มจำนวนที่"
-                  className="icon-btn w-11 h-11 rounded-full border border-[var(--color-line)] bg-white text-[var(--color-ink)] font-bold hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] disabled:opacity-35 disabled:hover:border-[var(--color-line)] disabled:hover:text-[var(--color-ink)] tap"
+                  className="icon-btn w-11 h-11 border border-[var(--color-control)] bg-white text-[var(--color-ink)] font-bold hover:border-[var(--color-ink)] disabled:opacity-35 disabled:hover:border-[var(--color-control)] tap"
                 >
                   +
                 </button>
@@ -369,17 +370,17 @@ export function CookView({
                 <li key={idx}>
                   <button
                     onClick={() => toggleIngredient(idx)}
-                    className="w-full min-h-11 flex items-start gap-2.5 text-left text-sm px-2 py-2.5 -mx-2 rounded-[var(--radius-sm)] hover:bg-[var(--color-brand-pale)] transition-colors cursor-pointer"
+                    className="w-full min-h-11 flex items-start gap-2.5 text-left text-sm px-2 py-2.5 -mx-2 rounded-[var(--radius-sm)] hover:bg-[var(--color-line-soft)] transition-colors cursor-pointer"
                   >
-                    {/* เดิมเรนเดอร์เครื่องหมายถูกค้างไว้ตลอดแล้วซ่อนด้วย text-transparent
+                    {/* เดิมเรนเดอร์เครื่องหมายถูกค้างไว้ตลอดแล้วซ่อนด้วยสีโปร่งใส
                         ติ๊กแล้วเลยแค่สีเปลี่ยน ตอนนี้ให้มันเด้งเข้ามาจริง ๆ */}
                     <motion.span
                       animate={{ scale: done ? [1, 1.25, 1] : 1 }}
                       transition={{ duration: 0.3 }}
-                      className={`w-5 h-5 mt-0.5 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors duration-150 ${
+                      className={`w-5 h-5 mt-0.5 shrink-0 rounded-[var(--radius-sm)] border-2 flex items-center justify-center transition-colors duration-150 ${
                         done
                           ? "bg-[var(--color-brand)] border-[var(--color-brand)] text-white"
-                          : "border-[var(--color-line)]"
+                          : "border-[var(--color-control)]"
                       }`}
                     >
                       <AnimatePresence>
@@ -420,17 +421,17 @@ export function CookView({
       {/* ของเสริม — ไม่ซื้อก็ทำเมนูนี้ได้ บอกให้ชัดจะได้ไม่รู้สึกว่าถูกบังคับ */}
       {recipe.extraIngredients && recipe.extraIngredients.length > 0 && (
         <div className="card p-4 md:p-5 mb-5 slide-up">
-          <h3 className="text-sm font-bold text-[var(--color-brand)] uppercase tracking-wide mb-1">
+          <h3 className="text-base font-semibold text-[var(--color-ink)] mb-1">
             ซื้อเพิ่มก็ได้
           </h3>
-          <p className="text-xs text-[var(--color-muted)] mb-3">
+          <p className="text-sm text-[var(--color-muted)] mb-3">
             ไม่มีก็ทำได้ มีแล้วอร่อยขึ้น
           </p>
           <div className="flex flex-wrap gap-2">
             {recipe.extraIngredients.map((item, idx) => (
               <span
                 key={idx}
-                className="pill gap-1.5 bg-[var(--color-brand-soft)] text-[var(--color-brand)]"
+                className="pill gap-1.5 border border-[var(--color-control)] bg-white text-[var(--color-ink)]"
               >
                 <IconCart size={13} />
                 {item}
@@ -442,7 +443,7 @@ export function CookView({
 
       {/* วิธีทำทั้งหมด — อ่านอย่างเดียว ไม่ต้องคอยติ๊กว่าทำถึงไหนแล้ว */}
       <div className="card p-5 md:p-6 mb-4">
-        <h3 className="text-sm font-bold text-[var(--color-brand)] uppercase tracking-wide mb-4">
+        <h3 className="text-base font-semibold text-[var(--color-ink)] mb-4">
           วิธีทำ
         </h3>
         <ol className="space-y-3 md:space-y-4">
@@ -451,10 +452,10 @@ export function CookView({
             return (
               <li key={i}>
                 <div className="flex gap-3 md:gap-4">
-                  <span className="w-7 h-7 md:w-8 md:h-8 shrink-0 rounded-full text-xs md:text-sm font-bold flex items-center justify-center bg-[var(--color-brand-soft)] text-[var(--color-brand)]">
+                  <span className="w-7 shrink-0 pt-0.5 text-sm md:text-base font-semibold text-[var(--color-muted)] tabular-nums">
                     {i + 1}
                   </span>
-                  <p className="text-sm md:text-base leading-relaxed pt-0.5 text-[var(--color-ink)]">
+                  <p className="text-[15px] md:text-base leading-relaxed pt-0.5 text-[var(--color-ink)]">
                     {instruction}
                   </p>
                 </div>
@@ -468,7 +469,7 @@ export function CookView({
       </div>
 
       {/* ปุ่มเดียวจบ — sticky ติดล่างจอ */}
-      <div className="sticky bottom-0 z-20 mt-auto pt-3 pb-4 safe-bottom bg-gradient-to-t from-[var(--color-page)] via-[var(--color-page)]/95 to-transparent">
+      <div className="sticky bottom-0 z-20 mt-auto pt-3 pb-4 safe-bottom bg-[var(--color-page)]">
         <button
           type="button"
           onClick={() => setFinished(true)}

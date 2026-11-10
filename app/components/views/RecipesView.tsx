@@ -1,5 +1,5 @@
 import type { Recipe } from "../../types/recipe";
-import { RecipeCard } from "../RecipeCard";
+import { RecipeCompactCard } from "../RecipeCompactCard";
 import { RecipeHeroCard } from "../RecipeHeroCard";
 import { EmptyState } from "../EmptyState";
 
@@ -22,7 +22,6 @@ export function RecipesView({
   if (recipes.length === 0) {
     return (
       <EmptyState
-        icon="🍜"
         title="ยังไม่มีเมนู"
         description="กลับไปสแกนวัตถุดิบเพื่อให้ AI แนะนำสูตรอาหาร"
         action={
@@ -37,7 +36,7 @@ export function RecipesView({
   return (
     <div className="space-y-5 md:space-y-6 pb-6 fade-in">
       <div>
-        <h2 className="section-title">เมนูที่แนะนำ</h2>
+        <h1 className="section-title text-2xl md:text-[28px]">เมนูที่แนะนำ</h1>
         <p className="section-subtitle">
           {recipes.length} เมนูจากวัตถุดิบของคุณ
         </p>
@@ -50,15 +49,15 @@ export function RecipesView({
         onStartCook={onStartCook}
       />
 
-      {/* Recipe grid: 1 col mobile, 2 cols tablet */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-5 stagger">
+      {/* เมนูที่เหลือ: แถวเดียวบนมือถือ สองคอลัมน์บนจอกว้าง */}
+      <div className="grid grid-cols-1 items-stretch gap-3 md:grid-cols-2 md:gap-4 stagger">
         {recipes.slice(1).map((r, i) => (
           <div
             key={`${r.name}-${i}`}
             className="h-full"
             style={{ "--i": i } as Record<string, string | number>}
           >
-            <RecipeCard
+            <RecipeCompactCard
               recipe={r}
               onFavoriteChange={onFavoriteChange}
               onStartCook={onStartCook}

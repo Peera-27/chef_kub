@@ -38,6 +38,7 @@ import {
   type ClassEntry,
 } from "../utils/classRegistry";
 import {
+  COOKING_MODES,
   DEFAULT_COOKING_MODE,
   getCookingMode,
   type CookingMode,
@@ -151,6 +152,11 @@ export type ViewMode =
   | "cook"
   | "settings";
 
+/* หน้าที่ต้องมีของประกอบ (stream / เมนูที่กำลังทำ / รูปที่แก้) — กด Back ย้อนกลับเข้าไปใหม่ไม่ได้
+   ออกจากหน้าพวกนี้จึง replace entry ทิ้ง ไม่ให้เหลือค้างใน history */
+const TRANSIENT_VIEWS: ViewMode[] = ["camera", "cook", "edit"];
+type ViewHistoryState = { view?: ViewMode } | null;
+
 export function useChefKub() {
   const {
     ensureModel: ensureYoloModel,
@@ -198,14 +204,57 @@ const isDrawingRef = useRef(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const imageCache = useRef<Map<string, CachedImageResult>>(new Map());
   const ingredientsKeyRef = useRef("");
+  // หน้าที่เปิดโหมดทำมา — ทำเสร็จแล้วกลับไปที่เดิม (เมนูโปรดไม่ควรเด้งไปหน้าเมนูที่ว่าง)
+  const cookReturnRef = useRef<ViewMode>("recipes");
+  const viewModeRef = useRef<ViewMode>("home");
 
   useEffect(() => {
+    // หน้าแนะนำส่งโหมดที่เลือกมาทาง ?mode= — ค่าที่ไม่รู้จักใช้ค่าเริ่มต้นเหมือนเดิม
+    const requested = new URLSearchParams(window.location.search).get("mode");
+    if (COOKING_MODES.some((m) => m.id === requested)) {
+      setCookingMode(requested as CookingMode);
+    }
     setFavorites(loadFavorites());
     setHistory(loadHistory());
     listClasses().then((entries) => {
       setClassRegistry(entries);
       setClassOptions(entries);
     });
+  }, []);
+
+  /* ผูกหน้าในแอปเข้ากับ history ของเบราว์เซอร์ — ไม่งั้นปุ่ม Back (โดยเฉพาะ Android)
+     พาออกจาก /app ทั้งก้อน รูปที่สแกนกับเมนูที่ได้หายหมด
+     spread history.state เพื่อเก็บ key ภายในของ Next router ไว้ */
+  useEffect(() => {
+    viewModeRef.current = viewMode;
+    const current = (window.history.state as ViewHistoryState)?.view;
+    if (current === viewMode) return;
+    const state = { ...window.history.state, view: viewMode };
+    if (!current || TRANSIENT_VIEWS.includes(current)) {
+      window.history.replaceState(state, "");
+    } else {
+      window.history.pushState(state, "");
+    }
+  }, [viewMode]);
+
+  useEffect(() => {
+    const onPopState = (e: PopStateEvent) => {
+      const target = (e.state as ViewHistoryState)?.view;
+      if (!target) return; // entry ที่ไม่ใช่ของแอป เช่นหน้าแนะนำ — ให้ Next จัดการ
+      const from = viewModeRef.current;
+      // entry ซ้ำ (เกิดจาก replace ตอนออกจากหน้า transient) หรือหน้า transient ที่ค้าง — ข้ามไปอีกขั้น
+      if (target === from || TRANSIENT_VIEWS.includes(target)) {
+        window.history.back();
+        return;
+      }
+      if (from === "camera") stopCamera();
+      if (from === "cook") setActiveRecipe(null);
+      if (from === "edit") cancelLabelPicker();
+      setViewMode(target);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+    // stopCamera / cancelLabelPicker แตะแค่ ref กับ setState ซึ่งคงที่ตลอดอายุ hook
   }, []);
 
   useEffect(() => {
@@ -755,6 +804,7 @@ const isDrawingRef = useRef(false);
   };
 
   const quickCookFavorite = (recipe: Recipe) => {
+    cookReturnRef.current = viewMode;
     setActiveRecipe(recipe);
     setViewMode("cook");
     ensureRecipeImage(recipe);
@@ -816,6 +866,7 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     setCurrentRect(null);
   };
   const startCook = (recipe: Recipe) => {
+    cookReturnRef.current = viewMode;
     setActiveRecipe(recipe);
     setViewMode("cook");
     ensureRecipeImage(recipe);
@@ -823,7 +874,7 @@ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
 
   const endCook = () => {
     setActiveRecipe(null);
-    setViewMode("recipes");
+    setViewMode(cookReturnRef.current);
   };
 
   const goHome = () => {

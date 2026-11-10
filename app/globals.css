@@ -1,68 +1,72 @@
 @import "tailwindcss";
 
+/* ระบบสีชุดเดียวทั้งเว็บ (หน้าแนะนำ + แอป) — โทนเขียวใบตอง
+   พื้นเขียวอ่อนจาง · หมึกเขียวเข้มแทนดำ · เขียวแบรนด์เป็นปุ่มหลักและข้อมูล (กรอบที่โมเดลตีให้, ของที่เลือกอยู่)
+   — ไม่มีไล่สี ไม่มีเงาบนของที่วางนิ่ง ไม่มีกระจกเบลอ */
 @theme {
+  --color-page: #eef3ea;
   --color-surface: #ffffff;
-  --color-surface-2: #f7fbf4;
-  --color-glass: rgba(255, 255, 255, 0.88);
-  /* นิวทรัลอมอุ่นเป็นครีม — เว็บอาหารที่พื้นเป็นขาวอมเทาจะรู้สึกเหมือนหน้า dashboard
-     ครีมทำให้รู้สึกเหมือนร้านมากกว่าเครื่องมือ โดยไม่ต้องแตะสีสถานะสักตัว
+  --color-surface-2: #e2eadc;
+  --color-ink: #0f2a1a;
+  /* 6.9:1 บนขาว, 6.2:1 บน page — ผ่าน AA ทั้งคู่ */
+  --color-muted: #475b4c;
+  --color-line: #d8e2d2;
+  --color-line-soft: #e7eee3;
+  --color-control: #b9c8b3;
 
-     muted เดิม #767c74 ทับพื้นเดิมได้ contrast แค่ ~4.06 ตกเกณฑ์ AA (4.5)
-     ตัวนี้ได้ ~5.7 อ่านง่ายขึ้นจริงและยังดูเบาอยู่ */
-  --color-page: #f2f7ef;
-  --color-ink: #173122;
-  --color-muted: #5d7063;
-  --color-line: #d7e5d4;
-  --color-line-soft: #eaf2e7;
+  /* เขียวแบรนด์ — ขาวบนสีนี้ได้ 5.4:1 */
+  --color-brand: #1b7a43;
+  --color-brand-dark: #135c32;
+  --color-brand-lime: #8ccf3f;
+  --color-brand-soft: #d6ebd8;
+  --color-brand-pale: #eaf4e9;
+  --color-brand-glow: transparent;
 
-  /* เขียวสน — ตัวขาวบนปุ่มได้ contrast 7.59 ผ่าน WCAG AA สบาย ๆ */
-  --color-brand: #08783d;
-  --color-brand-dark: #005b30;
-  --color-brand-lime: #73c92f;
-  --color-brand-soft: #e4f4df;
-  --color-brand-pale: #f3faef;
-  --color-brand-glow: rgba(8, 120, 61, 0.24);
-  --color-terracotta: #c75d3a;
-  --color-terracotta-dark: #9f4328;
-  --color-terracotta-soft: #f8e5dc;
-  --color-wood: #9a6743;
+  /* ปุ่มสแกน — action เดียวที่ใหญ่ที่สุดในแอป ใช้เขียวแบรนด์ ตัวหนังสือขาว */
+  --color-accent: #1b7a43;
+  --color-accent-ink: #ffffff;
 
-  --color-favorite: #ec4899;
-  --color-favorite-soft: #fdf2f8;
+  --color-glass: #ffffff;
+  --color-terracotta: #a8461f;
+  --color-terracotta-dark: #7f3416;
+  --color-terracotta-soft: #f6e6dd;
+  --color-wood: #7a5638;
 
-  /* ขยับเป็น teal เพราะแบรนด์เป็นเขียวแล้ว เขียวสถานะกับเขียวแบรนด์จะกลืนกัน */
-  --color-success: #0f766e;
-  --color-success-soft: #e9f6f4;
-  --color-warn: #f59e0b;
-  --color-warn-soft: #fffbeb;
-  /* ปลายไล่สีของปุ่มเตือน — เดิม hardcode เป็น amber-600 ไว้ในคอมโพเนนต์ */
-  --color-warn-dark: #d97706;
+  --color-favorite: #c8243d;
+  --color-favorite-soft: #fbeaed;
 
-  /* ธีมเดิมไม่มีสีสำหรับการกระทำอันตราย ทุกที่เลย hardcode red-500/600/700 กันเอง
-     ทำให้เฉดไม่ตรงกันและเปลี่ยนธีมทีต้องไล่แก้ทีละจุด */
-  --color-danger: #c62828;
-  --color-danger-soft: #fdecec;
+  --color-success: #1b7a43;
+  --color-success-soft: #d6ebd8;
+  --color-warn: #b45309;
+  --color-warn-soft: #fff7e0;
+  --color-warn-dark: #92400e;
 
-  /* ดาวให้คะแนน — ต้องตรงกับค่า STAR ใน recipeCard.ts ที่วาดลง canvas
-     (canvas อ่าน CSS variable ไม่ได้ เลยต้องล็อกค่าไว้สองที่) */
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
+
+  /* ดาวให้คะแนน — ต้องตรงกับค่า STAR ใน recipeCard.ts ที่วาดลง canvas */
   --color-star: #f5b642;
 
-  --font-sans: "Kanit", "Noto Sans Thai", system-ui, sans-serif;
+  --font-sans: var(--font-anuphan), "Noto Sans Thai", system-ui, sans-serif;
+  --font-display: var(--font-anuphan), system-ui, sans-serif;
 
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 22px;
-  --radius-xl: 28px;
-  --radius-2xl: 36px;
+  /* มุมแคบชุดเดียว ไล่ลงตามชั้นที่ซ้อนกัน */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 12px;
 
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 2px 8px rgba(20, 64, 36, 0.06);
-  --shadow-md: 0 8px 24px rgba(20, 64, 36, 0.09);
-  --shadow-lg: 0 16px 40px rgba(20, 64, 36, 0.12);
-  --shadow-xl: 0 24px 60px rgba(20, 64, 36, 0.16);
-  --shadow-glow: 0 8px 30px var(--color-brand-glow);
+  /* ของที่วางนิ่งไม่มีเงา แยกชั้นด้วยเส้น 1px หรือสีพื้นต่างระดับ
+     lg/xl เหลือไว้ให้ของที่ลอยจริง: แผ่นล่าง, เมนู, กล่องโต้ตอบ */
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: 0 12px 32px rgba(15, 42, 26, 0.14);
+  --shadow-xl: 0 18px 48px rgba(15, 42, 26, 0.18);
+  --shadow-glow: none;
 }
 
 @layer base {
@@ -72,26 +76,32 @@
   }
 
   body {
-    /* แสงนวลสองก้อน — เขียวแบรนด์กับส้มอุ่น alpha ต่ำมากจนไม่อ่านเป็นสีสถานะ
-       แต่พอให้พื้นไม่แบนเป็นแผ่นเดียว */
-    background:
-      radial-gradient(900px 520px at 100% -5%, rgba(115, 201, 47, 0.13), transparent 60%),
-      radial-gradient(800px 500px at -10% 10%, rgba(8, 120, 61, 0.1), transparent 58%),
-      var(--color-page);
+    background: var(--color-page);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.55;
     min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
     overscroll-behavior-y: none;
   }
 
-  ::selection {
-    background: #cceeb8;
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.005em;
+    /* สระบน-วรรณยุกต์ไทยซ้อนกันสูง บรรทัดชิดกว่านี้จะชนบรรทัดบน */
+    line-height: 1.3;
   }
 
-  /* Keyboard focus ring — visible only when navigating with keyboard */
+  ::selection {
+    background: var(--color-brand-soft);
+    color: var(--color-ink);
+  }
+
   :focus-visible {
-    outline: 2px solid var(--color-brand);
+    outline: 2px solid var(--color-ink);
     outline-offset: 2px;
   }
 
@@ -114,15 +124,13 @@
     cursor: not-allowed;
   }
 
-  /* Fingers are less precise than a mouse: every tappable button gets a
-     44px target on touch devices even when the visual control is compact. */
+  /* นิ้วไม่แม่นเท่าเมาส์ — ปุ่มทุกตัวบนจอสัมผัสสูงอย่างน้อย 44px */
   @media (pointer: coarse) {
     button {
       min-height: 44px;
     }
   }
 
-  /* Safe area padding helper for mobile */
   .safe-bottom {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
@@ -136,89 +144,107 @@
 
 @layer components {
   .card {
-    @apply bg-[var(--color-surface)] rounded-[var(--radius-lg)] border border-[var(--color-line)] shadow-[var(--shadow-sm)];
+    @apply bg-[var(--color-surface)] rounded-[var(--radius-lg)] border border-[var(--color-line)];
   }
 
   .card-flat {
-    @apply bg-white rounded-[var(--radius-lg)] border border-[var(--color-line)];
+    @apply bg-[var(--color-surface)] rounded-[var(--radius-lg)] border border-[var(--color-line)];
   }
 
+  /* ปุ่มหลักเป็นเขียวแบรนด์ — ใช้ปุ่มละหนึ่งตัวต่อจอ ปุ่มรองเป็นขอบ */
   .btn-primary {
     @apply cursor-pointer min-h-12 inline-flex items-center justify-center gap-2 px-5
       bg-[var(--color-brand)] text-white font-semibold rounded-[var(--radius-md)]
-      active:scale-[0.98] transition-all duration-150 shadow-[0_3px_12px_var(--color-brand-glow)]
-      hover:bg-[var(--color-brand-dark)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none;
+      active:scale-[0.98] transition-[background-color,transform] duration-150
+      hover:bg-[var(--color-brand-dark)] disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-accent {
+    @apply cursor-pointer min-h-12 inline-flex items-center justify-center gap-2 px-5
+      bg-[var(--color-accent)] text-[var(--color-accent-ink)] font-semibold rounded-[var(--radius-md)]
+      active:scale-[0.98] transition-[background-color,transform] duration-150
+      hover:bg-[var(--color-brand-dark)] disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  /* ปุ่มในการ์ดที่เรียงกันหลายใบ — เขียวอ่อน ไม่แย่งสายตาจากปุ่มหลักของจอ */
+  .btn-soft {
+    @apply cursor-pointer min-h-10 inline-flex items-center justify-center gap-1.5 px-4
+      bg-[var(--color-brand-soft)] text-[var(--color-brand-dark)] text-sm font-semibold rounded-[var(--radius-md)]
+      active:scale-[0.98] transition-[background-color,color,transform] duration-150
+      hover:bg-[var(--color-brand)] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
     @apply cursor-pointer min-h-12 inline-flex items-center justify-center gap-2 px-5
-      bg-white text-[var(--color-brand)] font-semibold rounded-[var(--radius-md)]
-      border border-[var(--color-line)] shadow-[var(--shadow-xs)] active:scale-[0.98] transition-all duration-150
-      hover:border-[var(--color-brand)] hover:bg-[var(--color-brand-pale)] disabled:opacity-40 disabled:cursor-not-allowed;
+      bg-[var(--color-surface)] text-[var(--color-ink)] font-semibold rounded-[var(--radius-md)]
+      border border-[var(--color-control)] active:scale-[0.98] transition-[border-color,background-color,transform] duration-150
+      hover:border-[var(--color-ink)] disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .btn-ghost {
     @apply cursor-pointer min-h-11 inline-flex items-center justify-center gap-2 px-3
       text-[var(--color-muted)] font-medium rounded-[var(--radius-md)]
-      active:scale-[0.98] transition-all duration-150 hover:text-[var(--color-brand)]
-      hover:bg-[var(--color-brand-pale)] disabled:opacity-40 disabled:cursor-not-allowed;
+      active:scale-[0.98] transition-colors duration-150 hover:text-[var(--color-ink)]
+      hover:bg-[var(--color-line-soft)] disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .btn-danger {
     @apply cursor-pointer min-h-11 inline-flex items-center justify-center gap-2 px-4
       bg-[var(--color-danger-soft)] text-[var(--color-danger)] font-semibold rounded-[var(--radius-md)]
-      border border-[var(--color-danger)]/15 active:scale-[0.98] transition-all duration-150
-      hover:border-[var(--color-danger)]/35 disabled:opacity-40 disabled:cursor-not-allowed;
+      active:scale-[0.98] transition-[background-color,transform] duration-150
+      hover:bg-[#f9d9d5] disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .btn-inverse {
     @apply cursor-pointer min-h-12 inline-flex items-center justify-center gap-2 px-5
-      bg-white text-[var(--color-brand-dark)] font-bold rounded-[var(--radius-md)]
-      border border-white/70 shadow-[var(--shadow-md)] active:scale-[0.98] transition-all duration-150
-      hover:bg-[var(--color-brand-pale)] disabled:opacity-40 disabled:cursor-not-allowed;
+      bg-white text-[var(--color-ink)] font-semibold rounded-[var(--radius-md)]
+      active:scale-[0.98] transition-[background-color,transform] duration-150
+      hover:bg-[var(--color-line-soft)] disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .choice-btn {
-    @apply min-h-12 rounded-[var(--radius-md)] border border-[var(--color-line)] bg-white
-      text-[var(--color-ink)] transition-all duration-150 hover:border-[var(--color-brand)]
-      hover:bg-[var(--color-brand-pale)] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply min-h-12 rounded-[var(--radius-md)] border border-[var(--color-control)] bg-white
+      text-[var(--color-ink)] transition-[border-color,background-color,transform] duration-150 hover:border-[var(--color-ink)]
+      active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .pill {
-    @apply text-xs md:text-sm px-3 py-1 md:px-3.5 md:py-1.5 rounded-full font-medium transition-all duration-150 whitespace-nowrap inline-flex items-center;
+    @apply text-[13px] px-2.5 py-0.5 rounded-[var(--radius-sm)] font-medium transition-colors duration-150 whitespace-nowrap inline-flex items-center;
   }
 
   .pill-active {
-    @apply bg-[var(--color-brand)] text-white shadow-[0_2px_8px_var(--color-brand-glow)];
+    @apply bg-[var(--color-brand)] text-white;
   }
 
   .pill-inactive {
-    @apply bg-white text-[var(--color-muted)] border border-[var(--color-line)] hover:border-[var(--color-brand)] hover:text-[var(--color-brand)];
+    @apply bg-white text-[var(--color-ink)] border border-[var(--color-control)] hover:border-[var(--color-ink)];
   }
 
   .section-title {
-    @apply text-lg font-bold text-[var(--color-ink)] tracking-tight;
+    @apply text-lg font-semibold text-[var(--color-ink)];
+    font-family: var(--font-display);
   }
 
   .section-subtitle {
-    @apply text-xs text-[var(--color-muted)] mt-0.5;
+    @apply text-sm text-[var(--color-muted)] mt-0.5;
   }
 
   .icon-btn {
-    @apply flex min-h-11 min-w-11 items-center justify-center rounded-full transition-all duration-150
-      active:scale-90 hover:bg-[var(--color-brand-pale)] disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply flex min-h-11 min-w-11 items-center justify-center rounded-[var(--radius-md)] transition-[background-color,transform] duration-150
+      active:scale-90 hover:bg-[var(--color-line-soft)] disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
-  /* text-base (16px) บนมือถือคือขั้นต่ำที่ iOS Safari ยอมไม่ซูมหน้าเข้าตอนโฟกัส
-     ถ้าเล็กกว่านี้หน้าจะเด้งซูมทุกครั้งที่กดช่องค้นหา แล้วซูมกลับไม่เอง */
+  /* 16px บนมือถือคือขั้นต่ำที่ iOS Safari ยอมไม่ซูมหน้าเข้าตอนโฟกัส */
   .input-search {
-    @apply w-full rounded-[var(--radius-md)] border border-[var(--color-line)] bg-white px-4 py-3
-      text-base md:text-sm min-h-[46px] shrink-0 appearance-none
-      outline-none transition-all duration-150
-      focus:border-[var(--color-brand)] focus:ring-2 focus:ring-[var(--color-brand)]/10;
+    @apply w-full rounded-[var(--radius-md)] border border-[var(--color-control)] bg-white px-4 py-3
+      text-base min-h-[46px] shrink-0 appearance-none
+      outline-none transition-colors duration-150
+      focus:border-[var(--color-brand)];
+  }
+  .input-search::placeholder {
+    color: #627266;
   }
 
-  /* ปุ่มกากบาท/ไอคอนแว่นของ type="search" ที่ WebKit ยัดมาให้ — ทับสไตล์เราเละ */
   .input-search::-webkit-search-decoration,
   .input-search::-webkit-search-cancel-button,
   .input-search::-webkit-search-results-button {
@@ -226,7 +252,6 @@
     appearance: none;
   }
 
-  /* Touch-friendly tap target (min 44px on mobile) */
   .tap {
     @apply min-h-[44px] min-w-[44px];
   }
@@ -241,20 +266,14 @@
   }
 
   .skeleton {
-    @apply bg-[var(--color-line)] rounded-[var(--radius-sm)] relative overflow-hidden;
+    @apply bg-[var(--color-line)] rounded-[var(--radius-sm)];
+    animation: skeletonPulse 1.4s ease-in-out infinite;
   }
-  .skeleton::after {
-    content: "";
-    @apply absolute inset-0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
-    animation: shimmer 1.5s infinite;
-  }
-  @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+  @keyframes skeletonPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
   }
 
-  /* Ellipsis helpers */
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -271,18 +290,24 @@
     }
   }
 
-  /* Side navigation for tablet/desktop */
+  /* แถบข้าง — ปุ่มที่เลือกอยู่เป็นพื้นเทากลาง ไม่ใช่ก้อนสีแบรนด์ */
   .nav-item {
-    @apply flex items-center gap-3 px-4 py-3 rounded-[var(--radius-md)] font-medium text-sm transition-colors;
+    @apply flex items-center gap-3 px-3 min-h-10 rounded-[var(--radius-md)] font-medium text-[15px] transition-colors;
   }
   .nav-item-active {
-    @apply bg-[var(--color-brand)] text-white shadow-[0_2px_10px_var(--color-brand-glow)];
+    @apply text-[var(--color-brand-dark)] font-semibold;
   }
   .nav-item-inactive {
-    @apply text-[var(--color-muted)] hover:bg-[var(--color-brand-pale)] hover:text-[var(--color-brand)];
+    @apply text-[var(--color-muted)] hover:bg-[var(--color-line-soft)] hover:text-[var(--color-ink)];
+  }
+  /* ไม่ใส่ transition — Motion ขยับก้อนนี้ด้วย layoutId */
+  .nav-pill {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-md);
+    background: var(--color-brand-soft);
   }
 
-  /* Utility animations */
   .slide-up {
     animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -292,10 +317,10 @@
   }
 
   .pop-in {
-    animation: popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
   @keyframes popIn {
-    from { opacity: 0; transform: scale(0.94); }
+    from { opacity: 0; transform: scale(0.96); }
     to { opacity: 1; transform: scale(1); }
   }
 
@@ -308,29 +333,16 @@
     55% { transform: translateY(1px); }
   }
 
+  /* แอปไม่มีอะไร "แสดง" อยู่เฉย ๆ — คลาสพวกนี้คอมโพเนนต์ยังอ้างอยู่ จึงคงชื่อไว้แต่ไม่ขยับ */
+  .shimmer-linear,
+  .glow-pulse,
+  .breathing,
+  .float-y,
+  .wiggle {
+    animation: none;
+  }
   .shimmer-linear {
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
-    animation: shimmerSlide 1.6s infinite;
-  }
-  @keyframes shimmerSlide {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-  }
-
-  .glow-pulse {
-    animation: glowPulse 2.4s ease-in-out infinite;
-  }
-  @keyframes glowPulse {
-    0%, 100% { opacity: 0.75; }
-    50% { opacity: 1; }
-  }
-
-  .breathing {
-    animation: breathing 2.6s ease-in-out infinite;
-  }
-  @keyframes breathing {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.04); }
+    display: none;
   }
 
   .spin-slower {
@@ -342,73 +354,38 @@
   }
 
   .card-lift {
-    transition: transform 0.3s ease, box-shadow 0.35s ease;
+    transition: border-color 0.2s ease;
   }
   .card-lift:hover {
-    transform: translateY(-3px);
+    border-color: var(--color-control);
   }
 
-  /* ===== Modern warm additions ===== */
-
-  .glass {
-    @apply bg-[var(--color-glass)] backdrop-blur-xl border border-white/60;
-  }
-
+  .glass,
   .card-glass {
-    @apply rounded-[var(--radius-lg)] border border-white/60 shadow-[var(--shadow-md)] backdrop-blur-xl bg-[var(--color-glass)];
+    @apply bg-[var(--color-surface)] border border-[var(--color-line)] rounded-[var(--radius-lg)];
   }
 
-  /* Brand gradient text + soft surface */
   .text-gradient-brand {
-    background: linear-gradient(120deg, var(--color-brand-dark), var(--color-brand));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--color-ink);
   }
 
   .surface-soft {
-    background: linear-gradient(180deg, var(--color-surface), var(--color-surface-2));
+    background: var(--color-surface);
   }
 
-  /* Segmented control */
-  .seg {
-    @apply flex gap-1 p-1 rounded-full bg-[var(--color-line-soft)] border border-[var(--color-line)];
-  }
-  .seg-btn {
-    @apply w-9 h-9 rounded-full flex items-center justify-center text-sm transition-all duration-200 relative min-h-[44px] min-w-[44px];
-  }
-  .seg-btn-active {
-    @apply bg-white text-[var(--color-brand)] shadow-[var(--shadow-sm)];
-  }
-  .seg-btn-idle {
-    @apply text-[var(--color-muted)] hover:text-[var(--color-brand)];
-  }
-
-  /* Sliding active indicator pill for nav
-     ไม่ใส่ transition ตรงนี้ — Motion เป็นคนขยับ (layoutId) ผ่าน transform
-     ถ้ามี transition: all ค้างไว้ CSS จะไปแย่งคุม transform เดียวกันจนกระตุก */
-  .nav-pill {
-    position: absolute;
-    inset: 0;
-    border-radius: var(--radius-md);
-    background: var(--color-brand-dark);
-    box-shadow: var(--shadow-glow);
-  }
-
-  /* Floating action chip */
   .fab {
-    @apply fixed bottom-24 right-4 z-40 w-14 h-14 rounded-full bg-[var(--color-brand)] text-white
-      grid place-items-center shadow-[var(--shadow-glow)] active:scale-90 transition-transform min-h-[44px] min-w-[44px];
+    @apply fixed right-4 z-40 w-14 h-14 rounded-[var(--radius-lg)] bg-[var(--color-accent)] text-[var(--color-accent-ink)]
+      grid place-items-center active:scale-90 transition-transform min-h-[44px] min-w-[44px];
+    bottom: calc(5rem + env(safe-area-inset-bottom));
+    box-shadow: var(--shadow-lg);
   }
 
-  /* Hairline divider */
   .divider {
     @apply h-px bg-[var(--color-line)] border-0;
   }
 
-  /* Small icon tile */
   .tile {
-    @apply w-9 h-9 rounded-xl grid place-items-center shrink-0;
+    @apply w-9 h-9 rounded-[var(--radius-md)] grid place-items-center shrink-0;
   }
 
   .kitchen-shell {
@@ -416,145 +393,31 @@
     isolation: isolate;
   }
 
-  .kitchen-shell::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    opacity: 0.24;
-    background-image:
-      linear-gradient(rgba(8, 120, 61, 0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(8, 120, 61, 0.08) 1px, transparent 1px);
-    background-size: 32px 32px;
-    mask-image: linear-gradient(to bottom, black, transparent 72%);
-  }
-
   .mobile-header-safe {
     padding-top: max(0.5rem, env(safe-area-inset-top));
   }
 
-  @media (max-width: 767px) {
-    .kitchen-shell::before {
-      display: none;
-    }
-  }
-
-  .kitchen-hero {
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,.65);
-    background:
-      radial-gradient(circle at 82% 18%, rgba(255,255,255,.18), transparent 24%),
-      linear-gradient(135deg, #004c29 0%, #08783d 58%, #45a536 100%);
-    box-shadow: var(--shadow-lg);
-  }
-
-  .kitchen-hero::after {
-    content: "✦";
-    position: absolute;
-    right: -12px;
-    bottom: -52px;
-    font-size: 150px;
-    line-height: 1;
-    color: rgba(255,255,255,.06);
-    transform: rotate(18deg);
-  }
-
   .wood-edge {
-    border-bottom: 3px solid rgba(115, 201, 47, .45);
-    box-shadow: 0 5px 16px rgba(20,64,36,.08);
+    border-bottom: 1px solid var(--color-line);
   }
 
-  .landing-hero {
-    background:
-      radial-gradient(circle at 88% 12%, rgba(115, 201, 47, .18), transparent 28%),
-      linear-gradient(180deg, rgba(255,255,255,.74), rgba(242,247,239,.3));
-  }
-
-  .kitchen-board {
-    position: relative;
-    border-radius: var(--radius-xl);
-    border: 1px solid rgba(110, 69, 39, .35);
-    background:
-      repeating-linear-gradient(
-        96deg,
-        rgba(255,255,255,.05) 0 3px,
-        transparent 3px 42px
-      ),
-      linear-gradient(145deg, #b78054, #8b5837);
-    box-shadow:
-      0 22px 45px rgba(70,49,31,.2),
-      inset 0 1px rgba(255,255,255,.25);
-    transform: rotate(1deg);
-  }
-
-  .kitchen-board::before {
-    content: "";
-    position: absolute;
-    width: 18px;
-    height: 18px;
-    right: 16px;
-    top: 16px;
-    border: 3px solid rgba(75,45,27,.45);
-    border-radius: 999px;
-    z-index: 2;
-  }
-
-  .section-kitchen {
-    background:
-      linear-gradient(rgba(8,120,61,.07) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(8,120,61,.07) 1px, transparent 1px),
-      rgba(255,255,255,.72);
-    background-size: 38px 38px;
-  }
-
-  /* ===== Animations ===== */
-
-  /* Stagger container: children animate in with a per-item delay set via --i */
   .stagger > * {
-    animation: fadeUp 0.5s var(--ease-spring) both;
-    animation-delay: calc(var(--i, 0) * 55ms);
+    animation: fadeUp 0.45s var(--ease-spring) both;
+    animation-delay: calc(var(--i, 0) * 50ms);
   }
 
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(14px); }
+    from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* สลับหน้า / เปิดปิด overlay / หัวใจเด้ง ย้ายไปอยู่ที่ Motion หมดแล้ว
-     (ViewTransition, SheetShell, useHeartPop) เพราะ CSS ทำ exit animation ไม่ได้ —
-     พอโหนดถูกถอดออกจาก DOM คลาสก็หายไปพร้อมกัน ไม่มีจังหวะให้เล่นตอนปิด */
-
-  /* Gentle float (camera hints, empty-state icon) */
-  .float-y {
-    animation: floatY 3s ease-in-out infinite;
-  }
-  @keyframes floatY {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
-  }
-
-  /* Progress shimmer for loading bars */
   .shimmer-bar {
     position: relative;
     overflow: hidden;
   }
-  .shimmer-bar::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
-    animation: shimmerSlide 1.4s infinite;
-  }
 
-  /* ริปเปิลปุ่มชัตเตอร์ย้ายไปอยู่ใน CameraView แล้ว
-     เพราะผูกกับ :active ไม่ได้ — คลาสหลุดตอนปล่อยนิ้ว อนิเมชันเลยไม่เคยเล่นจบ */
-
-  /* ===== Scan result: กรอบวาดตัวเอง แล้วป้ายชื่อค่อยเด้งตาม ===== */
-
-  /* ใช้กับ <rect pathLength="1"> เท่านั้น — pathLength ทำให้เส้นรอบรูปเป็น 1 หน่วยเสมอ
-     ไม่ว่ากล่องจะใหญ่เล็กแค่ไหน ทุกกล่องเลยวาดจบพร้อมกัน */
+  /* ===== ผลสแกน: กรอบวาดตัวเอง แล้วป้ายชื่อค่อยตามมา =====
+     ใช้กับ <rect pathLength="1"> — เส้นรอบรูปเป็น 1 หน่วยเสมอ ทุกกล่องวาดจบพร้อมกัน */
   .box-draw {
     stroke-dasharray: 1;
     stroke-dashoffset: 1;
@@ -565,7 +428,6 @@
     to { stroke-dashoffset: 0; }
   }
 
-  /* ป้ายชื่อ + พื้นกล่อง โผล่หลังเส้นวาดเสร็จ */
   .box-label-in {
     animation: softIn 0.35s ease-out both;
     animation-delay: calc(var(--i, 0) * 110ms + 480ms);
@@ -575,43 +437,22 @@
     to { opacity: 1; }
   }
 
-  /* Chip วัตถุดิบเด้งขึ้นทีละอัน */
   .chip-in {
-    animation: chipIn 0.42s var(--ease-spring) both;
-    animation-delay: calc(var(--i, 0) * 70ms + 300ms);
+    animation: chipIn 0.36s var(--ease-spring) both;
+    animation-delay: calc(var(--i, 0) * 60ms + 250ms);
   }
   @keyframes chipIn {
-    from { opacity: 0; transform: scale(0.5) translateY(8px); }
-    65% { transform: scale(1.1) translateY(0); }
-    to { opacity: 1; transform: scale(1); }
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
-  /* ===== เรียกร้องความสนใจ (รูปที่โมเดลไม่รู้จัก) ===== */
-
-  .wiggle {
-    display: inline-block;
-    transform-origin: 70% 80%;
-    animation: wiggle 2.8s ease-in-out infinite;
-  }
-  @keyframes wiggle {
-    0%, 55%, 100% { transform: rotate(0deg); }
-    60% { transform: rotate(-10deg); }
-    68% { transform: rotate(8deg); }
-    76% { transform: rotate(-6deg); }
-    84% { transform: rotate(3deg); }
-  }
-
-  /* วงแหวนอุ่นๆ เต้นช้าๆ รอบการ์ด — บอกว่า "ตรงนี้รอคุณอยู่นะ" */
+  /* รูปที่โมเดลไม่รู้จัก — กรอบหนาขึ้นนิ่ง ๆ แทนวงแหวนเต้น */
   .attention-ring {
-    animation: attentionRing 2.8s ease-in-out infinite;
-  }
-  @keyframes attentionRing {
-    0%, 100% { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 0 0 0 rgba(245, 158, 11, 0); }
-    50% { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 0 0 7px rgba(245, 158, 11, 0.12); }
+    outline: 2px solid var(--color-warn);
+    outline-offset: -2px;
   }
 
-  /* ===== หม้อต้มตอนโหลด ===== */
-
+  /* หม้อต้มตอนโหลด — เป็น feedback ว่ากำลังทำงาน ไม่ใช่ของประดับ จึงยังขยับ */
   .bob {
     animation: bob 1.5s ease-in-out infinite;
   }
@@ -629,7 +470,6 @@
     100% { opacity: 0; transform: translateY(-22px) scale(1.3); }
   }
 
-  /* จุดกระโดดสามจุด (…) */
   .hop {
     animation: hop 1.1s ease-in-out infinite;
   }
@@ -639,7 +479,6 @@
   }
 }
 
-/* Respect reduced-motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

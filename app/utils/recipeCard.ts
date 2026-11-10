@@ -32,10 +32,10 @@ export const CARD_FORMATS: Record<CardFormat, FormatConfig> = {
 };
 
 // ล็อกสีให้ตรงกับ @theme ใน globals.css — canvas อ่าน CSS variable ไม่ได้
-const BRAND = "#1f5f3f";
-const INK = "#1a1a1a";
+const BRAND = "#1b7a43";
+const INK = "#0f2a1a";
 const MUTED = "#767c74";
-const PAGE = "#f9f9f5";
+const PAGE = "#eef3ea";
 const STAR = "#f5b642";
 
 const PAD = 64;

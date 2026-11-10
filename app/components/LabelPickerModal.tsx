@@ -5,6 +5,7 @@ import { addClass } from "../actions/classes";
 import type { ClassEntry } from "../utils/classRegistry";
 import { filterClassNames } from "../utils/classRegistry";
 import { normalizeLabelName } from "../utils/normalizeLabel";
+import { IconX } from "./Icons";
 import { SheetShell } from "./motion/SheetShell";
 
 interface LabelPickerModalProps {
@@ -163,9 +164,9 @@ export function LabelPickerModal({
                 inputRef.current?.focus();
               }}
               aria-label="ล้างคำค้นหา"
-              className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-full text-[var(--color-muted)] hover:bg-gray-100 active:scale-90 transition-all"
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-[var(--radius-md)] text-[var(--color-muted)] hover:bg-[var(--color-line-soft)] active:scale-90 transition-[background-color,transform]"
             >
-              ✕
+              <IconX size={16} />
             </button>
           )}
         </div>

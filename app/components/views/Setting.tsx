@@ -91,7 +91,7 @@ export default function Settings({ onBack }: SettingProps) {
     <div className="space-y-5 md:space-y-6 pb-6 fade-in">
       {/* ===== Title ===== */}
       <div>
-        <h2 className="section-title">ตั้งค่าครัวของฉัน</h2>
+        <h1 className="section-title text-2xl md:text-[28px]">ตั้งค่าครัวของฉัน</h1>
         <p className="section-subtitle">
           เลือกอุปกรณ์ที่คุณมี Chef Kub จะแนะนำวิธีทำที่ทำได้จริงในครัวคุณ
         </p>
@@ -128,7 +128,7 @@ export default function Settings({ onBack }: SettingProps) {
                 type="button"
                 onClick={() => toggleEquipment(equipment.id)}
                 style={{ "--i": i } as Record<string, string | number>}
-                className="chip-in inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-white shadow-[var(--shadow-xs)] text-[var(--color-ink)] border border-black/[0.06] hover:bg-[var(--color-danger-soft)] hover:text-[var(--color-danger)] transition-all duration-200 active:scale-95"
+                className="chip-in inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-white text-[var(--color-ink)] border border-[var(--color-control)] hover:bg-[var(--color-danger-soft)] hover:text-[var(--color-danger)] transition-[color,background-color,border-color,transform] duration-200 active:scale-95"
               >
                 {equipment.name}
                 <span className="opacity-50 hover:opacity-100">
@@ -165,10 +165,10 @@ export default function Settings({ onBack }: SettingProps) {
             <div
               key={category.id}
               style={{ "--i": index } as Record<string, string | number>}
-              className={`bg-white rounded-[var(--radius-lg)] border overflow-hidden transition-all duration-200 ${
+              className={`bg-white rounded-[var(--radius-lg)] border overflow-hidden transition-[color,background-color,border-color,transform] duration-200 ${
                 isOpen
-                  ? "border-[var(--color-brand)] shadow-[var(--shadow-md)]"
-                  : "border-[var(--color-line)] shadow-[var(--shadow-sm)]"
+                  ? "border-[var(--color-ink)]"
+                  : "border-[var(--color-line)]"
               }`}
             >
               {/* Category header */}
@@ -178,23 +178,13 @@ export default function Settings({ onBack }: SettingProps) {
                 aria-expanded={isOpen}
                 className="w-full p-4 flex items-center gap-3 text-left tap"
               >
-                <span
-                  className={`tile w-11 h-11 text-xl transition-colors duration-200 ${
-                    isOpen
-                      ? "bg-[var(--color-brand-soft)]"
-                      : "bg-[var(--color-line-soft)]"
-                  }`}
-                >
-                  {category.icon}
-                </span>
-
                 <span className="flex-1 min-w-0">
                   <span className="flex items-center gap-2">
                     <span className="font-semibold text-[var(--color-ink)]">
                       {category.name}
                     </span>
                     {selectedCount > 0 && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--color-brand)] text-white">
+                      <span className="text-sm text-[var(--color-muted)] tabular-nums">
                         {selectedCount}
                       </span>
                     )}
@@ -239,7 +229,7 @@ export default function Settings({ onBack }: SettingProps) {
                           type="button"
                           onClick={() => toggleEquipment(equipment.id)}
                           aria-pressed={isSelected}
-                          className={`min-h-[52px] px-3 py-3 rounded-[var(--radius-md)] border text-left flex items-center gap-2 transition-all duration-200 active:scale-[0.97] ${
+                          className={`min-h-[52px] px-3 py-3 rounded-[var(--radius-md)] border text-left flex items-center gap-2 transition-[color,background-color,border-color,transform] duration-200 active:scale-[0.97] ${
                             isSelected
                               ? "bg-[var(--color-brand-soft)] border-[var(--color-brand)] text-[var(--color-brand)]"
                               : "bg-white border-[var(--color-line)] text-[var(--color-ink)] hover:border-[var(--color-brand)]"
@@ -272,15 +262,14 @@ export default function Settings({ onBack }: SettingProps) {
       {/* ===== ยังไม่ได้เลือกอะไรเลย ===== */}
       {selected.length === 0 && (
         <EmptyState
-          icon="🍽️"
           title="ครัวยังว่างอยู่"
           description="กดที่หมวดด้านบนเพื่อเลือกอุปกรณ์ที่คุณมี แล้วสูตรอาหารจะถูกปรับให้ทำได้จริง"
         />
       )}
 
       {/* ===== หมายเหตุ ===== */}
-      <p className="text-xs text-[var(--color-muted)] leading-relaxed px-1">
-        💡 กลับมาเปลี่ยนอุปกรณ์ได้ทุกเมื่อ การตั้งค่านี้ใช้ช่วย AI
+      <p className="text-sm text-[var(--color-muted)] leading-relaxed px-1">
+        กลับมาเปลี่ยนอุปกรณ์ได้ทุกเมื่อ การตั้งค่านี้ใช้ช่วย AI
         ปรับวิธีทำอาหารให้เหมาะกับครัวของคุณ
       </p>
 

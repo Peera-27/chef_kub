@@ -136,9 +136,9 @@ export function StepTimer({ seconds }: StepTimerProps) {
         }
         className={`relative overflow-hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 tap ${
           urgent
-            ? "bg-[var(--color-warn)] text-white shadow-sm"
+            ? "bg-[var(--color-warn)] text-white"
             : running
-              ? "bg-[var(--color-brand)] text-white shadow-sm"
+              ? "bg-[var(--color-brand)] text-white"
               : "bg-[var(--color-brand-soft)] text-[var(--color-brand)] hover:bg-[var(--color-brand-pale)]"
         }`}
       >

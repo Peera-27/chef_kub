@@ -1,12 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Kanit } from "next/font/google";
+import { Anuphan } from "next/font/google";
 import Script from "next/script";
 import { MotionProvider } from "./components/motion/MotionProvider";
 import "./globals.css";
-const kanit = Kanit({
+
+// Anuphan ตัวเดียวทั้งหัวข้อและเนื้อความ — เส้นโค้งนุ่ม อบอุ่นกว่า Plex เข้ากับงานอาหาร
+// เป็น variable font ไฟล์เดียวครอบทุกน้ำหนัก ไม่ต้องโหลดสองครอบครัวเหมือนเดิม
+const anuphan = Anuphan({
   subsets: ["thai", "latin"],
-  weight: ["300", "400", "500", "700"],
-  variable: "--font-kanit",
+  variable: "--font-anuphan",
   display: "swap",
 });
 
@@ -18,8 +20,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  themeColor: "#08783d",
+  themeColor: "#eef3ea",
 };
 
 export default function RootLayout({
@@ -28,8 +29,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th">
-      <body className={kanit.className}>
+    // suppressHydrationWarning: หน้าแนะนำเติมคลาส "js" ให้ <html> ก่อน React hydrate (ใช้ซ่อนสถานะก่อนเล่นอนิเมชัน)
+    <html
+      lang="th"
+      className={anuphan.variable}
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
+      {/* ซ่อนสถานะก่อนเล่นอนิเมชันเฉพาะเมื่อ JS ทำงาน — อยู่ใน layout เพราะ layout เรนเดอร์บนเซิร์ฟเวอร์ครั้งเดียว
+          ถ้าวางในหน้า แล้วเข้าหน้านั้นด้วยการกดลิงก์ฝั่ง client React จะไม่รันสคริปต์ คลาสก็ไม่ถูกเติม
+          CSS ที่ใช้คลาสนี้อยู่ใต้ .lp ทั้งหมด หน้าแอปจึงไม่โดนผลกระทบ */}
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+      </head>
+      <body>
         <MotionProvider>{children}</MotionProvider>
         {/* โหลดเฉพาะ production — endpoint ของ Cloudflare ตอบ CORS ให้ origin "http://localhost"
             แบบไม่มีพอร์ต ซึ่งไม่มีทางตรงกับ dev server ตัวไหน ยิงไปก็โดนบล็อกทิ้งอย่างเดียว

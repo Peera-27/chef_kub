@@ -164,10 +164,9 @@ async function generateFreshImage(
             Authorization: `Bearer ${apiToken}`,
             "Content-Type": "application/json",
           },
-          // 1024×512 ไม่ใช่ 16:9 เป๊ะ แต่จ่ายแค่ 2 tile ส่วน 576 ล้นเส้น 512 ไป 64px
-          // แล้วโดนคิดเต็มแถวที่สอง = 4 tile ทั้งที่ตาแทบไม่เห็นความต่างหลัง object-cover
+          // flux-1-schnell ไม่รับ width/height — ใส่ไปจะโดน 400 (code 5006) ทุกครั้ง
           // steps: schnell ถูก distill มาให้ทำงานที่ 1-4 steps — 2 พอสำหรับรูปอาหาร
-          body: JSON.stringify({ prompt, steps: 2, width: 1024, height: 512 }),
+          body: JSON.stringify({ prompt, steps: 2 }),
         },
       );
 

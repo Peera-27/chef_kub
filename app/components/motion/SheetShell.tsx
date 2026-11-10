@@ -52,7 +52,7 @@ export function SheetShell({
         {open && (
           <motion.div
             key="sheet-backdrop"
-            className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:bg-black/40 md:backdrop-blur-sm p-0 md:p-4"
+            className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:bg-black/40 md: p-0 md:p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

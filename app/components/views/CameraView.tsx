@@ -160,7 +160,7 @@ export function CameraView({
     <div className="flex min-h-0 flex-1 flex-col items-center gap-3 slide-up md:flex-none md:gap-6 md:py-8">
       <div className="flex w-full max-w-[540px] shrink-0 items-center justify-between gap-3">
         <div>
-          <h2 className="font-bold text-[var(--color-ink)]">ถ่ายวัตถุดิบ</h2>
+          <h1 className="text-xl font-bold text-[var(--color-ink)]">ถ่ายวัตถุดิบ</h1>
           <p className="text-xs text-[var(--color-muted)]">
             ให้เห็นวัตถุดิบชัดและไม่ซ้อนกัน
           </p>
@@ -181,7 +181,7 @@ export function CameraView({
 
       {/* จอมือถือ: กล่องนี้กินความสูงที่เหลือทั้งหมด (flex-1) — md ขึ้นไปกลับไปล็อกสัดส่วน 4:3
           <video> วางแบบ absolute ไม่ใช่ h-full เพราะ % ความสูงไม่ resolve เมื่อความสูงพ่อมาจาก flex */}
-      <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-[var(--radius-xl)] bg-black shadow-lg md:aspect-[4/3] md:w-[480px] md:flex-none md:shadow-xl lg:w-[540px]">
+      <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-[var(--radius-lg)] bg-black md:aspect-[4/3] md:w-[480px] md:flex-none lg:w-[540px]">
         <div className="absolute inset-0">
           <video
             ref={videoRef}
@@ -191,10 +191,10 @@ export function CameraView({
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-6 md:inset-8 pointer-events-none">
-            <div className="absolute top-0 left-0 w-8 h-8 md:w-10 md:h-10 border-t-2 border-l-2 border-white/60 rounded-tl-lg glow-pulse" />
-            <div className="absolute top-0 right-0 w-8 h-8 md:w-10 md:h-10 border-t-2 border-r-2 border-white/60 rounded-tr-lg glow-pulse" />
-            <div className="absolute bottom-0 left-0 w-8 h-8 md:w-10 md:h-10 border-b-2 border-l-2 border-white/60 rounded-bl-lg glow-pulse" />
-            <div className="absolute bottom-0 right-0 w-8 h-8 md:w-10 md:h-10 border-b-2 border-r-2 border-white/60 rounded-br-lg glow-pulse" />
+            <div className="absolute top-0 left-0 w-8 h-8 md:w-10 md:h-10 border-t-2 border-l-2 border-white/60 rounded-tl-lg" />
+            <div className="absolute top-0 right-0 w-8 h-8 md:w-10 md:h-10 border-t-2 border-r-2 border-white/60 rounded-tr-lg" />
+            <div className="absolute bottom-0 left-0 w-8 h-8 md:w-10 md:h-10 border-b-2 border-l-2 border-white/60 rounded-bl-lg" />
+            <div className="absolute bottom-0 right-0 w-8 h-8 md:w-10 md:h-10 border-b-2 border-r-2 border-white/60 rounded-br-lg" />
           </div>
 
           <AnimatePresence>
@@ -242,38 +242,25 @@ export function CameraView({
             </div>
           )}
 
-          <div className="absolute inset-0 rounded-[var(--radius-xl)] ring-1 ring-inset ring-white/10 pointer-events-none" />
         </div>
 
-        {/* Fake scan bar */}
-        <div className="absolute inset-0 overflow-hidden rounded-[var(--radius-xl)] pointer-events-none md:inset-8">
-          <div className="absolute left-0 right-0 h-20 bg-gradient-to-b from-transparent via-white/10 to-transparent breathing" />
-        </div>
       </div>
 
       <button
         onClick={handleCapture}
         disabled={status !== "live"}
-        className="icon-btn relative shrink-0 w-[68px] h-[68px] md:w-[90px] md:h-[90px] bg-white border-[5px] md:border-[6px] border-[var(--color-brand)] rounded-full shadow-lg md:shadow-xl active:scale-90 transition-transform tap disabled:opacity-45"
+        className="icon-btn relative shrink-0 w-[68px] h-[68px] md:w-[90px] md:h-[90px] bg-white border-[5px] md:border-[6px] border-[var(--color-ink)] rounded-full active:scale-90 transition-transform tap disabled:opacity-45"
         aria-label="ถ่ายรูป"
       >
-        <span
-          className="absolute inset-0 -z-10 rounded-full bg-[var(--color-brand-glow)] blur-md float-y"
-          aria-hidden
-        />
         {/* วงแหวนกระจายออก — อยู่หลังปุ่ม ส่วนที่โผล่พ้นขอบขาวคือส่วนที่เห็น */}
         <motion.span
-          className="absolute inset-0 -z-10 rounded-full border-2 border-[var(--color-brand)]"
+          className="absolute inset-0 -z-10 rounded-full border-2 border-[var(--color-ink)]"
           initial={{ scale: 1, opacity: 0 }}
           animate={ring}
           aria-hidden
         />
         <div className="w-11 h-11 md:w-14 md:h-14 bg-[var(--color-brand)] rounded-full transition-transform" />
       </button>
-      {/* จอมือถือซ่อนไว้ — ปุ่มกลมใหญ่กลางจอสื่อชัดพออยู่แล้ว */}
-      <p className="hidden md:block -mt-3 text-xs font-medium text-[var(--color-muted)]">
-        แตะปุ่มเพื่อถ่าย
-      </p>
     </div>
   );
 }

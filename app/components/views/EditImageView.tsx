@@ -58,19 +58,19 @@ export function EditImageView({
         canvas.height,
       );
       const valid = resolveClassId(box.label) !== null;
-      ctx.strokeStyle = valid ? "#10b981" : "#f59e0b";
+      ctx.strokeStyle = valid ? "#1b7a43" : "#b45309";
       ctx.lineWidth = Math.max(2, Math.round(imgW / 200));
       ctx.strokeRect(display.x, display.y, display.w, display.h);
-      ctx.fillStyle = valid ? "#10b981" : "#f59e0b";
+      ctx.fillStyle = valid ? "#1b7a43" : "#b45309";
       const fontSize = Math.max(12, Math.round(imgW / 40));
       ctx.font = `${fontSize}px sans-serif`;
       ctx.fillText(box.label, display.x, display.y - 5);
     });
 
-    // วาดเส้นประสีฟ้าตอนกำลังลาก
+    // วาดเส้นประตอนกำลังลาก
     if (currentRect) {
-      ctx.strokeStyle = "#3b82f6";
-      ctx.lineWidth = Math.max(2, Math.round(imgW / 200)); // ✅ กันเส้นบางเกินไปจนมองไม่เห็นบน PC
+      ctx.strokeStyle = "#0f2a1a";
+      ctx.lineWidth = Math.max(2, Math.round(imgW / 200)); // กันเส้นบางเกินไปจนมองไม่เห็นบน PC
       ctx.setLineDash([5, 5]);
       ctx.strokeRect(
         currentRect.x,
@@ -88,15 +88,6 @@ export function EditImageView({
   return (
     <div className="flex flex-col items-center slide-up">
       <div className="flex items-center gap-2 mb-4 text-center px-4">
-        <span
-          className={`tile text-base ${
-            isBlank
-              ? "bg-[var(--color-warn-soft)]"
-              : "bg-[var(--color-brand-soft)]"
-          }`}
-        >
-          {isBlank ? "🏷️" : "✏️"}
-        </span>
         <p className="text-sm md:text-base text-[var(--color-muted)]">
           {isBlank
             ? "ช่วยระบุวัตถุดิบให้หน่อย — ลากกรอบคร่อมทีละชิ้น"
@@ -105,7 +96,7 @@ export function EditImageView({
       </div>
 
       {/* Image + canvas: responsive height — DO NOT change structure/canvas handlers (crop logic) */}
-      <div className="relative rounded-[var(--radius-lg)] overflow-hidden shadow-lg ring-2 ring-[var(--color-brand)]/30 w-fit mx-auto max-w-full md:max-w-xl">
+      <div className="relative rounded-[var(--radius-lg)] overflow-hidden border border-[var(--color-line)] w-fit mx-auto max-w-full md:max-w-xl">
         <img
           src={editingImage.url}
           alt="แก้ไข"
@@ -130,10 +121,7 @@ export function EditImageView({
         {/* คำใบ้ตอนภาพยังว่าง — pointer-events-none เพื่อไม่ให้บังการลากกรอบ */}
         {isBlank && !currentRect && (
           <div className="absolute inset-0 z-20 flex items-center justify-center p-4 pointer-events-none">
-            <div className="flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-black/65 backdrop-blur-sm text-white text-center max-w-[85%] pop-in">
-              <span className="text-3xl leading-none" aria-hidden>
-                👆
-              </span>
+            <div className="flex flex-col items-center gap-2 px-5 py-4 rounded-[var(--radius-lg)] bg-[var(--color-ink)]/85 text-white text-center max-w-[85%] pop-in">
               <p className="text-sm font-semibold">ลากคร่อมวัตถุดิบทีละชิ้น</p>
               <p className="text-xs text-white/75 leading-relaxed">
                 ใช้นิ้วลากบนมือถือ หรือคลิกค้างแล้วลากบนคอมฯ
@@ -201,7 +189,7 @@ export function EditImageView({
       <button
         onClick={onDone}
         disabled={invalidCount > 0}
-        className="btn-primary mt-6 w-full md:max-w-xl py-4 md:py-5 font-bold tap bg-gradient-to-r from-[var(--color-brand)] to-[var(--color-brand-dark)]"
+        className="btn-primary mt-6 w-full md:max-w-xl py-4 md:py-5 font-bold tap"
       >
         ยืนยันรายการวัตถุดิบ
       </button>

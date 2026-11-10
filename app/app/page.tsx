@@ -107,7 +107,7 @@ export default function Home() {
       {/* ===== Desktop / Tablet layout (≥768px): sidebar + content ===== */}
       <div className="hidden md:flex md:min-h-dvh">
         {/* Sidebar */}
-        <aside className="md:w-64 lg:w-72 md:flex-col md:border-r md:border-[var(--color-line)] md:bg-[var(--color-surface)]/90 md:backdrop-blur-xl md:sticky md:top-0 md:h-dvh shrink-0 flex flex-col">
+        <aside className="md:w-56 lg:w-72 md:flex-col md:border-r md:border-[var(--color-line)] md:bg-[var(--color-page)] md:sticky md:top-0 md:h-dvh shrink-0 flex flex-col">
           <div className="p-6 pb-4">
             {/* กดโลโก้เพื่อกลับหน้าแนะนำ */}
             <Link
@@ -119,21 +119,16 @@ export default function Home() {
                 alt=""
                 width={384}
                 height={384}
-                className="w-10 h-10 select-none"
+                className="w-9 h-9 select-none"
                 priority
               />
-              <div>
-                <h1 className="text-2xl font-bold text-gradient-brand tracking-tight leading-none">
-                  Chef Kub
-                </h1>
-                <p className="text-[11px] text-[var(--color-muted)] mt-1">
-                  สแกนแล้วเริ่มทำได้เลย
-                </p>
-              </div>
+              <span className="text-xl font-bold text-[var(--color-ink)] leading-none" style={{ fontFamily: "var(--font-display)" }}>
+                Chef Kub
+              </span>
             </Link>
           </div>
 
-          <nav className="flex-1 px-3 space-y-1.5">
+          <nav className="flex-1 px-3 space-y-0.5">
             {navItems.map((item) => {
               const isActive = viewMode === item.key;
               return (
@@ -164,11 +159,7 @@ export default function Home() {
                         initial={{ scale: 0.5, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                        className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          isActive
-                            ? "bg-white/25 text-white"
-                            : "bg-[var(--color-brand)] text-white"
-                        }`}
+                        className="ml-auto text-sm text-[var(--color-muted)] tabular-nums"
                       >
                         {item.badge}
                       </motion.span>
@@ -180,7 +171,7 @@ export default function Home() {
           </nav>
 
           {/* Scan CTA — action หลักของแอป เข้าถึงได้จากทุกหน้า */}
-          <div className="px-3 pb-3">
+          <div className="px-3 pb-5">
             <button
               onClick={startCamera}
               className="btn-primary w-full py-3 flex items-center justify-center gap-2 text-sm tap"
@@ -190,12 +181,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Sidebar footer */}
-          <div className="p-4 border-t border-[var(--color-line)]">
-            <p className="text-[10px] text-[var(--color-muted)] text-center">
-              สแกนวัตถุดิบ · คิดสูตร · ทำอาหาร
-            </p>
-          </div>
         </aside>
 
         {/* Main content area */}
@@ -203,9 +188,9 @@ export default function Home() {
           {/* Page content */}
           <ViewTransition
             viewKey={viewMode}
-            className="flex-1 px-4 md:px-8 lg:px-12 py-5 md:py-8 pb-8"
+            className="flex-1 px-4 md:px-6 lg:px-12 py-5 md:py-8 pb-8"
           >
-            <div className="max-w-2xl mx-auto lg:max-w-3xl">
+            <div className="max-w-2xl mx-auto lg:max-w-4xl">
               {viewMode === "home" && (
                 <HomeView
                   gallery={gallery}
@@ -295,7 +280,7 @@ export default function Home() {
       <div className="md:hidden min-h-dvh flex flex-col">
         {/* Mobile header */}
         {!["camera", "cook"].includes(viewMode) && (
-          <header className="mobile-header-safe sticky top-0 z-30 border-b border-[var(--color-line)] bg-[var(--color-surface)]/92 px-4 pb-2 backdrop-blur-md">
+          <header className="mobile-header-safe sticky top-0 z-30 border-b border-[var(--color-line)] bg-[var(--color-page)] px-4 pb-2">
             <div className="flex justify-between items-center">
               {/* กดโลโก้เพื่อกลับหน้าแนะนำ */}
               <Link
@@ -311,15 +296,15 @@ export default function Home() {
                   className="h-8 w-8 object-contain"
                   priority
                 />
-                <h1 className="text-lg font-bold text-gradient-brand tracking-tight leading-none">
+                <span className="text-lg font-bold text-[var(--color-ink)] leading-none" style={{ fontFamily: "var(--font-display)" }}>
                   Chef Kub
-                </h1>
+                </span>
               </Link>
               <div className="flex items-center gap-2">
                 {viewMode === "home" &&(
                   <button
                     onClick={() => setViewMode("settings")}
-                    className="icon-btn h-11 w-11 border border-[var(--color-line)] bg-white text-[var(--color-brand)] shadow-[var(--shadow-xs)]"
+                    className="icon-btn h-11 w-11 text-[var(--color-ink)]"
                     aria-label="ตั้งค่าครัว"
                   >
                     <IconSettings size={19} />
@@ -329,7 +314,7 @@ export default function Home() {
                 {["edit", "settings"].includes(viewMode) && (
                   <button
                     onClick={goHome}
-                    className="btn-secondary text-xs px-3 py-1.5 tap"
+                    className="btn-secondary min-h-11 text-sm px-4 tap"
                   >
                     กลับ
                   </button>
@@ -454,11 +439,11 @@ export default function Home() {
 
         {/* Mobile bottom nav */}
         {showBottomNav && (
-          <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[var(--color-surface)]/95 backdrop-blur-xl border-t border-[var(--color-line)] shadow-[0_-8px_30px_rgba(20,64,36,0.08)] safe-bottom">
+          <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[var(--color-page)] border-t border-[var(--color-line)] safe-bottom">
             <div className="relative flex">
               {/* Sliding active indicator */}
               <span
-                className="absolute top-0 left-0 h-1 rounded-b-full bg-[var(--color-brand)] transition-transform duration-300 ease-out"
+                className="absolute top-0 left-0 h-0.5 bg-[var(--color-brand)] transition-transform duration-300 ease-out"
                 style={{
                   // อิงจำนวนแท็บจริง ไม่ fix เป็น 1/3 ไว้ เพิ่มแท็บทีหลังจะได้ไม่เพี้ยน
                   width: `${100 / bottomNavItems.length}%`,
@@ -480,7 +465,7 @@ export default function Home() {
                     whileTap={{ scale: 0.9 }}
                     className={`flex-1 flex flex-col items-center gap-0.5 py-2 tap transition-colors relative ${
                       isActive
-                        ? "text-[var(--color-brand)]"
+                        ? "text-[var(--color-ink)] font-semibold"
                         : "text-[var(--color-muted)]"
                     }`}
                   >
@@ -491,7 +476,7 @@ export default function Home() {
                     >
                       {item.icon(isActive)}
                     </motion.span>
-                    <span className="text-[10px] font-medium">{item.label}</span>
+                    <span className="text-xs font-medium">{item.label}</span>
                     {item.badge ? (
                       // key = ตัวเลข ทำให้ badge เด้งใหม่ทุกครั้งที่จำนวนเปลี่ยน
                       <motion.span
@@ -499,7 +484,7 @@ export default function Home() {
                         initial={{ scale: 0.4, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ type: "spring", stiffness: 520, damping: 20 }}
-                        className="absolute top-1 right-1/2 translate-x-4 w-4 h-4 bg-[var(--color-brand)] text-white text-[9px] font-bold rounded-full flex items-center justify-center"
+                        className="absolute top-1 right-1/2 translate-x-5 min-w-5 h-5 px-1 bg-[var(--color-brand)] text-white text-xs font-semibold rounded-[var(--radius-sm)] flex items-center justify-center tabular-nums"
                       >
                         {item.badge}
                       </motion.span>

@@ -21,7 +21,6 @@ export const RECIPE_TAGS = [
 
 interface CookingModeConfig {
   id: CookingMode;
-  emoji: string;
   label: string;
   hint: string;
   /** ยิ่งสูงยิ่งกล้าเสนอเมนูแปลก */
@@ -33,7 +32,6 @@ interface CookingModeConfig {
 export const COOKING_MODES: CookingModeConfig[] = [
   {
     id: "classic",
-    emoji: "🍳",
     label: "ปกติ",
     hint: "เมนูคุ้นเคย ทำได้ชัวร์",
     temperature: 0.7,
@@ -43,7 +41,6 @@ export const COOKING_MODES: CookingModeConfig[] = [
   },
   {
     id: "fusion",
-    emoji: "🌏",
     label: "ฟิวชั่น",
     hint: "จับอาหารสองชาติมาชนกัน",
     temperature: 1.0,
@@ -55,7 +52,6 @@ export const COOKING_MODES: CookingModeConfig[] = [
   },
   {
     id: "anime",
-    emoji: "🍜",
     label: "จากอนิเมะ",
     hint: "เมนูที่โผล่ในอนิเมะ/ซีรีส์",
     temperature: 1.0,

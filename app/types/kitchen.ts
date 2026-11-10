@@ -7,7 +7,6 @@ export type KitchenEquipment = {
 export type EquipmentCategory = {
   id: string;
   name: string;
-  icon: string;
   description: string;
   items: KitchenEquipment[];
 };

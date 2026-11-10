@@ -7,7 +7,6 @@ export const equipmentCategories: EquipmentCategory[] = [
   {
     id: "heating",
     name: "อุปกรณ์ให้ความร้อน",
-    icon: "🔥",
     description: "อุปกรณ์สำหรับให้ความร้อนและปรุงอาหาร",
     items: [
       { id: "gas-stove", name: "เตาแก๊ส", important: true },
@@ -25,7 +24,6 @@ export const equipmentCategories: EquipmentCategory[] = [
   {
     id: "cooking",
     name: "อุปกรณ์ปรุงอาหาร",
-    icon: "🍳",
     description: "อุปกรณ์สำหรับต้ม ผัด ทอด และนึ่ง",
     items: [
       { id: "pot", name: "หม้อ", important: true },
@@ -40,7 +38,6 @@ export const equipmentCategories: EquipmentCategory[] = [
   {
     id: "preparation",
     name: "อุปกรณ์เตรียมวัตถุดิบ",
-    icon: "🔪",
     description: "อุปกรณ์สำหรับหั่น สับ บด และเตรียมวัตถุดิบ",
     items: [
       { id: "chef-knife", name: "มีดเชฟ", important: true },
@@ -59,7 +56,6 @@ export const equipmentCategories: EquipmentCategory[] = [
   {
     id: "mixing",
     name: "อุปกรณ์ผสมและตวง",
-    icon: "🥣",
     description: "อุปกรณ์สำหรับผสมและเตรียมส่วนผสม",
     items: [
       { id: "mixing-bowl", name: "ชามผสม" },
@@ -75,7 +71,6 @@ export const equipmentCategories: EquipmentCategory[] = [
   {
     id: "baking",
     name: "อุปกรณ์ทำขนม",
-    icon: "🧁",
     description: "อุปกรณ์สำหรับทำขนมและเบเกอรี่",
     items: [
       { id: "stand-mixer", name: "เครื่องตีแป้ง" },

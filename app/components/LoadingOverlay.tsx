@@ -16,7 +16,7 @@ const STEAM = [
 export function LoadingOverlay({ message }: LoadingOverlayProps) {
   return (
     <motion.div
-      className="fixed inset-0 bg-black/55 backdrop-blur-sm flex flex-col items-center justify-center z-50 p-6"
+      className="fixed inset-0 bg-black/55 flex flex-col items-center justify-center z-50 p-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -32,19 +32,22 @@ export function LoadingOverlay({ message }: LoadingOverlayProps) {
         {STEAM.map((s, i) => (
           <span
             key={i}
-            className="absolute top-1 w-2 h-2 rounded-full bg-white/60 blur-[1px] steam"
+            className="absolute top-1 w-2 h-2 rounded-full bg-white/60 steam"
             style={{ left: s.left, animationDelay: s.delay }}
             aria-hidden
           />
         ))}
 
         <span className="absolute inset-x-0 bottom-3 grid place-items-center">
-          <span className="text-5xl md:text-6xl bob select-none" aria-hidden>
-            🍲
-          </span>
+          <img
+            src="/mascot.png"
+            alt=""
+            width={80}
+            height={80}
+            className="h-20 w-20 bob select-none"
+          />
         </span>
 
-        <span className="absolute inset-x-4 bottom-2 h-3 rounded-full bg-[var(--color-brand)]/25 blur-md" />
       </motion.div>
 
       {/* ข้อความเปลี่ยนไปตามสเต็ปที่ทำอยู่ — ให้มันจางสลับกันแทนที่จะกระตุกเปลี่ยนคำ

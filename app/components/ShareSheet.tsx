@@ -71,7 +71,7 @@ export function ShareSheet({
             >
               <span
                 className={`${option.preview} shrink-0 rounded-md border-2 border-[var(--color-brand)] bg-[var(--color-brand-soft)] grid place-items-center ${
-                  isBusy ? "glow-pulse" : ""
+                  isBusy ? "" : ""
                 }`}
               >
                 {option.choice === "text" && (

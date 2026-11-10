@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 import { useHeartPop } from "../hooks/useHeartPop";
 import type { Recipe } from "../types/recipe";
 import { isFavorite, toggleFavorite } from "../utils/storage";
-import { IconHeart } from "./Icons";
+import { IconChefHat, IconHeart } from "./Icons";
 
 interface RecipeCompactCardProps {
   recipe: Recipe;
@@ -10,6 +10,11 @@ interface RecipeCompactCardProps {
   onFavoriteChange: () => void;
 }
 
+/**
+ * การ์ดเมนูแบบแถว ใช้ทั้งหน้าเมนู (ใบที่ 2 เป็นต้นไป) และหน้ารายการโปรด
+ * รูปซ้าย · ชื่อ+ข้อมูลกลาง · หัวใจมุมขวา — ปุ่มเริ่มทำเป็นเขียวอ่อน
+ * ให้ปุ่มเขียวเข้มเหลือแค่ action หลักของจอ ไม่ใช่ปุ่มดำเรียงเต็มจอทุกใบ
+ */
 export function RecipeCompactCard({
   recipe,
   onStartCook,
@@ -24,56 +29,61 @@ export function RecipeCompactCard({
     heart.pop();
   };
 
+  const meta = [
+    recipe.readyInMinutes != null ? `${recipe.readyInMinutes} นาที` : null,
+    recipe.calories,
+    ...recipe.tags.slice(0, 1),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <motion.div
-      className="card grid h-full min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] grid-rows-[1fr_auto] items-center gap-x-3 gap-y-4 overflow-hidden p-3.5 md:grid-cols-[6.5rem_minmax(0,1fr)] md:p-4"
-      whileHover={{ y: -3, boxShadow: "var(--shadow-lg)" }}
-      transition={{ type: "spring", stiffness: 340, damping: 26 }}
-    >
-      {/* 16:9 ให้ตรงกับรูปที่ flux คืนมา (1024×576) — กรอบจตุรัสจะครอบซ้ายขวาทิ้งข้างละ ~30% */}
-      <div className="aspect-video w-[5.5rem] shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-brand-pale)] flex items-center justify-center md:w-[6.5rem]">
+    <div className="card card-lift flex h-full min-w-0 gap-3 p-3 md:gap-4 md:p-4">
+      {/* 4:3 จตุรัสเกินไปสำหรับรูป 16:9 แต่ 16:9 เตี้ยจนชื่อเมนูสองบรรทัดล้นรูป — 4:3 กลางทาง */}
+      <div className="grid aspect-[4/3] w-24 shrink-0 place-items-center self-start overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-brand-soft)] text-[var(--color-brand)] md:w-28">
         {recipe.imageUrl ? (
           <img
             src={recipe.imageUrl}
-            alt={recipe.name}
-            className="w-full h-full object-cover"
+            alt=""
+            className="h-full w-full object-cover"
           />
         ) : (
-          <span className="text-xl md:text-2xl">🍽️</span>
+          <IconChefHat size={28} />
         )}
       </div>
 
-      <div className="min-w-0 self-stretch flex flex-col justify-center">
-        <h4 className="line-clamp-2 min-h-[2.75rem] overflow-hidden break-words [overflow-wrap:anywhere] font-semibold leading-snug text-[var(--color-ink)]">
-          {recipe.name}
-        </h4>
-        <p className="mt-1 truncate text-xs text-[var(--color-muted)]">
-          {recipe.readyInMinutes != null && `${recipe.readyInMinutes} นาที · `}
-          {recipe.calories}
-        </p>
-      </div>
-
-      <div className="col-span-2 mt-auto flex w-full min-w-0 items-center gap-2 border-t border-[var(--color-line-soft)] pt-3">
-        <motion.button
-          onClick={onToggle}
-          animate={heart.controls}
-          whileTap={{ scale: 0.85 }}
-          className={`icon-btn w-9 h-9 md:w-10 md:h-10 tap ${
-            favorited
-              ? "text-[var(--color-favorite)]"
-              : "text-[var(--color-muted)]"
-          }`}
-          aria-label={favorited ? "เอาออกจากโปรด" : "เพิ่มในโปรด"}
-        >
-          <IconHeart size={18} filled={favorited} />
-        </motion.button>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-start gap-1">
+          <h3 className="line-clamp-2 min-w-0 flex-1 [overflow-wrap:anywhere] text-base font-semibold leading-snug text-[var(--color-ink)]">
+            {recipe.name}
+          </h3>
+          <motion.button
+            onClick={onToggle}
+            animate={heart.controls}
+            whileTap={{ scale: 0.85 }}
+            className={`icon-btn -mr-2 -mt-2 h-11 w-11 shrink-0 ${
+              favorited
+                ? "text-[var(--color-favorite)]"
+                : "text-[var(--color-muted)]"
+            }`}
+            aria-label={favorited ? "เอาออกจากโปรด" : "เพิ่มในโปรด"}
+          >
+            <IconHeart size={18} filled={favorited} />
+          </motion.button>
+        </div>
+        {meta && (
+          <p className="mb-3 mt-0.5 truncate text-sm text-[var(--color-muted)] tabular-nums">
+            {meta}
+          </p>
+        )}
         <button
           onClick={() => onStartCook(recipe)}
-          className="btn-primary min-w-0 flex-1 whitespace-nowrap px-4 text-sm tap"
+          className="btn-soft mt-auto self-start"
+          aria-label={`เริ่มทำ ${recipe.name}`}
         >
-          เริ่มทำเมนู
+          เริ่มทำ
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

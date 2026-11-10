@@ -19,13 +19,12 @@ export function FavoritesView({
   return (
     <div className="space-y-6 pb-6 fade-in">
       <div>
-        <h2 className="section-title">รายการโปรด</h2>
+        <h1 className="section-title text-2xl md:text-[28px]">รายการโปรด</h1>
         <p className="section-subtitle">กดทำเมนูนี้เพื่อเริ่มทันที</p>
       </div>
 
       {favorites.length === 0 ? (
         <EmptyState
-          icon="💝"
           title="ยังไม่มีสูตรโปรด"
           description="กดไอคอนหัวใจที่สูตรอาหารเพื่อเพิ่มในรายการโปรด"
           action={
