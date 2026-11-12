@@ -12,9 +12,19 @@ const anuphan = Anuphan({
   display: "swap",
 });
 
+import { SITE_URL } from "./lib/site";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Chef Kub — สแกนวัตถุดิบ คิดสูตรอาหารด้วย AI",
   description: "ถ่ายรูปวัตถุดิบ ให้ AI วิเคราะห์และแนะนำสูตรอาหารไทย",
+  openGraph: {
+    type: "website",
+    siteName: "Chef Kub",
+    locale: "th_TH",
+    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "ไข่เจียวฟูกรอบบนจาน" }],
+  },
+  twitter: { card: "summary_large_image", images: ["/og.jpg"] },
 };
 
 export const viewport: Viewport = {

@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   title: "Chef Kub — ถ่ายของในตู้เย็น ได้เมนูไทยที่ทำได้เลย",
   description:
     "ถ่ายรูปวัตถุดิบที่มีอยู่ โมเดลบนเครื่องตีกรอบให้ทีละชิ้น แล้ว AI คิดสูตรอาหารไทยที่ทำได้จริงจากของตรงหน้า พร้อมโหมดทำอาหารที่จับเวลาให้ในตัว",
+  alternates: { canonical: "/" },
 };
 
 const FAQ = [
@@ -142,6 +143,21 @@ export default function Landing() {
 
         {/* ===== คำถาม ===== */}
         <section id="faq" className="faq" aria-labelledby="faq-h">
+          {/* FAQPage schema ให้ Google อ่านคำถามเดียวกับที่แสดงบนหน้า */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: FAQ.map(({ q, a }) => ({
+                  "@type": "Question",
+                  name: q,
+                  acceptedAnswer: { "@type": "Answer", text: a },
+                })),
+              }).replace(/</g, "\\u003c"),
+            }}
+          />
           <h2 id="faq-h" className="head faq-h">
             ถามกันบ่อย
           </h2>
